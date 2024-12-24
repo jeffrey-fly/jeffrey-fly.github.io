@@ -69,6 +69,81 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-gdb-查看指令" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" class="article-date">
+  <time class="dt-published" datetime="2024-12-24T07:52:16.000Z" itemprop="datePublished">2024-12-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/program/">program</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">gdb 查看指令</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h2 id="使用-x-命令和内存地址："><a href="#使用-x-命令和内存地址：" class="headerlink" title="使用 x 命令和内存地址："></a>使用 x 命令和内存地址：</h2><p>x (examine) 命令允许你检查内存中的数据。你可以指定要检查的内存地址、格式和单位。</p>
+<p>基本语法： x &#x2F;nfu addr</p>
+<ul>
+<li><p>n：要显示的单位数量。</p>
+</li>
+<li><p>f：显示格式（例如，x 表示十六进制，t 表示二进制，d 表示十进制）。</p>
+</li>
+<li><p>u：单位大小（b 表示字节，h 表示半字（16 位），w 表示字（32 位），g 表示巨字（64 位））。</p>
+</li>
+<li><p>addr：要检查的内存地址。</p>
+</li>
+</ul>
+<p>示例： 假设有一个 32 位整数 val，其地址为 0x12345678，你想以 16 位为单位查看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x12345678</span><br></pre></td></tr></table></figure>
+
+<p>这将显示从 0x12345678 开始的两个半字（16 位）的十六进制值。</p>
+<p>结合 p 命令获取地址： 你可以使用 p &amp;变量名 获取变量的地址，然后将其传递给 x 命令。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int main() &#123;</span><br><span class="line">    int val = 0x12345678;</span><br><span class="line">    printf(&quot;val = 0x%x\n&quot;, val);</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译并用 GDB 调试：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc -g test.c -o test</span><br><span class="line">gdb ./test</span><br></pre></td></tr></table></figure>
+<p>在 GDB 中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) break main</span><br><span class="line">(gdb) run</span><br><span class="line">(gdb) p &amp;val</span><br><span class="line">$1 = (int *) 0x7fffffffe0dc</span><br><span class="line">(gdb) x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0x5678  0x1234</span><br></pre></td></tr></table></figure>
+<p>这里注意字节序，在小端序机器上，低位字节在前，高位字节在后，所以显示为 0x5678 0x1234。<br>如果想要二进制显示，则使用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0101011001111000        0001001000110100</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用表达式和位运算（对于变量值）："><a href="#使用表达式和位运算（对于变量值）：" class="headerlink" title="使用表达式和位运算（对于变量值）："></a>使用表达式和位运算（对于变量值）：</h2><p>如果你只想查看变量的值，而不需要查看内存，可以使用 C 语言的位运算来提取 16 位部分，然后使用 p&#x2F;t 显示。</p>
+<p>示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int val = 0x12345678;</span><br></pre></td></tr></table></figure>
+<p>在 GDB 中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p/t (val &amp; 0xFFFF) // 获取低 16 位</span><br><span class="line">$1 = 0101011001111000</span><br><span class="line">(gdb) p/t ((val &gt;&gt; 16) &amp; 0xFFFF) // 获取高 16 位</span><br><span class="line">$2 = 0001001000110100</span><br></pre></td></tr></table></figure>
+<h2 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h2><p>对于查看内存中的数据（包括变量在内存中的表示），使用 x 命令结合 h (半字) 和 t (二进制) 格式指定符是最直接的方法。<br>对于只查看变量的值，使用位运算提取 16 位部分，然后使用 p&#x2F;t 也是一个有效的选择。<br>选择哪种方法取决于你的具体需求。如果你需要查看变量在内存中的布局（例如，在结构体或数组中），x 命令是更好的选择。如果你只需要查看变量值的不同部分，位运算可能更方便。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" data-id="cm526xcd600084wfy63shd4tm" data-title="gdb 查看指令" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/debug/" rel="tag">debug</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-page" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/12/24/page/" class="article-date">
@@ -118,7 +193,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/24/page/" data-id="cm51uoati0007jyfygcqd0v7n" data-title="page" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/24/page/" data-id="cm526xcd500074wfy928gajvo" data-title="page" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -163,7 +238,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/23/File%20Descriptor%20Limits/" data-id="cm51uoat80001jyfyg3099pc2" data-title="File Descriptor Limits" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/23/File%20Descriptor%20Limits/" data-id="cm526xccx00014wfy01c9di1m" data-title="File Descriptor Limits" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -207,7 +282,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/23/nonstop/" data-id="cm51uoatf0005jyfy5rrw2oo0" data-title="gdb 异步调试" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/23/nonstop/" data-id="cm526xcd300054wfy60hf6m3b" data-title="gdb 异步调试" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -260,7 +335,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/21/hello-world/" data-id="cm51uoatc0003jyfy11ev6hes" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/21/hello-world/" data-id="cm526xcd000034wfy542b1xxs" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -302,7 +377,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/debug/" style="font-size: 10px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 10px;">postgres</a>
+      <a href="/tags/debug/" style="font-size: 20px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 10px;">postgres</a>
     </div>
   </div>
 
@@ -322,6 +397,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">gdb 查看指令</a>
+          </li>
         
           <li>
             <a href="/2024/12/24/page/">page</a>
