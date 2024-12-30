@@ -69,6 +69,60 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Install_pg_from_codes" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/30/Install_pg_from_codes/" class="article-date">
+  <time class="dt-published" datetime="2024-12-30T06:38:41.842Z" itemprop="datePublished">2024-12-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/12/30/Install_pg_from_codes/">Install pg from codes in linux</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>First, we need to create a postgres user and add it to the sudo group</p>
+<h2 id="Get-codes"><a href="#Get-codes" class="headerlink" title="Get codes"></a>Get codes</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone git://git.postgresql.org/git/postgresql.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Install-from-codes"><a href="#Install-from-codes" class="headerlink" title="Install from codes"></a>Install from codes</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./configure --enable-debug &#x27;CFLAGS=-O0 -g&#x27; --enable-cassert --enable-depend --enable-dtrace --without-icu</span><br><span class="line">make</span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+
+<h2 id="Modify-environment-variables"><a href="#Modify-environment-variables" class="headerlink" title="Modify environment variables"></a>Modify environment variables</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">source ~/.bashrc</span><br><span class="line">export PATH=&quot;/usr/local/pgsql/bin:$PATH&quot;</span><br><span class="line">export PGDATA=/usr/local/pgsql/data</span><br></pre></td></tr></table></figure>
+
+<h2 id="initdb"><a href="#initdb" class="headerlink" title="initdb"></a>initdb</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo chown -R postgres:postgres /usr/local/pgsql</span><br><span class="line">initdb</span><br></pre></td></tr></table></figure>
+
+<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D /usr/local/pgsql/data -l logfile start</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2024/12/30/Install_pg_from_codes/" data-id="cm5aokm7y00056lfy82wo62os" data-title="Install pg from codes in linux" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/postgres/" rel="tag">postgres</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-gdb-查看指令" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" class="article-date">
@@ -130,7 +184,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" data-id="cm526xcd600084wfy63shd4tm" data-title="gdb 查看指令" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" data-id="cm5aokm8100076lfy8czbebls" data-title="gdb 查看指令" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -178,7 +232,8 @@
 <li>items (row versions)</li>
 <li>special space</li>
 </ul>
-<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><p><img src="https://i-blog.csdnimg.cn/blog_migrate/c2ecfbabd9d1a7a5d57ba9e637d716c0.png" alt="Screen Shot 2024-07-26 at 10.43.00 AM.png"></p>
+<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><style>.spggcovfthkm{zoom:50%;}</style><img src="/2024/12/24/page/page.png" class="spggcovfthkm" alt="page.png">
+
 <h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
 
 
@@ -193,7 +248,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/24/page/" data-id="cm526xcd500074wfy928gajvo" data-title="page" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/24/page/" data-id="cm5aokm87000e6lfy8dz7bkjf" data-title="page" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -238,7 +293,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/23/File%20Descriptor%20Limits/" data-id="cm526xccx00014wfy01c9di1m" data-title="File Descriptor Limits" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/23/File%20Descriptor%20Limits/" data-id="cm5aokm7x00046lfycb9pa5pe" data-title="File Descriptor Limits" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -282,7 +337,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/23/nonstop/" data-id="cm526xcd300054wfy60hf6m3b" data-title="gdb 异步调试" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/23/nonstop/" data-id="cm5aokm84000a6lfyc0bq6igx" data-title="gdb 异步调试" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -335,7 +390,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/21/hello-world/" data-id="cm526xcd000034wfy542b1xxs" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/12/21/hello-world/" data-id="cm5aokm8300096lfy67vr1z0d" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -377,7 +432,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/debug/" style="font-size: 20px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 10px;">postgres</a>
+      <a href="/tags/debug/" style="font-size: 20px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 20px;">postgres</a>
     </div>
   </div>
 
@@ -399,6 +454,10 @@
       <ul>
         
           <li>
+            <a href="/2024/12/30/Install_pg_from_codes/">Install pg from codes in linux</a>
+          </li>
+        
+          <li>
             <a href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">gdb 查看指令</a>
           </li>
         
@@ -412,10 +471,6 @@
         
           <li>
             <a href="/2024/12/23/nonstop/">gdb 异步调试</a>
-          </li>
-        
-          <li>
-            <a href="/2024/12/21/hello-world/">Hello World</a>
           </li>
         
       </ul>
