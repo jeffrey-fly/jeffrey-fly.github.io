@@ -14,7 +14,7 @@
 <meta property="og:description" content="概念Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致 核心目标 Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。 日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-01-15T02:44:26.000Z">
-<meta property="article:modified_time" content="2025-01-15T03:37:11.363Z">
+<meta property="article:modified_time" content="2025-01-15T03:39:12.794Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="分布式">
 <meta name="twitter:card" content="summary">
@@ -182,8 +182,8 @@
 </tr>
 <tr>
 <td>扩展性</td>
-<td>有限</td>
-<td>，单点可能成为瓶颈	高扩展性，分片机制避免瓶颈</td>
+<td>有限,单点可能成为瓶颈</td>
+<td>高扩展性，分片机制避免瓶颈</td>
 </tr>
 <tr>
 <td>复杂度</td>
