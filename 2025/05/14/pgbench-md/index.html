@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   
   
-  <title>Install pg from codes in linux | Jeffrey‘s space</title>
+  <title>how to use pgbench | Jeffrey‘s space</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="First, we need to create a postgres user and add it to the sudo group Get codes1git clone git:&#x2F;&#x2F;git.postgresql.org&#x2F;git&#x2F;postgresql.git  Install from codes123.&#x2F;configure --enable-debug &#x27;CFLAGS&#x3D;-O0">
+  <meta name="description" content="pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C 1. Initialize the Test DatabaseThis sets up the schema and populates data. 1pgbench">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Install pg from codes in linux">
-<meta property="og:url" content="http://example.com/2024/12/30/Install_pg_from_codes/index.html">
+<meta property="og:title" content="how to use pgbench">
+<meta property="og:url" content="http://example.com/2025/05/14/pgbench-md/index.html">
 <meta property="og:site_name" content="Jeffrey‘s space">
-<meta property="og:description" content="First, we need to create a postgres user and add it to the sudo group Get codes1git clone git:&#x2F;&#x2F;git.postgresql.org&#x2F;git&#x2F;postgresql.git  Install from codes123.&#x2F;configure --enable-debug &#x27;CFLAGS&#x3D;-O0">
+<meta property="og:description" content="pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C 1. Initialize the Test DatabaseThis sets up the schema and populates data. 1pgbench">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-12-30T06:46:16.000Z">
-<meta property="article:modified_time" content="2024-12-31T09:23:41.280Z">
+<meta property="article:published_time" content="2025-05-14T03:26:53.000Z">
+<meta property="article:modified_time" content="2025-05-14T03:40:31.460Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="postgres">
 <meta name="twitter:card" content="summary">
@@ -72,10 +72,10 @@
 </header>
 
       <div class="outer">
-        <section id="main"><article id="post-Install_pg_from_codes" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-pgbench-md" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2024/12/30/Install_pg_from_codes/" class="article-date">
-  <time class="dt-published" datetime="2024-12-30T06:46:16.000Z" itemprop="datePublished">2024-12-30</time>
+    <a href="/2025/05/14/pgbench-md/" class="article-date">
+  <time class="dt-published" datetime="2025-05-14T03:26:53.000Z" itemprop="datePublished">2025-05-14</time>
 </a>
     
   <div class="article-category">
@@ -90,7 +90,7 @@
         
   
     <h1 class="p-name article-title" itemprop="headline name">
-      Install pg from codes in linux
+      how to use pgbench
     </h1>
   
 
@@ -98,21 +98,33 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>First, we need to create a postgres user and add it to the sudo group</p>
-<h2 id="Get-codes"><a href="#Get-codes" class="headerlink" title="Get codes"></a>Get codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git://git.postgresql.org/git/postgresql.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Install-from-codes"><a href="#Install-from-codes" class="headerlink" title="Install from codes"></a>Install from codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./configure --enable-debug <span class="string">&#x27;CFLAGS=-O0 -g&#x27;</span> --enable-cassert --enable-depend --enable-dtrace --without-icu</span><br><span class="line">make</span><br><span class="line"><span class="built_in">sudo</span> make install</span><br></pre></td></tr></table></figure>
-
-<h2 id="Modify-environment-variables"><a href="#Modify-environment-variables" class="headerlink" title="Modify environment variables"></a>Modify environment variables</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="string">&quot;/usr/local/pgsql/bin:<span class="variable">$PATH</span>&quot;</span></span><br><span class="line"><span class="built_in">export</span> PGDATA=/usr/local/pgsql/data</span><br></pre></td></tr></table></figure>
-
-<h2 id="initdb"><a href="#initdb" class="headerlink" title="initdb"></a>initdb</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R postgres:postgres /usr/local/pgsql</span><br><span class="line">initdb</span><br></pre></td></tr></table></figure>
-
-<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D /usr/local/pgsql/data -l logfile start</span><br></pre></td></tr></table></figure>
+        <p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
+<h2 id="1-Initialize-the-Test-Database"><a href="#1-Initialize-the-Test-Database" class="headerlink" title="1. Initialize the Test Database"></a>1. Initialize the Test Database</h2><p>This sets up the schema and populates data.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -i -s 10 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-i: Initialize the database.</li>
+<li>-s 10: Scale factor. Each scale unit ~100,000 rows in the pgbench_accounts table.</li>
+<li>mydb: The database to test.</li>
+</ul>
+<h2 id="2-Run-a-Simple-Benchmark-Test"><a href="#2-Run-a-Simple-Benchmark-Test" class="headerlink" title="2. Run a Simple Benchmark Test"></a>2. Run a Simple Benchmark Test</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -c 10 -j 2 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-c 10: 10 concurrent clients.</li>
+<li>-j 2: 2 threads.</li>
+<li>-T 60: Run for 60 seconds.</li>
+<li>mydb: Target database.</li>
+</ul>
+<p>It will output something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$ pgbench -c 10 -j 2 -T 60 mydb</span><br><span class="line">pgbench (18devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: &lt;builtin: TPC-B (sort of)&gt;</span><br><span class="line">scaling factor: 10</span><br><span class="line">query mode: simple</span><br><span class="line">number of clients: 10</span><br><span class="line">number of threads: 2</span><br><span class="line">maximum number of tries: 1</span><br><span class="line">duration: 60 s</span><br><span class="line">number of transactions actually processed: 12841</span><br><span class="line">number of failed transactions: 0 (0.000%)</span><br><span class="line">latency average = 46.726 ms</span><br><span class="line">initial connection time = 39.072 ms</span><br><span class="line">tps = 214.013767 (without initial connection time)</span><br><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$</span><br></pre></td></tr></table></figure>
+<h2 id="3-Run-Custom-SQL-Scripts"><a href="#3-Run-Custom-SQL-Scripts" class="headerlink" title="3. Run Custom SQL Scripts"></a>3. Run Custom SQL Scripts</h2><p>You can benchmark with custom SQL transactions:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<p>Where myscript.sql contains something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br><span class="line">···</span><br><span class="line">Use :variable for substitution. We can define variables using -D:</span><br></pre></td></tr></table></figure>
+<p>pgbench -f myscript.sql -D aid&#x3D;12345 -D delta&#x3D;50 -c 10 -T 60 mydb<br>&#96;&#96;&#96;</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/12/30/Install_pg_from_codes/" data-id="cm5w8vnkf0009dxfybhdogyrx" data-title="Install pg from codes in linux" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2025/05/14/pgbench-md/" data-id="cmane93070003qxfy5d7r9nw8" data-title="how to use pgbench" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -124,19 +136,10 @@
     
 <nav id="article-nav">
   
-    <a href="/2024/12/31/Buffer-Bulk-Eviction/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          Buffer Bulk Eviction
-        
-      </div>
-    </a>
   
-  
-    <a href="/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2025/01/23/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">gdb 查看指令</div>
+      <div class="article-nav-title">gdb调试改变返回值.md</div>
     </a>
   
 </nav>
