@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>B树索引（postgres） | Jeffrey‘s space</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。 一 结构每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="B树索引（postgres）">
+<meta property="og:url" content="http://example.com/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/index.html">
+<meta property="og:site_name" content="Jeffrey‘s space">
+<meta property="og:description" content="存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。 一 结构每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-07-10T06:33:12.000Z">
+<meta property="article:modified_time" content="2025-07-10T08:04:45.883Z">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Jeffrey‘s space" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Jeffrey‘s space</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-B树索引" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/" class="article-date">
+  <time class="dt-published" datetime="2025-07-10T06:33:12.000Z" itemprop="datePublished">2025-07-10</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      B树索引（postgres）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
+<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
+<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
+<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
+<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
+<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
+<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
+</ol>
+<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
+<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
+<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
+<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
+</ul>
+<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
+<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
+<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
+<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
+<p>PostgreSQL 当前 不支持 Skip Scan</p>
+<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
+<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
+<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
+<li>聚簇后的表，在按该索引扫描时性能更好</li>
+</ul>
+<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
+<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
+<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
+<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
+</ul>
+<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
+<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
+<ol>
+<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
+<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
+</ol>
+<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
+<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
+<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
+<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
+</ol>
+<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
+<li>适合返回大量结果的索引查询；</li>
+<li>通过减少随机访问，降低 I&#x2F;O；</li>
+<li>支持多个索引结果合并，提高复杂查询效率。</li>
+</ol>
+<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
+<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
+<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
+</ol>
+<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
+<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
+<ol>
+<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
+<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
+<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
+</ol>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/" data-id="cmdqu9wow0000gkfy29233fs6" data-title="B树索引（postgres）" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/07/31/wordpress/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          wordpress
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/06/04/TPCC/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">TPCC</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/program/">program</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/" rel="tag">debug</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/postgres/" rel="tag">postgres</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/debug/" style="font-size: 15px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 20px;">postgres</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">May 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/07/31/wordpress/">wordpress</a>
+          </li>
+        
+          <li>
+            <a href="/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/">B树索引（postgres）</a>
+          </li>
+        
+          <li>
+            <a href="/2025/06/04/TPCC/">TPCC</a>
+          </li>
+        
+          <li>
+            <a href="/2025/05/14/pgbench-md/">How to use pgbench</a>
+          </li>
+        
+          <li>
+            <a href="/2025/01/23/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/">gdb调试改变返回值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 Jeffrey<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
