@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>性能调试 | Jeffrey‘s space</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="CPUtop1top -H -p &lt;PID&gt;  只显示指定进程  的所有线程，并实时显示它们的 CPU、内存等使用情况。 1pstack &lt;PID&gt;  perf1perf top -p &lt;PID&gt;  查看函数热点，采样一段时间 12perf record -p &lt;PID&gt; -g -- sleep 10perf report  strace1strac">
+<meta property="og:type" content="article">
+<meta property="og:title" content="性能调试">
+<meta property="og:url" content="http://example.com/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/index.html">
+<meta property="og:site_name" content="Jeffrey‘s space">
+<meta property="og:description" content="CPUtop1top -H -p &lt;PID&gt;  只显示指定进程  的所有线程，并实时显示它们的 CPU、内存等使用情况。 1pstack &lt;PID&gt;  perf1perf top -p &lt;PID&gt;  查看函数热点，采样一段时间 12perf record -p &lt;PID&gt; -g -- sleep 10perf report  strace1strac">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-08-13T10:53:59.000Z">
+<meta property="article:modified_time" content="2025-10-23T11:02:56.636Z">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Jeffrey‘s space" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Jeffrey‘s space</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-性能调试" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" class="article-date">
+  <time class="dt-published" datetime="2025-08-13T10:53:59.000Z" itemprop="datePublished">2025-08-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      性能调试
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h1><h2 id="top"><a href="#top" class="headerlink" title="top"></a>top</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top -H -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<p>只显示指定进程 <PID> 的所有线程，并实时显示它们的 CPU、内存等使用情况。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pstack &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="perf"><a href="#perf" class="headerlink" title="perf"></a>perf</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perf top -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<p>查看函数热点，采样一段时间</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">perf record -p &lt;PID&gt; -g -- sleep 10</span><br><span class="line">perf report</span><br></pre></td></tr></table></figure>
+
+<h2 id="strace"><a href="#strace" class="headerlink" title="strace"></a>strace</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -ttT -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="火焰图"><a href="#火焰图" class="headerlink" title="火焰图"></a>火焰图</h2><ul>
+<li><p>安装perf</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install linux-tools-common linux-tools-$(uname -r)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>采样数据</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf record -F 99 -p &lt;PID&gt; -g -- sleep 30</span><br></pre></td></tr></table></figure>
+
+<p>  -F 99          每秒采样 99 次<br>  -p <PID>       针对指定进程<br>  -g             采集调用栈（火焰图需要）<br>  – sleep 30    采样 30 秒</p>
+</li>
+<li><p>生成调用栈</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf script &gt; out.perf</span><br></pre></td></tr></table></figure></li>
+<li><p>下载 FlameGraph 工具</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/brendangregg/FlameGraph.git</span><br><span class="line">cd FlameGraph</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>生成火焰图</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./stackcollapse-perf.pl ../out.perf &gt; out.folded</span><br><span class="line">./flamegraph.pl out.folded &gt; flamegraph.svg</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h1><h2 id="系统io"><a href="#系统io" class="headerlink" title="系统io"></a>系统io</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+<p>重点关注 await（平均等待时间）和 svctm（服务时间）。如果 await &gt;&gt; svctm，说明队列很长，设备忙不过来。</p>
+<h2 id="某个进程io"><a href="#某个进程io" class="headerlink" title="某个进程io"></a>某个进程io</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -d -p &lt;PID&gt; 1</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" data-id="cmh3bsdab00011yfy5jp070qk" data-title="性能调试" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/08/19/io/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          io
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/07/31/wordpress/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">wordpress</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/program/">program</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/" rel="tag">debug</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/postgres/" rel="tag">postgres</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/debug/" style="font-size: 15px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 20px;">postgres</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">May 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/08/19/io/">io</a>
+          </li>
+        
+          <li>
+            <a href="/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/">性能调试</a>
+          </li>
+        
+          <li>
+            <a href="/2025/07/31/wordpress/">wordpress</a>
+          </li>
+        
+          <li>
+            <a href="/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/">B树索引（postgres）</a>
+          </li>
+        
+          <li>
+            <a href="/2025/06/04/TPCC/">TPCC</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 Jeffrey<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

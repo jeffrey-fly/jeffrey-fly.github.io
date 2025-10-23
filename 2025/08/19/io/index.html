@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>io | Jeffrey‘s space</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="要确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断，而不仅仅看 CPU 或火焰图。尤其是你这种 500 个文件同时写入，同时还有读取 的场景，I&#x2F;O 瓶颈可能体现在磁盘、文件系统甚至内核调度上。下面是比较系统的方法：  1. 使用系统工具监控 I&#x2F;OLinux 常用： iostat 1iostat -x 1   %util 高接近 100% → 磁盘基本饱和。 awa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="io">
+<meta property="og:url" content="http://example.com/2025/08/19/io/index.html">
+<meta property="og:site_name" content="Jeffrey‘s space">
+<meta property="og:description" content="要确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断，而不仅仅看 CPU 或火焰图。尤其是你这种 500 个文件同时写入，同时还有读取 的场景，I&#x2F;O 瓶颈可能体现在磁盘、文件系统甚至内核调度上。下面是比较系统的方法：  1. 使用系统工具监控 I&#x2F;OLinux 常用： iostat 1iostat -x 1   %util 高接近 100% → 磁盘基本饱和。 awa">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-08-19T10:25:48.000Z">
+<meta property="article:modified_time" content="2025-08-21T03:24:12.892Z">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Jeffrey‘s space" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Jeffrey‘s space</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-io" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/08/19/io/" class="article-date">
+  <time class="dt-published" datetime="2025-08-19T10:25:48.000Z" itemprop="datePublished">2025-08-19</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      io
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>要确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断，而不仅仅看 CPU 或火焰图。尤其是你这种 <strong>500 个文件同时写入，同时还有读取</strong> 的场景，I&#x2F;O 瓶颈可能体现在磁盘、文件系统甚至内核调度上。下面是比较系统的方法：</p>
+<hr>
+<h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
+<li><p><strong><code>iostat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
+<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
+<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
+</ul>
+</li>
+<li><p><strong><code>iotop</code></strong></p>
+<ul>
+<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
+<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
+</ul>
+</li>
+<li><p><strong><code>vmstat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
+<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
+</ul>
+</li>
+<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
+<ul>
+<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
+<li><p>测试磁盘最大写入带宽：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>oflag=direct</code> 避免缓存干扰。</li>
+<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
+</ul>
+</li>
+<li><p>同理，可以测试并发读写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
+<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
+<ul>
+<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
+</ul>
+</li>
+<li><p><strong>延迟累积</strong>：</p>
+<ul>
+<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
+</ul>
+</li>
+<li><p><strong>锁与等待</strong>：</p>
+<ul>
+<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="4-特别注意并发写入"><a href="#4-特别注意并发写入" class="headerlink" title="4. 特别注意并发写入"></a>4. 特别注意并发写入</h3><ul>
+<li><p>500 个文件同时写入可能导致：</p>
+<ul>
+<li><strong>磁盘寻址频繁</strong>（HDD 磁盘）。</li>
+<li><strong>文件系统元数据锁争用</strong>（尤其是 ext4、XFS）。</li>
+<li><strong>页缓存压力</strong> → kernel flush 频繁触发 <code>fsync</code>。</li>
+</ul>
+</li>
+<li><p>对策：</p>
+<ul>
+<li>限制并发写入数（比如分批写）。</li>
+<li>调整 <code>IO scheduler</code> 或使用 <code>O_DIRECT</code> 绕过页缓存。</li>
+<li>如果是 SSD，注意随机写性能和并发数。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>如果你想，我可以帮你画一个 <strong>判断 I&#x2F;O 是否瓶颈的流程图</strong>，让你遇到类似多文件并发读写时快速判断瓶颈来源。</p>
+<p>你希望我画吗？</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/08/19/io/" data-id="cmh3bsda800001yfy91qa88at" data-title="io" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">性能调试</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/database/">database</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/program/">program</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug/" rel="tag">debug</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/postgres/" rel="tag">postgres</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/debug/" style="font-size: 15px;">debug</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/postgres/" style="font-size: 20px;">postgres</a> <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/07/">July 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">May 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/08/19/io/">io</a>
+          </li>
+        
+          <li>
+            <a href="/2025/08/13/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/">性能调试</a>
+          </li>
+        
+          <li>
+            <a href="/2025/07/31/wordpress/">wordpress</a>
+          </li>
+        
+          <li>
+            <a href="/2025/07/10/B%E6%A0%91%E7%B4%A2%E5%BC%95/">B树索引（postgres）</a>
+          </li>
+        
+          <li>
+            <a href="/2025/06/04/TPCC/">TPCC</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 Jeffrey<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
