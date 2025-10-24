@@ -268,7 +268,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/08/20/Background-Writing/" class="post-title-link" itemprop="url">Background_Writing</a>
+            <a href="/2025/08/20/Background-Writing/" class="post-title-link" itemprop="url">Background Writing</a>
         </h2>
 
         <div class="post-meta">
@@ -285,7 +285,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-10-24 16:44:46" itemprop="dateModified" datetime="2025-10-24T16:44:46+08:00">2025-10-24</time>
+                <time title="Modified: 2025-10-24 16:55:39" itemprop="dateModified" datetime="2025-10-24T16:55:39+08:00">2025-10-24</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -318,145 +318,6 @@
 <p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
 </blockquote>
 <p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/08/19/IO/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey‘s space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/08/19/IO/" class="post-title-link" itemprop="url">IO</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-08-19 18:25:48" itemprop="dateCreated datePublished" datetime="2025-08-19T18:25:48+08:00">2025-08-19</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-10-24 16:42:00" itemprop="dateModified" datetime="2025-10-24T16:42:00+08:00">2025-10-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
-<li><p><strong><code>iostat</code></strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
-<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
-<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
-</ul>
-</li>
-<li><p><strong><code>iotop</code></strong></p>
-<ul>
-<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
-<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
-</ul>
-</li>
-<li><p><strong><code>vmstat</code></strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
-<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
-</ul>
-</li>
-<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
-<ul>
-<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
-<li><p>测试磁盘最大写入带宽：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>oflag=direct</code> 避免缓存干扰。</li>
-<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
-</ul>
-</li>
-<li><p>同理，可以测试并发读写：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
-<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
-<ul>
-<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
-</ul>
-</li>
-<li><p><strong>延迟累积</strong>：</p>
-<ul>
-<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
-</ul>
-</li>
-<li><p><strong>锁与等待</strong>：</p>
-<ul>
-<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
-</ul>
-</li>
-</ul>
 
       
     </div>
@@ -561,6 +422,145 @@
 <h1 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h1><h2 id="系统io"><a href="#系统io" class="headerlink" title="系统io"></a>系统io</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
 <p>重点关注 await（平均等待时间）和 svctm（服务时间）。如果 await &gt;&gt; svctm，说明队列很长，设备忙不过来。</p>
 <h2 id="某个进程io"><a href="#某个进程io" class="headerlink" title="某个进程io"></a>某个进程io</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -d -p &lt;PID&gt; 1</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/08/05/IO/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey‘s space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/08/05/IO/" class="post-title-link" itemprop="url">IO</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-08-05 18:25:48" itemprop="dateCreated datePublished" datetime="2025-08-05T18:25:48+08:00">2025-08-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-10-24 16:56:06" itemprop="dateModified" datetime="2025-10-24T16:56:06+08:00">2025-10-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
+<li><p><strong><code>iostat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
+<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
+<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
+</ul>
+</li>
+<li><p><strong><code>iotop</code></strong></p>
+<ul>
+<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
+<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
+</ul>
+</li>
+<li><p><strong><code>vmstat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
+<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
+</ul>
+</li>
+<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
+<ul>
+<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
+<li><p>测试磁盘最大写入带宽：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>oflag=direct</code> 避免缓存干扰。</li>
+<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
+</ul>
+</li>
+<li><p>同理，可以测试并发读写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
+<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
+<ul>
+<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
+</ul>
+</li>
+<li><p><strong>延迟累积</strong>：</p>
+<ul>
+<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
+</ul>
+</li>
+<li><p><strong>锁与等待</strong>：</p>
+<ul>
+<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
+</ul>
+</li>
+</ul>
+
       
     </div>
 
