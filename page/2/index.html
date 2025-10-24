@@ -155,6 +155,89 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/30/Install_pg_from_codes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey‘s space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/12/30/Install_pg_from_codes/" class="post-title-link" itemprop="url">Install pg from codes in linux</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-12-30 14:46:16" itemprop="dateCreated datePublished" datetime="2024-12-30T14:46:16+08:00">2024-12-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2024-12-31 17:23:41" itemprop="dateModified" datetime="2024-12-31T17:23:41+08:00">2024-12-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>First, we need to create a postgres user and add it to the sudo group</p>
+<h2 id="Get-codes"><a href="#Get-codes" class="headerlink" title="Get codes"></a>Get codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git://git.postgresql.org/git/postgresql.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Install-from-codes"><a href="#Install-from-codes" class="headerlink" title="Install from codes"></a>Install from codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./configure --enable-debug <span class="string">&#x27;CFLAGS=-O0 -g&#x27;</span> --enable-cassert --enable-depend --enable-dtrace --without-icu</span><br><span class="line">make</span><br><span class="line"><span class="built_in">sudo</span> make install</span><br></pre></td></tr></table></figure>
+
+<h2 id="Modify-environment-variables"><a href="#Modify-environment-variables" class="headerlink" title="Modify environment variables"></a>Modify environment variables</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="string">&quot;/usr/local/pgsql/bin:<span class="variable">$PATH</span>&quot;</span></span><br><span class="line"><span class="built_in">export</span> PGDATA=/usr/local/pgsql/data</span><br></pre></td></tr></table></figure>
+
+<h2 id="initdb"><a href="#initdb" class="headerlink" title="initdb"></a>initdb</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R postgres:postgres /usr/local/pgsql</span><br><span class="line">initdb</span><br></pre></td></tr></table></figure>
+
+<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D /usr/local/pgsql/data -l logfile start</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/24/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -321,7 +404,7 @@
 <li>items (row versions)</li>
 <li>special space</li>
 </ul>
-<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><style>.kdxlvoltodeb{zoom:50%;}</style><img src="/2024/12/24/page/page.png" class="kdxlvoltodeb" alt="page.png">
+<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><style>.rsaoctkdvbil{zoom:50%;}</style>
 
 <h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
 
@@ -630,13 +713,13 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-count">16</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
