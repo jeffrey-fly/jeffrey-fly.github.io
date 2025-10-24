@@ -1169,7 +1169,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #edc952;
+  background: #6a697f;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2301,4 +2301,9 @@ embed {
 /* 调整顶部间距，让内容更紧凑 */
 .main-inner {
   margin-top: 0 !important;
+}
+/* 调整 NexT 头像大小 */
+.site-author-image {
+  width: 120px; /* 默认大概 80px，这里可以改成 100~150 */
+  height: 120px;
 }
