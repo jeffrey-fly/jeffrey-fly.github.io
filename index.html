@@ -155,6 +155,105 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/10/24/Recovery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey‘s space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/10/24/Recovery/" class="post-title-link" itemprop="url">Recovery in postgres</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-10-24 16:50:14 / Modified: 16:53:50" itemprop="dateCreated datePublished" datetime="2025-10-24T16:50:14+08:00">2025-10-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。</p>
+<blockquote>
+<p>startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br><span class="line">postgres@lavm-bar1guved6:/root$ </span><br></pre></td></tr></table></figure>
+<p>一个正常停止的服务器会处于“已关闭”（shut down）状态；而一个未运行的服务器却显示为“生产中”（in production）状态，则表明发生了故障。在这种情况下，启动进程（startup process）将自动从在同一个 pg_control 文件中找到的最新完成的检查点（checkpoint）**的起始 LSN 处开始进行恢复。</p>
+<blockquote>
+<p>如果 PGDATA 目录中包含与备份相关的 backup_label 文件，则起始 LSN 位置会从该文件中获取。</p>
+</blockquote>
+<p>在启动过程中，系统会从指定位置开始，逐一读取WAL（Write-Ahead Log，预写式日志）条目。如果数据页的 LSN（Log Sequence Number，日志序列号）小于当前读取到的 WAL 条目的 LSN，系统会将该 WAL 条目应用到数据页上。如果数据页的 LSN 已经大于 WAL 条目的 LSN，则不应应用该 WAL 条目；事实上，也绝不能应用，因为 WAL 条目被设计为必须严格按顺序重放。</p>
+<p>然而，有些 WAL 条目是Full Page Image（FPI）。这类条目可以应用于页面的任何状态，因为它们会完全覆盖页面内容，无论页面原先是什么状态都不重要。因此，这种修改是幂等的（idempotent）——多次应用不会改变结果另一个幂等操作的例子是注册事务状态的变更：每个事务的状态在 CLOG（事务提交日志）中是通过设置特定位来表示的，这种设置不依赖于原来的位值。因此，不需要在 CLOG 页面中记录最近变更的 LSN（日志序列号），因为日志重放时只要设置一次这些位就够了，重复设置也不会有副作用最后，系统会执行一次 checkpoint（检查点），将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了。</p>
+<p>WAL 日志条目会被应用到缓冲池（buffer cache）中的页面上，就像正常运行时对数据页的普通修改一样。</p>
+<p>文件的恢复也遵循类似方式：例如，若某条 WAL 记录表明某个文件应该存在，但实际却缺失，系统就会重新创建这个文件。<br>一旦恢复完成，所有 unlogged relations会被它们对应的 初始化副本（init fork） 覆盖。</p>
+<p>最后，系统会执行一次 checkpoint，将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了<br>在其经典形式中，恢复过程包含两个阶段：</p>
+<ul>
+<li>roll-forward阶段：重放 WAL 日志，重复执行在崩溃时丢失的操作；</li>
+<li>roll-back阶段：服务器中止那些在故障发生时尚未提交的事务。<br>在 PostgreSQL 中，向后回滚是不需要的。恢复完成后，CLOG（事务状态日志）中对未完成事务既没有提交（commit）标记，也没有中止（abort）标记（这在技术上表示该事务处于活动状态），但因为可以确定该事务已经不再运行，所以系统会将其视为已中止（aborted）。</li>
+</ul>
+<p>我们可以通过强制服务器以“立即模式”（immediate mode）停止来模拟故障：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_ctl stop -m immediate</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br></pre></td></tr></table></figure>
+<p>当我们启动服务器时，启动进程会检测到之前发生了故障，因而进入恢复模式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">2025-08-04 10:23:31.860 CST [487414] LOG:  starting PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit</span><br><span class="line">2025-08-04 10:23:31.861 CST [487414] LOG:  listening on IPv4 address &quot;127.0.0.1&quot;, port 5432</span><br><span class="line">2025-08-04 10:23:31.878 CST [487414] LOG:  listening on Unix socket &quot;/tmp/.s.PGSQL.5432&quot;</span><br><span class="line">2025-08-04 10:23:31.920 CST [487420] LOG:  database system was interrupted; last known up at 2025-08-01 09:36:11 CST</span><br><span class="line">2025-08-04 10:23:32.098 CST [487420] LOG:  database system was not properly shut down; automatic recovery in progress</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo starts at 0/01B75168</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  invalid record length at 0/01B752A8: expected at least 24, got 0</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo done at 0/01B75270 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s</span><br><span class="line">2025-08-04 10:23:32.132 CST [487418] LOG:  checkpoint starting: end-of-recovery fast wait</span><br><span class="line">2025-08-04 10:23:32.152 CST [487418] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.005 s, total=0.022 s; sync files=2, longest=0.005 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/01B752A8, redo lsn=0/01B752A8</span><br><span class="line">2025-08-04 10:23:32.155 CST [487414] LOG:  database system is ready to accept connections</span><br></pre></td></tr></table></figure>
+<p>如果服务器正在正常关闭，postmaster 会先断开所有客户端连接，然后执行最后一次检查点操作，将所有脏页（未写入磁盘的修改页面）刷写到磁盘上。</p>
+<p>看当前的WAL位置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">test=# SELECT pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line">---------------------------</span><br><span class="line"> 0/01B75358</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+<p>我们正常停止服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_ctl stop</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br></pre></td></tr></table></figure>
+<p>现在的数据库状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               shut down</span><br></pre></td></tr></table></figure>
+<p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
+<p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/08/20/Background-Writing/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1082,105 +1181,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/31/Buffer-Bulk-Eviction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey‘s space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/12/31/Buffer-Bulk-Eviction/" class="post-title-link" itemprop="url">Buffer Bulk Eviction</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2024-12-31 17:14:21 / Modified: 17:35:11" itemprop="dateCreated datePublished" datetime="2024-12-31T17:14:21+08:00">2024-12-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>If bulk reads or writes are performed, there is a risk that one-time data can quickly oust useful pages from the buffer cache.</p>
-<p>As a precaution, bulk operations use rather small buffer rings, and eviction is performed within their boundaries, without affecting other buffers.</p>
-<p>A buffer ring of a particular size consists of an array of buffers that are used one after another. At first, the buffer ring is empty, and individual buffers join it one by one, after being selected from the buffer cache in the usual manner. Then eviction comes into play,but only within the ring limits</p>
-<p>Buffers added into a ring are not excluded from the buffer cache and can still be used by other operations. So if the buffer to be reused turns out to be pinned, or its usage count is higher than one, it will be simply detached from the ring and replaced by another buffer.<br>PostgreSQL supports three eviction strategies.</p>
-<table>
-<thead>
-<tr>
-<th><strong>strategy</strong></th>
-<th>trigger</th>
-<th>buffer ring</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Bulk reads</strong></td>
-<td>sequential scans of large tables if their size exceeds 1&#x2F;4 of the buffer cache(128MB：16384 page）</td>
-<td>256KB(32 page)</td>
-</tr>
-<tr>
-<td><strong>Bulk writes</strong></td>
-<td>applied by Copy from, create table as select , and create materialized view commands, as well as by those alter table  flavors that cause table rewrites.</td>
-<td>default: 16MB(2048 page)</td>
-</tr>
-<tr>
-<td><strong>Vacuuming</strong></td>
-<td>full table scan without taking the visibility map into account</td>
-<td>256KB(32 page)</td>
-</tr>
-</tbody></table>
-<p>Buffer rings do not always prevent undesired eviction. If UPDATE or DELETE commands affect a lot of rows, the performed table scan applies the bulk reads strategy, but since the pages are constantly being modified, buffer rings virtually become useless.</p>
-<p>Another example worth mentioning is storing oversized data in TOAST tables. In spite of a potentially large volume of data that has to be read, toasted values are always accessed via an index, so they bypass buffer rings.</p>
-<p>Let’s take a closer look at the bulk reads strategy. For simplicity, we will create a table in such a way that an inserted row takes the whole page. By default, the buffer cache size is 16,384 pages, 8 kb each. So the table must take more than 4096 pages for the scan to use a buffer ring.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">SHOW</span> shared_buffers;</span><br><span class="line"> shared_buffers </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> <span class="number">128</span>MB</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> big(</span><br><span class="line">test(# id <span class="type">integer</span> <span class="keyword">PRIMARY KEY</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s <span class="type">char</span>(<span class="number">1000</span>)</span><br><span class="line">test(# ) <span class="keyword">WITH</span> (fillfactor <span class="operator">=</span> <span class="number">10</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">INSERT INTO</span> big(s)</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">SELECT</span> <span class="string">&#x27;FOO&#x27;</span> <span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">4096</span><span class="operator">+</span><span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">4097</span></span><br><span class="line">test<span class="operator">=</span># ANALYZE big;</span><br><span class="line">ANALYZE</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> relname, relfilenode, relpages <span class="keyword">FROM</span> pg_class</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHERE</span> relname <span class="keyword">IN</span> (<span class="string">&#x27;big&#x27;</span>, <span class="string">&#x27;big_pkey&#x27;</span>);</span><br><span class="line"> relname  <span class="operator">|</span> relfilenode <span class="operator">|</span> relpages </span><br><span class="line"><span class="comment">----------+-------------+----------</span></span><br><span class="line"> big      <span class="operator">|</span>       <span class="number">16487</span> <span class="operator">|</span>     <span class="number">4097</span></span><br><span class="line"> big_pkey <span class="operator">|</span>       <span class="number">16492</span> <span class="operator">|</span>       <span class="number">14</span></span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> big;</span><br><span class="line">                 QUERY PLAN                 </span><br><span class="line"><span class="comment">--------------------------------------------</span></span><br><span class="line"> Seq Scan <span class="keyword">on</span> big (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">4097</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache</span><br><span class="line"><span class="keyword">WHERE</span> relfilenode <span class="operator">=</span> pg_relation_filenode(<span class="string">&#x27;big&#x27;</span>::regclass);</span><br><span class="line"> count </span><br><span class="line"><span class="comment">-------</span></span><br><span class="line">    <span class="number">32</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1252,7 +1252,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
