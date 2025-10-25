@@ -155,6 +155,161 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/10/25/innodb-and-pg/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey‘s space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/10/25/innodb-and-pg/" class="post-title-link" itemprop="url">innodb and heap table</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-10-25 15:37:12 / Modified: 15:43:40" itemprop="dateCreated datePublished" datetime="2025-10-25T15:37:12+08:00">2025-10-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。</p>
+<h2 id="概念介绍"><a href="#概念介绍" class="headerlink" title="概念介绍"></a>概念介绍</h2><p>InnoDB：MySQL 的主要存储引擎<br>heap table：postgres数据库P表在物理上的存储（Heap File）</p>
+<h2 id="数据存储方式"><a href="#数据存储方式" class="headerlink" title="数据存储方式"></a>数据存储方式</h2><h3 id="innodb-底层存储"><a href="#innodb-底层存储" class="headerlink" title="innodb 底层存储"></a>innodb 底层存储</h3><p>innodb是一个基于聚簇索引（Clustered Index）的存储引擎。</p>
+<h4 id="数据存储方式-1"><a href="#数据存储方式-1" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>聚簇索引存储表数据  <ul>
+<li>表的主键索引就是数据本身的物理存储顺序。</li>
+<li>每个页（page）一般 16KB，页内数据按主键顺序排列。</li>
+<li>非主键列数据和行信息都在叶子节点。</li>
+</ul>
+</li>
+<li>二级索引<ul>
+<li>非主键索引存储的是主键值而不是行指针。</li>
+<li>查询非主键列时，需要先通过二级索引拿到主键，再去主键聚簇索引里查数据（回表，row lookup）。</li>
+</ul>
+</li>
+</ul>
+<h4 id="页与数据组织"><a href="#页与数据组织" class="headerlink" title="页与数据组织"></a>页与数据组织</h4><ul>
+<li>数据按 B+ 树页组织。</li>
+<li>插入&#x2F;更新可能导致页分裂。</li>
+</ul>
+<h3 id="postgres-heap-table"><a href="#postgres-heap-table" class="headerlink" title="postgres heap table"></a>postgres heap table</h3><h4 id="数据存储方式-2"><a href="#数据存储方式-2" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>数据按插入顺序存放，没有聚簇索引。</li>
+<li>行标识符 TID（tuple id） 用于指向表的页和行。</li>
+<li>页（默认 8KB）内存储多行 tuple。</li>
+<li>没有聚簇索引，非索引扫描可能会更慢，但插入非常快。</li>
+</ul>
+<h4 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h4><ul>
+<li>B+ 树、哈希、GIN、GiST 等索引都是附加结构，存储独立于表。</li>
+<li>回表操作是通过 TID 定位行。</li>
+</ul>
+<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>InnoDB</th>
+<th>PostgreSQL 堆表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据组织</td>
+<td>聚簇索引（主键决定物理顺序）</td>
+<td>堆表，顺序插入</td>
+</tr>
+<tr>
+<td>主键访问</td>
+<td>快（顺序扫描&#x2F;范围查询）</td>
+<td>需要 B+ 树索引或全表扫描</td>
+</tr>
+<tr>
+<td>二级索引访问</td>
+<td>回表（先索引后主键查行）</td>
+<td>回表（索引 -&gt; TID -&gt; 行）</td>
+</tr>
+<tr>
+<td>插入性能</td>
+<td>如果主键顺序插入快，否则可能页分裂</td>
+<td>快，顺序写入，几乎不分裂</td>
+</tr>
+<tr>
+<td>更新&#x2F;删除</td>
+<td>支持 in-place 更新，但大行更新可能迁移</td>
+<td>创建新行，旧行留存，需要 vacuum</td>
+</tr>
+<tr>
+<td>MVCC</td>
+<td>Undo log + hidden columns</td>
+<td>xmin&#x2F;xmax + heap tuple</td>
+</tr>
+<tr>
+<td>表膨胀</td>
+<td>自动管理页空间</td>
+<td>容易膨胀，需要 vacuum</td>
+</tr>
+<tr>
+<td>查询优化</td>
+<td>聚簇索引优化范围查询</td>
+<td>多依赖索引，或者全表扫描</td>
+</tr>
+</tbody></table>
+<p>因为pg的存储结构导致访问数据，多了许多随机io：从索引到数据文件。导致pg的查询性能不如innnodb</p>
+<h3 id="pg的一些优化"><a href="#pg的一些优化" class="headerlink" title="pg的一些优化"></a>pg的一些优化</h3><h4 id="CLUSTER-命令（物理重排）"><a href="#CLUSTER-命令（物理重排）" class="headerlink" title="CLUSTER 命令（物理重排）"></a>CLUSTER 命令（物理重排）</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER t USING idx_id;</span><br></pre></td></tr></table></figure>
+<p>把表物理顺序按照索引顺序重排 —— 效果类似 InnoDB 聚簇索引。<br>缺点：</p>
+<ul>
+<li>是离线操作；</li>
+<li>之后新插入的行会破坏顺序（除非周期性 recluster）</li>
+</ul>
+<h4 id="索引仅扫描（Index-Only-Scan）"><a href="#索引仅扫描（Index-Only-Scan）" class="headerlink" title="索引仅扫描（Index Only Scan）"></a>索引仅扫描（Index Only Scan）</h4><p>如果查询的字段都在索引里且可见性检查通过（可见性 map 中标记为 all-visible），可以不访问堆表，直接从索引返回结果。</p>
+<h4 id="BRIN-索引"><a href="#BRIN-索引" class="headerlink" title="BRIN 索引"></a>BRIN 索引</h4><p>BRIN 全称是 Block Range INdex，是一种 非常轻量级的索引，设计理念与 B-Tree 不同：<br>不是存储每一行的索引它只存储堆表的一段范围（block range）内的最小值和最大值等摘要信息。每个 BRIN 索引条目覆盖 多个物理数据页（例如 128 个 8KB 页面 &#x3D; 1MB 的行数据）。<br>通过这些范围信息，可以快速排除不可能匹配的块，再去 heap 查找具体 tuple。<br>简单理解：BRIN 是“粗粒度索引”，通过块范围（block range）而非单行建立索引<br>非常适合 大表 + 顺序或局部相关数据：大表 + 顺序或局部相关数据：</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/10/24/Recovery/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1021,166 +1176,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/15/Raft%E5%8D%8F%E8%AE%AE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey‘s space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/01/15/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-01-15 10:44:26 / Modified: 11:39:12" itemprop="dateCreated datePublished" datetime="2025-01-15T10:44:26+08:00">2025-01-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
-<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
-<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
-<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
-<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
-</ol>
-<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
-<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
-<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
-<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
-</ul>
-<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
-<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
-<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
-<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
-</ul>
-<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
-<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
-<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
-<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
-</ul>
-<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
-<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
-<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
-</ul>
-<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
-<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
-<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
-<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
-<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
-</ol>
-<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
-<li>多实例并行运行：</li>
-</ol>
-<ul>
-<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
-<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
-</ul>
-<ol start="2">
-<li>共享底层资源：</li>
-</ol>
-<ul>
-<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
-<li>使用高效的调度机制协调实例间的资源竞争。</li>
-</ul>
-<ol start="3">
-<li>动态分片和迁移：</li>
-</ol>
-<ul>
-<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
-<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
-</ul>
-<ol start="4">
-<li>跨分片操作：</li>
-</ol>
-<ul>
-<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
-<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
-</ul>
-<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
-<thead>
-<tr>
-<th><strong>特性</strong></th>
-<th>Raft</th>
-<th>MultiRaft</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>目标</td>
-<td>提供单一一致性机制</td>
-<td>提供分区一致性机制</td>
-</tr>
-<tr>
-<td>运行实例</td>
-<td>单个 Raft 集群</td>
-<td>多个独立的 Raft 集群</td>
-</tr>
-<tr>
-<td>适用场景</td>
-<td>小规模系统</td>
-<td>大规模分布式存储或事务场景</td>
-</tr>
-<tr>
-<td>扩展性</td>
-<td>有限,单点可能成为瓶颈</td>
-<td>高扩展性，分片机制避免瓶颈</td>
-</tr>
-<tr>
-<td>复杂度</td>
-<td>较低</td>
-<td>较高，需要处理跨分片事务</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1252,18 +1247,18 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-count">18</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
