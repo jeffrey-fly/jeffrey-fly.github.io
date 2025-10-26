@@ -27,9 +27,9 @@
 <meta property="og:description" content="背景使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？ 修改寄存器值函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。 步骤：  在函数返回之前设置断点（如 ret 指令处）1b *func+&lt;offset&amp;g">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-01-23T02:09:48.000Z">
-<meta property="article:modified_time" content="2025-10-26T09:34:30.984Z">
+<meta property="article:modified_time" content="2025-10-26T09:57:14.204Z">
 <meta property="article:author" content="Jeffrey">
-<meta property="article:tag" content="debug">
+<meta property="article:tag" content="gdb">
 <meta name="twitter:card" content="summary">
 
 
@@ -154,7 +154,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -228,7 +228,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-10-26 17:34:30" itemprop="dateModified" datetime="2025-10-26T17:34:30+08:00">2025-10-26</time>
+      <time title="Modified: 2025-10-26 17:57:14" itemprop="dateModified" datetime="2025-10-26T17:57:14+08:00">2025-10-26</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -265,7 +265,7 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/debug/" rel="tag"># debug</a>
+              <a href="/tags/gdb/" rel="tag"># gdb</a>
           </div>
 
         
