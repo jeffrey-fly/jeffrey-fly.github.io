@@ -441,6 +441,94 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/04/03/postgres/Checkpoint/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/03/postgres/Checkpoint/" class="post-title-link" itemprop="url">Checkpoint</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-03 19:28:21" itemprop="dateCreated datePublished" datetime="2025-04-03T19:28:21+08:00">2025-04-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
+<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
+<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
+<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
+<ul>
+<li>CLOG（提交日志）中的事务状态信息，</li>
+<li>子事务的元数据，</li>
+<li>以及其他一些结构。</li>
+</ul>
+<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
+<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
+<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
+<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
+<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
+<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
+<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
+<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
+<p>Example：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
+<p>同样的信息也可以在 pg_control 文件中找到。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/03/16/debug/How-to-use-asan-in-linux/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1016,103 +1104,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey's space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" class="post-title-link" itemprop="url">gdb 查看指令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2024-12-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-12-24T15:52:16+08:00">2024-12-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="使用-x-命令和内存地址："><a href="#使用-x-命令和内存地址：" class="headerlink" title="使用 x 命令和内存地址："></a>使用 x 命令和内存地址：</h2><p>x (examine) 命令允许你检查内存中的数据。你可以指定要检查的内存地址、格式和单位。</p>
-<p>基本语法： x &#x2F;nfu addr</p>
-<ul>
-<li><p>n：要显示的单位数量。</p>
-</li>
-<li><p>f：显示格式（例如，x 表示十六进制，t 表示二进制，d 表示十进制）。</p>
-</li>
-<li><p>u：单位大小（b 表示字节，h 表示半字（16 位），w 表示字（32 位），g 表示巨字（64 位））。</p>
-</li>
-<li><p>addr：要检查的内存地址。</p>
-</li>
-</ul>
-<p>示例： 假设有一个 32 位整数 val，其地址为 0x12345678，你想以 16 位为单位查看：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x12345678</span><br></pre></td></tr></table></figure>
-
-<p>这将显示从 0x12345678 开始的两个半字（16 位）的十六进制值。</p>
-<p>结合 p 命令获取地址： 你可以使用 p &amp;变量名 获取变量的地址，然后将其传递给 x 命令。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> val = <span class="number">0x12345678</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;val = 0x%x\n&quot;</span>, val);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>编译并用 GDB 调试：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc -g test.c -o <span class="built_in">test</span></span><br><span class="line">gdb ./test</span><br></pre></td></tr></table></figure>
-<p>在 GDB 中：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> main</span><br><span class="line">(gdb) run</span><br><span class="line">(gdb) p &amp;val</span><br><span class="line"><span class="variable">$1</span> = (int *) 0x7fffffffe0dc</span><br><span class="line">(gdb) x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0x5678  0x1234</span><br></pre></td></tr></table></figure>
-<p>这里注意字节序，在小端序机器上，低位字节在前，高位字节在后，所以显示为 0x5678 0x1234。<br>如果想要二进制显示，则使用：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0101011001111000        0001001000110100</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用表达式和位运算（对于变量值）："><a href="#使用表达式和位运算（对于变量值）：" class="headerlink" title="使用表达式和位运算（对于变量值）："></a>使用表达式和位运算（对于变量值）：</h2><p>如果你只想查看变量的值，而不需要查看内存，可以使用 C 语言的位运算来提取 16 位部分，然后使用 p&#x2F;t 显示。</p>
-<p>示例：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int val = 0x12345678;</span><br></pre></td></tr></table></figure>
-<p>在 GDB 中：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p/t (val &amp; 0xFFFF) // 获取低 16 位</span><br><span class="line"><span class="variable">$1</span> = 0101011001111000</span><br><span class="line">(gdb) p/t ((val &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0</span>xFFFF) // 获取高 <span class="number">16</span> 位</span><br><span class="line"><span class="variable">$2</span> = <span class="number">0001001000110100</span></span><br></pre></td></tr></table></figure>
-<h2 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h2><p>对于查看内存中的数据（包括变量在内存中的表示），使用 x 命令结合 h (半字) 和 t (二进制) 格式指定符是最直接的方法。<br>对于只查看变量的值，使用位运算提取 16 位部分，然后使用 p&#x2F;t 也是一个有效的选择。<br>选择哪种方法取决于你的具体需求。如果你需要查看变量在内存中的布局（例如，在结构体或数组中），x 命令是更好的选择。如果你只需要查看变量值的不同部分，位运算可能更方便。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1184,7 +1175,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
