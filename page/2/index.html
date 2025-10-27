@@ -155,6 +155,135 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/" class="post-title-link" itemprop="url">B树索引（postgres）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-07-10 14:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T14:33:12+08:00">2025-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
+<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
+<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
+<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
+<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
+<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
+<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
+</ol>
+<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
+<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
+<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
+<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
+</ul>
+<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
+<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
+<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
+<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
+<p>PostgreSQL 当前 不支持 Skip Scan</p>
+<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
+<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
+<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
+<li>聚簇后的表，在按该索引扫描时性能更好</li>
+</ul>
+<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
+<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
+<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
+<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
+</ul>
+<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
+<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
+<ol>
+<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
+<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
+</ol>
+<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
+<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
+<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
+<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
+</ol>
+<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
+<li>适合返回大量结果的索引查询；</li>
+<li>通过减少随机访问，降低 I&#x2F;O；</li>
+<li>支持多个索引结果合并，提高复杂查询效率。</li>
+</ol>
+<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
+<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
+<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
+</ol>
+<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
+<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
+<ol>
+<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
+<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
+<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
+</ol>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/06/04/database/TPCC/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -294,6 +423,179 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
 <p>Use :variable for substitution. We can define variables using -D:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/03/16/debug/How-to-use-asan-in-linux/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/03/16/debug/How-to-use-asan-in-linux/" class="post-title-link" itemprop="url">How to use asan in linux</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-03-16 10:54:41" itemprop="dateCreated datePublished" datetime="2025-03-16T10:54:41+08:00">2025-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="1-安装编译工具"><a href="#1-安装编译工具" class="headerlink" title="1. 安装编译工具"></a>1. 安装编译工具</h2><p>ASan 是 GCC 和 Clang 内建的功能，无需额外安装 ASan，只需要你的编译器支持即可。GCC ≥ 4.8 &#x2F; Clang ≥ 3.1 就支持 ASan  </p>
+<pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@lavm-bar1guved6:~# clang --version</span><br><span class="line">Ubuntu clang version 14.0.0-1ubuntu1.1</span><br><span class="line">Target: x86_64-pc-linux-gnu</span><br><span class="line">Thread model: posix</span><br><span class="line">InstalledDir: /usr/bin</span><br><span class="line"></span><br><span class="line">root@lavm-bar1guved6:~# gcc --version</span><br><span class="line">gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0</span><br><span class="line">Copyright (C) 2021 Free Software Foundation, Inc.</span><br><span class="line">This is free software; see the <span class="built_in">source</span> <span class="keyword">for</span> copying conditions.  There is NO</span><br><span class="line">warranty; not even <span class="keyword">for</span> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h2 id="2-how-to-use"><a href="#2-how-to-use" class="headerlink" title="2. how to use"></a>2. how to use</h2><h3 id="使用gcc"><a href="#使用gcc" class="headerlink" title="使用gcc"></a>使用gcc</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -fsanitize=address -g your_file.c -o your_program</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h3 id="使用cmake"><a href="#使用cmake" class="headerlink" title="使用cmake"></a>使用cmake</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译阶段（C/C++）加 ASan 插桩</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_C_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_C_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_CXX_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_CXX_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 链接阶段链接 libasan</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_EXE_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_EXE_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_SHARED_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_SHARED_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#or</span></span><br><span class="line">cmake -DCMAKE_C_FLAGS=<span class="string">&quot;-fsanitize=address -fno-omit-frame-pointer -g&quot;</span> \</span><br><span class="line">    -DCMAKE_EXE_LINKER_FLAGS=<span class="string">&quot;-fsanitize=address&quot;</span> \</span><br><span class="line">    -DCMAKE_BUILD_TYPE=Debug \</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h3 id="使用-Makefile"><a href="#使用-Makefile" class="headerlink" title="使用 Makefile"></a>使用 Makefile</h3><p>可以在 CFLAGS 中添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS += -fsanitize=address -g -fno-omit-frame-pointer</span><br><span class="line">LDFLAGS += -fsanitize=address</span><br></pre></td></tr></table></figure>
+<h3 id="使用-LSAN（泄漏检测）"><a href="#使用-LSAN（泄漏检测）" class="headerlink" title="使用 LSAN（泄漏检测）"></a>使用 LSAN（泄漏检测）</h3><p>GCC 和 Clang 中 ASan 自动包含 LeakSanitizer（LSan），但某些情况下要确保：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-fsanitize=address -fno-omit-frame-pointer</span><br></pre></td></tr></table></figure>
+<p>加上 -fno-omit-frame-pointer 可以让调用栈更完整。</p>
+<h2 id="3-运行程序"><a href="#3-运行程序" class="headerlink" title="3. 运行程序"></a>3. 运行程序</h2><p>编译好的程序可以直接运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./your_program</span><br></pre></td></tr></table></figure>
+<h2 id="4-设置环境变量"><a href="#4-设置环境变量" class="headerlink" title="4. 设置环境变量"></a>4. 设置环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:symbolize=1:quarantine_size=1024:log_path=/home/postgres/asan/asan.log</span><br></pre></td></tr></table></figure>
+<h2 id="5-Example"><a href="#5-Example" class="headerlink" title="5. Example"></a>5. Example</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">=================================================================</span><br><span class="line">==791265==ERROR: LeakSanitizer: detected memory leaks</span><br><span class="line"></span><br><span class="line">Direct leak of 1024 byte(s) in 1 object(s) allocated from:</span><br><span class="line">    #0 0x7f6fcee65887 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:145</span><br><span class="line">    #1 0x55adcdfee87a in main /home/postgres/codes/sample/epoll_server.c:54</span><br><span class="line">    #2 0x7f6fcebb1d8f in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58</span><br><span class="line"></span><br><span class="line">SUMMARY: AddressSanitizer: 1024 byte(s) leaked in 1 allocation(s).</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/27/postgres/Logging/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/02/27/postgres/Logging/" class="post-title-link" itemprop="url">Logging</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-27 18:40:39" itemprop="dateCreated datePublished" datetime="2025-02-27T18:40:39+08:00">2025-02-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在发生故障（例如停电、操作系统错误或数据库服务器崩溃）时，RAM 中的所有内容都将丢失；只有写入磁盘的数据会保留下来。要在故障后启动服务器，您必须恢复数据一致性。如果磁盘本身已损坏，则必须通过备份恢复来解决相同的问题。</p>
+<p>理论上，您可以始终保持磁盘上的数据一致性。但实际上，这意味着服务器必须不断地将随机页面写入磁盘（尽管顺序写入成本更低），并且此类写入的顺序必须保证在任何特定时刻都不会损害一致性（这很难实现，尤其是当您处理复杂的索引结构时）。</p>
+<p>与大多数数据库系统一样，PostgreSQL 采用了一种不同的方法。</p>
+<p>服务器运行时，部分当前数据仅存在于 RAM 中，其写入永久存储的操作被推迟。因此，服务器运行时存储在磁盘上的数据始终是不一致的，因为页面从不会一次性全部刷新。但是，RAM 中发生的每个更改（例如在缓冲区缓存中执行的页面更新）都会被记录下来：PostgreSQL 会创建一个日志条目，其中包含在需要时重复此操作所需的所有基本信息。</p>
+<p>页面修改相关的日志条目必须先于修改后的页面本身写入磁盘。这就是日志名称的由来：预写式日志（write-ahead log），简称 WAL。这项要求保证了在发生故障时，PostgreSQL 可以从磁盘读取 WAL 条目并重放它们，以重复那些已完成但结果仍在 RAM 中且在崩溃前未写入磁盘的操作。</p>
+<p>保留预写式日志通常比将随机页面写入磁盘更高效。WAL 条目构成一个连续的数据流，即使是硬盘驱动器 (HDD) 也能很好地处理。此外，WAL 条目通常比页面大小更小。</p>
+<p>为了在发生故障时避免数据不一致，所有可能破坏数据一致性的操作都需要记录下来。具体来说，以下操作会记录在 预写式日志 (WAL) 中：</p>
+<ul>
+<li>WAL 记录的操作</li>
+</ul>
+<ol>
+<li>缓冲区缓存中的页面修改：由于写入是延迟的，这些修改需要记录下来以备恢复。</li>
+<li>事务提交和回滚：事务状态的变化发生在 CLOG 缓冲区中，不会立即写入磁盘，因此需要记录。</li>
+<li>文件操作：当添加或删除表时，文件和目录的创建与删除等操作必须与数据更改同步，所以也要记录。</li>
+</ol>
+<ul>
+<li>WAL 不记录的操作</li>
+</ul>
+<ol>
+<li>unlogged表相关操作</li>
+<li>临时表上的操作：由于临时表的生命周期仅限于创建它们的会话，所以它们的操作不会被记录。<blockquote>
+<p>在 PostgreSQL 10 之前，哈希索引的操作也不会被记录。它们的主要目的是将哈希函数与不同的数据类型匹配。</p>
+</blockquote>
+</li>
+</ol>
+<p>除了用于崩溃恢复之外，WAL 还可以用于从备份进行时间点恢复以及数据复制。</p>
+
       
     </div>
 
@@ -811,224 +1113,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/11/11/debug/nonstop/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey's space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/11/11/debug/nonstop/" class="post-title-link" itemprop="url">gdb 异步调试</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2024-11-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-11-11T10:59:00+08:00">2024-11-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/10/24/linux/File%20Descriptor%20Limits/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey's space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/10/24/linux/File%20Descriptor%20Limits/" class="post-title-link" itemprop="url">File Descriptor Limits</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2024-10-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-10-24T15:52:16+08:00">2024-10-24</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><a target="_blank" rel="noopener" href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/11/tools/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey's space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/05/11/tools/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2024-05-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-05-11T10:59:00+08:00">2024-05-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
-
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1096,7 +1184,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1107,7 +1195,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">9</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
