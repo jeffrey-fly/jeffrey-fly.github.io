@@ -20,20 +20,20 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="First, we need to create a postgres user and add it to the sudo group Get codes1git clone git:&#x2F;&#x2F;git.postgresql.org&#x2F;git&#x2F;postgresql.git  Install from codes123.&#x2F;configure --enable-debug &#x27;CFLAGS&#x3D;-O0">
+  <meta name="description" content="一 相关结构体说明12345678910typedef struct LWLock&#123;    uint16           tranche;       &#x2F;* tranche ID *&#x2F;    pg_atomic_uint32 state;         &#x2F;* state of exclusive&#x2F;nonexclusive lockers *&#x2F;    proclist_head">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Install pg from codes in linux">
-<meta property="og:url" content="http://example.com/2024/12/30/postgres/Install_pg_from_codes/index.html">
+<meta property="og:title" content="LWLock in postgres">
+<meta property="og:url" content="http://example.com/2025/09/05/postgres/LWLock-in-postgres/index.html">
 <meta property="og:site_name" content="Jeffrey&#39;s space">
-<meta property="og:description" content="First, we need to create a postgres user and add it to the sudo group Get codes1git clone git:&#x2F;&#x2F;git.postgresql.org&#x2F;git&#x2F;postgresql.git  Install from codes123.&#x2F;configure --enable-debug &#x27;CFLAGS&#x3D;-O0">
+<meta property="og:description" content="一 相关结构体说明12345678910typedef struct LWLock&#123;    uint16           tranche;       &#x2F;* tranche ID *&#x2F;    pg_atomic_uint32 state;         &#x2F;* state of exclusive&#x2F;nonexclusive lockers *&#x2F;    proclist_head">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-12-30T06:46:16.000Z">
-<meta property="article:modified_time" content="2025-10-27T01:07:35.411Z">
+<meta property="article:published_time" content="2025-09-05T08:14:55.000Z">
+<meta property="article:modified_time" content="2025-10-28T08:55:16.329Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="postgres">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://example.com/2024/12/30/postgres/Install_pg_from_codes/">
+<link rel="canonical" href="http://example.com/2025/09/05/postgres/LWLock-in-postgres/">
 
 
 <script id="page-configurations">
@@ -46,7 +46,7 @@
   };
 </script>
 
-  <title>Install pg from codes in linux | Jeffrey's space</title>
+  <title>LWLock in postgres | Jeffrey's space</title>
   
 
 
@@ -161,7 +161,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/30/postgres/Install_pg_from_codes/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/09/05/postgres/LWLock-in-postgres/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -174,7 +174,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Install pg from codes in linux
+          LWLock in postgres
         </h1>
 
         <div class="post-meta">
@@ -184,7 +184,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2024-12-30 14:46:16" itemprop="dateCreated datePublished" datetime="2024-12-30T14:46:16+08:00">2024-12-30</time>
+              <time title="Created: 2025-09-05 16:14:55" itemprop="dateCreated datePublished" datetime="2025-09-05T16:14:55+08:00">2025-09-05</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -207,16 +207,27 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>First, we need to create a postgres user and add it to the sudo group</p>
-<h2 id="Get-codes"><a href="#Get-codes" class="headerlink" title="Get codes"></a>Get codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git://git.postgresql.org/git/postgresql.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Install-from-codes"><a href="#Install-from-codes" class="headerlink" title="Install from codes"></a>Install from codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./configure --enable-debug <span class="string">&#x27;CFLAGS=-O0 -g&#x27;</span> --enable-cassert --enable-depend --enable-dtrace --without-icu</span><br><span class="line">make</span><br><span class="line"><span class="built_in">sudo</span> make install</span><br></pre></td></tr></table></figure>
-
-<h2 id="Modify-environment-variables"><a href="#Modify-environment-variables" class="headerlink" title="Modify environment variables"></a>Modify environment variables</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="string">&quot;/usr/local/pgsql/bin:<span class="variable">$PATH</span>&quot;</span></span><br><span class="line"><span class="built_in">export</span> PGDATA=/usr/local/pgsql/data</span><br></pre></td></tr></table></figure>
-
-<h2 id="initdb"><a href="#initdb" class="headerlink" title="initdb"></a>initdb</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R postgres:postgres /usr/local/pgsql</span><br><span class="line">initdb</span><br></pre></td></tr></table></figure>
-
-<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D /usr/local/pgsql/data -l logfile start</span><br></pre></td></tr></table></figure>
+        <h2 id="一-相关结构体说明"><a href="#一-相关结构体说明" class="headerlink" title="一 相关结构体说明"></a>一 相关结构体说明</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="title class_">LWLock</span></span><br><span class="line">&#123;</span><br><span class="line">    uint16           tranche;       <span class="comment">/* tranche ID */</span></span><br><span class="line">    pg_atomic_uint32 state;         <span class="comment">/* state of exclusive/nonexclusive lockers */</span></span><br><span class="line">    proclist_head    waiters;       <span class="comment">/* list of waiting PGPROCs */</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> LOCK_DEBUG</span></span><br><span class="line">    pg_atomic_uint32 nwaiters;      <span class="comment">/* number of waiters */</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">PGPROC</span>    *owner;        <span class="comment">/* last exclusive owner of the lock */</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125; LWLock;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>tranche<br>每个 LWLock 都属于某个 tranche，tranche 是一个 int 类型的 ID，代表这把锁的用途</p>
+</li>
+<li><p>state<br>bit0～23：共享锁状态，实际最多用bit0～17，因为backend最多18位<br>bit24: 排他锁状态<br>bit28：用于锁定等待队列：waiters<br>bit29: 是否允许唤醒等待队列里面的进程，初始状态：LW_FLAG_RELEASE_OK<br>bit30: LW_FLAG_HAS_WAITERS ：是否有waiter</p>
+</li>
+<li><p>waiters<br>等待队列</p>
+</li>
+</ul>
+<h2 id="二-Interface说明"><a href="#二-Interface说明" class="headerlink" title="二 Interface说明"></a>二 Interface说明</h2><h3 id="2-1-LWLockAcquire"><a href="#2-1-LWLockAcquire" class="headerlink" title="2.1 LWLockAcquire"></a>2.1 LWLockAcquire</h3><p>加锁，失败进入等待队列，直接加上锁的情况，可能会造成等待队列无效唤醒  </p>
+<blockquote>
+<p>acquire a lightweight lock in the specified mode<br>Side effect: cancel&#x2F;die interrupts are held off until lock release.</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mode == LW_EXCLUSIVE)</span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_LOCK_MASK) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_EXCLUSIVE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_VAL_EXCLUSIVE) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_SHARED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按位判断前25位即可知道此LWLock是否被进程所占</p>
+<h3 id="2-2-LWLockRelease"><a href="#2-2-LWLockRelease" class="headerlink" title="2.2 LWLockRelease"></a>2.2 LWLockRelease</h3><p>进行唤醒条件：</p>
+<ul>
+<li>oldstate &amp; LW_FLAG_HAS_WAITERS：等待队列非空。这个条件确认有进程在等待锁。  </li>
+<li>oldstate &amp; LW_FLAG_RELEASE_OK： 允许唤醒。这个标志表示系统在上次唤醒后，已经将再次唤醒其他等待者的权限交给了被唤醒的进程。</li>
+<li>(oldstate &amp; LW_LOCK_MASK) &#x3D;&#x3D; 0：锁已空闲。这个条件确认锁当前没有被任何进程占用（无论是独占模式还是共享模式，计数都为零）</li>
+</ul>
 
     </div>
 
@@ -235,12 +246,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" rel="prev" title="gdb 查看指令">
-      <i class="fa fa-chevron-left"></i> gdb 查看指令
+    <a href="/2025/09/03/postgres/Lock/" rel="prev" title="Lock">
+      <i class="fa fa-chevron-left"></i> Lock
     </a></div>
       <div class="post-nav-item">
-    <a href="/2024/12/31/postgres/Buffer-Bulk-Eviction/" rel="next" title="Buffer Bulk Eviction">
-      Buffer Bulk Eviction <i class="fa fa-chevron-right"></i>
+    <a href="/2025/09/10/postgres/RD-Trees-for-Full-Text-Search/" rel="next" title="RD-Trees for Full-Text Search">
+      RD-Trees for Full-Text Search <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -300,7 +311,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Get-codes"><span class="nav-number">1.</span> <span class="nav-text">Get codes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Install-from-codes"><span class="nav-number">2.</span> <span class="nav-text">Install from codes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Modify-environment-variables"><span class="nav-number">3.</span> <span class="nav-text">Modify environment variables</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#initdb"><span class="nav-number">4.</span> <span class="nav-text">initdb</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#start"><span class="nav-number">5.</span> <span class="nav-text">start</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-%E7%9B%B8%E5%85%B3%E7%BB%93%E6%9E%84%E4%BD%93%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">一 相关结构体说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-Interface%E8%AF%B4%E6%98%8E"><span class="nav-number">2.</span> <span class="nav-text">二 Interface说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-LWLockAcquire"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 LWLockAcquire</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-LWLockRelease"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 LWLockRelease</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

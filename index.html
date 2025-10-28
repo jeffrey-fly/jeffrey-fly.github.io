@@ -515,6 +515,93 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/09/05/postgres/LWLock-in-postgres/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/09/05/postgres/LWLock-in-postgres/" class="post-title-link" itemprop="url">LWLock in postgres</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-09-05 16:14:55" itemprop="dateCreated datePublished" datetime="2025-09-05T16:14:55+08:00">2025-09-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="一-相关结构体说明"><a href="#一-相关结构体说明" class="headerlink" title="一 相关结构体说明"></a>一 相关结构体说明</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="title class_">LWLock</span></span><br><span class="line">&#123;</span><br><span class="line">    uint16           tranche;       <span class="comment">/* tranche ID */</span></span><br><span class="line">    pg_atomic_uint32 state;         <span class="comment">/* state of exclusive/nonexclusive lockers */</span></span><br><span class="line">    proclist_head    waiters;       <span class="comment">/* list of waiting PGPROCs */</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> LOCK_DEBUG</span></span><br><span class="line">    pg_atomic_uint32 nwaiters;      <span class="comment">/* number of waiters */</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">PGPROC</span>    *owner;        <span class="comment">/* last exclusive owner of the lock */</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125; LWLock;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>tranche<br>每个 LWLock 都属于某个 tranche，tranche 是一个 int 类型的 ID，代表这把锁的用途</p>
+</li>
+<li><p>state<br>bit0～23：共享锁状态，实际最多用bit0～17，因为backend最多18位<br>bit24: 排他锁状态<br>bit28：用于锁定等待队列：waiters<br>bit29: 是否允许唤醒等待队列里面的进程，初始状态：LW_FLAG_RELEASE_OK<br>bit30: LW_FLAG_HAS_WAITERS ：是否有waiter</p>
+</li>
+<li><p>waiters<br>等待队列</p>
+</li>
+</ul>
+<h2 id="二-Interface说明"><a href="#二-Interface说明" class="headerlink" title="二 Interface说明"></a>二 Interface说明</h2><h3 id="2-1-LWLockAcquire"><a href="#2-1-LWLockAcquire" class="headerlink" title="2.1 LWLockAcquire"></a>2.1 LWLockAcquire</h3><p>加锁，失败进入等待队列，直接加上锁的情况，可能会造成等待队列无效唤醒  </p>
+<blockquote>
+<p>acquire a lightweight lock in the specified mode<br>Side effect: cancel&#x2F;die interrupts are held off until lock release.</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mode == LW_EXCLUSIVE)</span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_LOCK_MASK) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_EXCLUSIVE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_VAL_EXCLUSIVE) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_SHARED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按位判断前25位即可知道此LWLock是否被进程所占</p>
+<h3 id="2-2-LWLockRelease"><a href="#2-2-LWLockRelease" class="headerlink" title="2.2 LWLockRelease"></a>2.2 LWLockRelease</h3><p>进行唤醒条件：</p>
+<ul>
+<li>oldstate &amp; LW_FLAG_HAS_WAITERS：等待队列非空。这个条件确认有进程在等待锁。  </li>
+<li>oldstate &amp; LW_FLAG_RELEASE_OK： 允许唤醒。这个标志表示系统在上次唤醒后，已经将再次唤醒其他等待者的权限交给了被唤醒的进程。</li>
+<li>(oldstate &amp; LW_LOCK_MASK) &#x3D;&#x3D; 0：锁已空闲。这个条件确认锁当前没有被任何进程占用（无论是独占模式还是共享模式，计数都为零）</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/09/03/postgres/Lock/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -685,7 +772,7 @@
 <td>X</td>
 </tr>
 </tbody></table>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>[postgres][postgres]<br>[postgres]: <a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">https://www.postgresql.org/docs/17/explicit-locking.html</a> “Conflicting Lock Modes”</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
 
       
     </div>
@@ -1188,107 +1275,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/07/30/postgres/WAL-Structure-Logical-Structure/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffrey's space">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/07/30/postgres/WAL-Structure-Logical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Logical-Structure)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-07-30 10:46:03" itemprop="dateCreated datePublished" datetime="2025-07-30T10:46:03+08:00">2025-07-30</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>从wal逻辑结构来看，WAL 可被描述为变长日志条目流。每个条目都包含有关特定操作的一些数据，并以标准标头作为前缀。该标头提供的信息包括但不限于：</p>
-<ul>
-<li>与条目（entry）相关的事务 ID </li>
-<li>解释条目的资源管理器</li>
-<li>用于检测数据损坏的校验和</li>
-<li>条目长度</li>
-<li>对前一个 WAL 条目的引用<blockquote>
-<p>WAL 通常是按正向读取的，但某些工具（例如 pg_rewind）可能会反向扫描它</p>
-</blockquote>
-</li>
-</ul>
-<p>WAL 数据本身可以具有不同的格式和含义。例如，它可能是一段页片段（page fragment），需要替换某个页面中指定偏移处的一部分内容。相应的资源管理器（resource manager）必须知道如何解析并重放这一特定条目。针对表、各种索引类型、事务状态以及其他实体，PostgreSQL 都有独立的资源管理器来处理它们各自的 WAL。</p>
-<p>WAL 文件会占用服务器共享内存中的特殊缓冲区。用于 WAL 的缓存大小由参数 wal_buffers 决定。默认情况下，这个大小会自动设为总缓冲区缓存（buffer cache）大小的 1&#x2F;32。</p>
-<p>WAL 缓存与缓冲区缓存（buffer cache）非常相似，但它通常以环形缓冲区（ring buffer）的方式运行：新的日志条目被添加到缓冲区的头部，而旧的条目则从尾部开始写入磁盘。如果 WAL 缓存太小，就会比必要的更频繁地进行磁盘同步操作。</p>
-<p>在系统负载较低的情况下，插入位置（即缓冲区的头部）几乎总是与已经写入磁盘的条目位置（即缓冲区的尾部）保持一致。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_lsn(), pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_lsn <span class="operator">|</span> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">--------------------+---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDC2CD8         <span class="operator">|</span> <span class="number">1</span><span class="operator">/</span>EBDC2CD8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>在PostgreSQL 10之前，所有函数名称都包含XLOG首字母缩写词，而不是WAL。</p>
-</blockquote>
-<p>为了引用某个特定的日志条目，PostgreSQL 使用一种特殊的数据类型：pg_lsn（日志序列号，Log Sequence Number，简称 LSN）。它表示从 WAL 起始位置开始，以字节为单位的 64 位偏移量。LSN 通常以两个十六进制数字表示，中间用斜杠（&#x2F;）分隔。</p>
-<p>我们创建一个表：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> wal(id <span class="type">integer</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> wal <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">启动一个事务，并记录下当前 WAL 插入位置的 LSN。</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA4F8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>现在执行一个任意命令，例如，更新一行数据。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">UPDATE</span> wal <span class="keyword">SET</span> id <span class="operator">=</span> id <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
-<p>页面的修改是在 RAM 中的缓冲区缓存（buffer cache）中进行的。这个更改也会记录在位于 RAM 中的 WAL 页面中。因此，插入的 LSN 会向前推进。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5E8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>为了确保修改后的数据页是在对应的 WAL 条目之后才被刷新到磁盘，数据页的页头会存储该页最新相关的 WAL 条目的 LSN。你可以使用 pageinspect 插件查看这个 LSN。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> lsn <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;wal&#x27;</span>,<span class="number">0</span>));</span><br><span class="line">    lsn     </span><br><span class="line"><span class="comment">------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5B0</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>整个数据库集群只有一个 WAL，并且新的条目会不断地追加到其中。因此，存储在数据页中的 LSN 可能会比 之前某个时刻 pg_current_wal_insert_lsn() 返回的 LSN 更小。但如果系统中没有发生任何操作，这两个数值将会相同。</p>
-<p>现在提交这个事务</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">commit</span>;</span><br><span class="line"><span class="keyword">COMMIT</span></span><br><span class="line"><span class="keyword">commit</span>操作同样被日志记录，同时<span class="keyword">insert</span> lsn再次改变</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDC500</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>为了确保某个 CLog 页在对应的 WAL 条目写入磁盘之前不会被刷新到磁盘，必须追踪该页所对应的最新 WAL 条目的 LSN。但这种 LSN 信息是保存在内存（RAM）中的，而不是存在 CLog 页本身</p>
-<p>某个时刻，WAL 日志条目会被写入磁盘；此时，才能把对应的 CLOG 和数据页从缓存中淘汰（evict）。如果必须更早淘汰这些缓存页，那么系统会发现这一点，并会先强制将对应的 WAL 条目写入磁盘。<br>如果你知道两个 LSN（日志序列号）的位置，就可以通过简单地相减计算这两者之间的 WAL 日志大小（以字节为单位）。只需将它们转换为 pg_lsn 类型即可进行减法运算</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;1/EBDDC500&#x27;</span>::pg_lsn <span class="operator">-</span> <span class="string">&#x27;1/EBDDA4F8&#x27;</span>::pg_lsn;</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line">     <span class="number">8200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>在这个具体案例中，更新（update）和提交（commit）操作相关的 WAL 条目大约占用了几千字节。可以用相同的方法，估算某个工作负载在单位时间内产生的 WAL 日志量。<br>这些信息对设置检查点（checkpoint）参数非常重要。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1360,7 +1346,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
