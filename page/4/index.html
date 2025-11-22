@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Jeffrey&#39;s space">
+<meta property="og:url" content="http://example.com/page/4/index.html">
+<meta property="og:site_name" content="Jeffrey&#39;s space">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/page/4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Jeffrey's space</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Jeffrey's space</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-docs">
+
+    <a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/10/27/debug/pprof/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/10/27/debug/pprof/" class="post-title-link" itemprop="url">分析tcmalloc 内存增长 —- pprof</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-10-27 09:44:27" itemprop="dateCreated datePublished" datetime="2024-10-27T09:44:27+08:00">2024-10-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>有时候程序莫名内存上涨厉害，但不是泄漏，如何定位哪申请使用的大量内存呢？</p>
+<p>如果没使用tcmalloc，使用heaptrack工具（git clone <a target="_blank" rel="noopener" href="https://github.com/KDE/heaptrack.git%EF%BC%89%EF%BC%9B">https://github.com/KDE/heaptrack.git）；</a></p>
+<p>如果使用了tcmalloc，可以通过tcmalloc自带的工具来分析</p>
+<h2 id="一-工具"><a href="#一-工具" class="headerlink" title="一 工具"></a>一 工具</h2><ol>
+<li>tcmalloc</li>
+<li>pprof</li>
+</ol>
+<p>pprof相当于分析器，阅读器，分析阅读的内容为heap文件，内容包括  </p>
+<ul>
+<li>每个活跃分配的大小</li>
+<li>分配的调用栈</li>
+<li>分配次数</li>
+</ul>
+<h2 id="二-生成heap文件"><a href="#二-生成heap文件" class="headerlink" title="二 生成heap文件"></a>二 生成heap文件</h2><ul>
+<li><p>手动<br>在程序的入口或需要开始分析的地方，添加 HeapProfilerStart(“文件路径”)。<br>在程序结束或需要停止分析的地方，添加 HeapProfilerStop()。<br>在需要手动生成快照的地方，添加 HeapProfilerDump(“文件名”)。</p>
+</li>
+<li><p>自动<br>设置环境变量，动态加载设置环境变量即可，tcmalloc库加载时会读取并解析这个环境变量，从而开启堆分析功能</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HEAP_PROFILE=/tmp/myapp_heap</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果是静态加载，需代码中启动：HeapProfilerStart</p>
+</blockquote>
+</li>
+<li><p>补充说明<br>自动生成文件的时机：申请内存超过阈值时会自动生成，阈值可以通过HEAP_PROFILE_ALLOCATION_INTERVAL环境变量来设置</p>
+</li>
+</ul>
+<h2 id="三-分析heap文件（快照）"><a href="#三-分析heap文件（快照）" class="headerlink" title="三 分析heap文件（快照）"></a>三 分析heap文件（快照）</h2><h3 id="单次快照"><a href="#单次快照" class="headerlink" title="单次快照"></a>单次快照</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 文本格式</span></span><br><span class="line">pprof test_heap --text /tmp/test_heap.0001.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 火焰图</span></span><br><span class="line">pprof --svg /path/to/my_program.hprof &gt; flamegraph.svg</span><br></pre></td></tr></table></figure>
+<h3 id="两次快照："><a href="#两次快照：" class="headerlink" title="两次快照："></a>两次快照：</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 对比两次快照</span></span><br><span class="line">pprof --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成火焰图</span></span><br><span class="line">pprof --svg --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap &gt; diff_flamegraph.svg</span><br></pre></td></tr></table></figure>
+<p>火焰图需要额外安装</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install graphviz</span><br></pre></td></tr></table></figure>
+<h3 id="sample"><a href="#sample" class="headerlink" title="sample"></a>sample</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    HeapProfilerStart(<span class="string">&quot;/tmp/test_heap&quot;</span>);</span><br><span class="line">    <span class="type">void</span>* p = <span class="built_in">malloc</span>(<span class="number">16</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 分配 16MB</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;Allocated 16MB\n&quot;</span>;</span><br><span class="line">    HeapProfilerDump(<span class="string">&quot;after_alloc&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(p);</span><br><span class="line">    HeapProfilerStop();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ test_heap.cc -ltcmalloc -lpthread -lunwind -o test_heap</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/10/24/linux/File%20Descriptor%20Limits/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/10/24/linux/File%20Descriptor%20Limits/" class="post-title-link" itemprop="url">File Descriptor Limits</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-10-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-10-24T15:52:16+08:00">2024-10-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a target="_blank" rel="noopener" href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/06/30/postgres/Install-postgres-from-codes-in-linux/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/06/30/postgres/Install-postgres-from-codes-in-linux/" class="post-title-link" itemprop="url">Install postgres from codes in linux</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-06-30 15:41:43" itemprop="dateCreated datePublished" datetime="2024-06-30T15:41:43+08:00">2024-06-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>First, we need to create a postgres user and add it to the sudo group</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">usermod -aG <span class="built_in">sudo</span> postgres <span class="comment"># 注意安全，云主机不要这么设置</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Get-codes"><a href="#Get-codes" class="headerlink" title="Get codes"></a>Get codes</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> --depth=1 https://git.postgresql.org/git/postgresql.git</span><br></pre></td></tr></table></figure>
+<p>Compile after installing dependencies</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> apt install -y \</span><br><span class="line">  build-essential \</span><br><span class="line">  libreadline-dev \</span><br><span class="line">  zlib1g-dev \</span><br><span class="line">  flex \</span><br><span class="line">  bison \</span><br><span class="line">  libxml2-dev \</span><br><span class="line">  libxslt1-dev \</span><br><span class="line">  libssl-dev \</span><br><span class="line">  libpam0g-dev \</span><br><span class="line">  libedit-dev \</span><br><span class="line">  libldap2-dev \</span><br><span class="line">  libicu-dev \</span><br><span class="line">  tcl-dev \</span><br><span class="line">  uuid-dev \</span><br><span class="line">  python3-dev \</span><br><span class="line">  libperl-dev \</span><br><span class="line">  llvm-dev \</span><br><span class="line">  clang \</span><br><span class="line">  libperl-dev \</span><br><span class="line">  libpython3-dev \</span><br><span class="line">  libossp-uuid-dev \</span><br><span class="line">  systemtap-sdt-dev \</span><br><span class="line">  pkg-config</span><br><span class="line">./configure --enable-debug <span class="string">&#x27;CFLAGS=-O0 -g&#x27;</span> --enable-cassert --enable-depend --enable-dtrace --without-icu --with-llvm --prefix</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h2 id="Modify-environment-variables"><a href="#Modify-environment-variables" class="headerlink" title="Modify environment variables"></a>Modify environment variables</h2><p>create a configure file</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">~/.pg_env</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 设置当前使用的 PostgreSQL 安装路径</span></span><br><span class="line"><span class="built_in">export</span> PG_HOME=<span class="variable">$HOME</span>/pgsql</span><br><span class="line"><span class="built_in">export</span> PGDATA=<span class="variable">$HOME</span>/pgdata</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$PG_HOME</span>/bin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">export</span> LD_LIBRARY_PATH=<span class="variable">$PG_HOME</span>/lib:<span class="variable">$LD_LIBRARY_PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 可选：显示当前 PostgreSQL 版本</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;🔧 Loaded PG env: <span class="subst">$(pg_config --version)</span>&quot;</span></span><br><span class="line">在 ~/.bashrc 末尾加上这一行：</span><br><span class="line">[ -f ~/.pg_env ] &amp;&amp; <span class="built_in">source</span> ~/.pg_env</span><br></pre></td></tr></table></figure>
+<h2 id="initdb"><a href="#initdb" class="headerlink" title="initdb"></a>initdb</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R postgres:postgres /usr/local/pgsql</span><br><span class="line">initdb</span><br></pre></td></tr></table></figure>
+<h2 id="start"><a href="#start" class="headerlink" title="start"></a>start</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D /usr/local/pgsql/data -l logfile start</span><br></pre></td></tr></table></figure>
+
+<h2 id="About-Extensions"><a href="#About-Extensions" class="headerlink" title="About Extensions"></a>About Extensions</h2><p>cd contrib</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>登录你要使用的数据库，然后执行：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line">\dx</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/11/tools/hello-world/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/05/11/tools/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-05-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-05-11T10:59:00+08:00">2024-05-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
+
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/05/tools/docker-compose/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffrey's space">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/11/05/tools/docker-compose/" class="post-title-link" itemprop="url">docker compose</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-11-05 20:17:05" itemprop="dateCreated datePublished" datetime="2023-11-05T20:17:05+08:00">2023-11-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="一-Docker-Compose-是什么"><a href="#一-Docker-Compose-是什么" class="headerlink" title="一. Docker Compose 是什么"></a>一. Docker Compose 是什么</h2><ul>
+<li><p>Docker Compose 是 Docker 官方提供的工具，用于定义和管理多容器应用。</p>
+</li>
+<li><p>它允许你用一个 YAML 文件 描述整个应用的服务（containers）、网络、卷、环境变量等，然后一条命令就能创建、启动、停止、销毁整个应用。</p>
+</li>
+<li><p>主要目标是 声明式管理 —— 你只写配置文件，Compose 确保容器状态和配置一致。</p>
+</li>
+</ul>
+<p>简单理解：<br>Docker 是管一个容器，Compose 是管理一堆容器的应用。</p>
+<h2 id="二-Compose-的核心概念"><a href="#二-Compose-的核心概念" class="headerlink" title="二. Compose 的核心概念"></a>二. Compose 的核心概念</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Service（服务）</strong></td>
+<td>YAML 文件里定义的一个容器，包括镜像、端口、环境变量、卷挂载等。</td>
+</tr>
+<tr>
+<td><strong>Container（容器）</strong></td>
+<td>实际运行的 Docker 实例，由 Service 创建。</td>
+</tr>
+<tr>
+<td><strong>Volume（卷）</strong></td>
+<td>持久化数据，用宿主机目录或 Docker 卷存储数据库、缓存、照片等。</td>
+</tr>
+<tr>
+<td><strong>Network（网络）</strong></td>
+<td>内部容器间通信网络，自动创建，保证服务可以互相访问。</td>
+</tr>
+<tr>
+<td><strong>Project（项目）</strong></td>
+<td>一个 Compose 文件及其相关容器、卷、网络的集合，默认用目录名作为项目名。</td>
+</tr>
+</tbody></table>
+<h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>docker compose up -d</code></td>
+<td>创建并启动服务（后台模式）</td>
+</tr>
+<tr>
+<td><code>docker compose down</code></td>
+<td>停止并删除容器、网络（卷可保留）</td>
+</tr>
+<tr>
+<td><code>docker compose stop</code></td>
+<td>停止容器，但不删除</td>
+</tr>
+<tr>
+<td><code>docker compose start</code></td>
+<td>启动已存在容器</td>
+</tr>
+<tr>
+<td><code>docker compose restart</code></td>
+<td>停止 + 启动</td>
+</tr>
+<tr>
+<td><code>docker compose logs -f</code></td>
+<td>查看实时日志</td>
+</tr>
+<tr>
+<td><code>docker compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
+<td>进入容器执行命令（类似 <code>docker exec</code>）</td>
+</tr>
+<tr>
+<td><code>docker compose ps</code></td>
+<td>查看当前项目的容器状态</td>
+</tr>
+</tbody></table>
+<h2 id="五-Compose优势"><a href="#五-Compose优势" class="headerlink" title="五. Compose优势"></a>五. Compose优势</h2><ol>
+<li>一条命令管理多容器：不需要每次都记 docker run … 的复杂参数。</li>
+<li>环境可移植：同一个 YAML 文件可以在 Windows、Linux、Mac 上使用。</li>
+<li>声明式管理：修改 YAML 后，up -d 自动更新容器状态，保证一致性。</li>
+<li>支持卷与网络：数据持久化和容器间通信自动配置。</li>
+<li>方便调试与扩展：可以用多个服务（数据库 + 后端 + 前端）组成完整应用。</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jeffrey-fly" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jeffrey-fly" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/" title="Twitter → https:&#x2F;&#x2F;twitter.com" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
