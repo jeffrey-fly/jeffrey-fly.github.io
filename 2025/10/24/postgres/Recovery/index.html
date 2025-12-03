@@ -27,7 +27,7 @@
 <meta property="og:description" content="服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。  startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。  123postgres@la">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-10-24T08:50:14.000Z">
-<meta property="article:modified_time" content="2025-11-24T01:56:45.055Z">
+<meta property="article:modified_time" content="2025-12-03T01:44:40.108Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -144,7 +144,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -157,6 +157,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">1.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -182,7 +183,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -296,6 +297,9 @@
 <p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
 <p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
     </div>
 

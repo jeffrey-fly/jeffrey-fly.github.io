@@ -177,7 +177,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -371,6 +371,11 @@
 <p>正如前文所述，某些操作符类（operator class）提供了用于最近邻搜索的距离操作符。<br>对于 NULL 值，距离计算结果为 NULL，这种情况下这些值会排在最后返回（类似 B-tree 中的 NULLS LAST 语法）。</p>
 <p>然而，对于范围类型（range types）而言，并不存在“距离操作符”（因为它们表示的是线段，也就是线性几何体，而不是面状几何体）。所以，当索引建立在这些类型上时，上述性质会有所不同。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> reservations(during tsrange);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> reservations <span class="keyword">USING</span> gist(during);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;reservations_during_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
       
     </div>
 
@@ -1287,6 +1292,9 @@
 <li>尚未被复制或归档的 WAL 文件，服务器无权删除。如果启用了流复制或持续归档功能，必须持续监控这些机制，否则非常容易导致磁盘空间耗尽。</li>
 <li>你可以通过配置 wal_keep_size 参数来预留一定的磁盘空间用于存储 WAL 文件，以避免这些问题带来的风险。</li>
 </ul>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
       
     </div>
@@ -1400,6 +1408,10 @@
 <p>在 <strong>异步模式</strong> 下，这个简单的基准测试显示出 显著更低的延迟（latency）和更高的吞吐量（tps）。当然，每个具体系统的数值会根据当前负载有所不同，但可以清楚地看出，对于 短事务，性能提升是相当明显的。</p>
 <p>恢复参数：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> RESET synchronous_commit;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
       
     </div>

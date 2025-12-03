@@ -27,7 +27,7 @@
 <meta property="og:description" content="从wal逻辑结构来看，WAL 可被描述为变长日志条目流。每个条目都包含有关特定操作的一些数据，并以标准标头作为前缀。该标头提供的信息包括但不限于：  与条目（entry）相关的事务 ID  解释条目的资源管理器 用于检测数据损坏的校验和 条目长度 对前一个 WAL 条目的引用 WAL 通常是按正向读取的，但某些工具（例如 pg_rewind）可能会反向扫描它    WAL 数据本身可以具有不同的格">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-07-30T02:46:03.000Z">
-<meta property="article:modified_time" content="2025-11-24T01:56:45.055Z">
+<meta property="article:modified_time" content="2025-12-03T01:44:56.800Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -144,7 +144,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -157,6 +157,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">1.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -182,7 +183,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -299,6 +300,9 @@
 <p>某个时刻，WAL 日志条目会被写入磁盘；此时，才能把对应的 CLOG 和数据页从缓存中淘汰（evict）。如果必须更早淘汰这些缓存页，那么系统会发现这一点，并会先强制将对应的 WAL 条目写入磁盘。<br>如果你知道两个 LSN（日志序列号）的位置，就可以通过简单地相减计算这两者之间的 WAL 日志大小（以字节为单位）。只需将它们转换为 pg_lsn 类型即可进行减法运算</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;1/EBDDC500&#x27;</span>::pg_lsn <span class="operator">-</span> <span class="string">&#x27;1/EBDDA4F8&#x27;</span>::pg_lsn;</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line">     <span class="number">8200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
 <p>在这个具体案例中，更新（update）和提交（commit）操作相关的 WAL 条目大约占用了几千字节。可以用相同的方法，估算某个工作负载在单位时间内产生的 WAL 日志量。<br>这些信息对设置检查点（checkpoint）参数非常重要。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
     </div>
 

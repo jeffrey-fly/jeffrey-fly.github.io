@@ -1107,6 +1107,9 @@
 <p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
 </blockquote>
 <p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1140,7 +1143,12 @@
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
 <p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
 <p>同样的信息也可以在 pg_control 文件中找到。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>]]></content>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
       <categories>
         <category>postgres</category>
       </categories>
@@ -1183,6 +1191,10 @@
 <p>Another example worth mentioning is storing oversized data in TOAST tables. In spite of a potentially large volume of data that has to be read, toasted values are always accessed via an index, so they bypass buffer rings.</p>
 <p>Let’s take a closer look at the bulk reads strategy. For simplicity, we will create a table in such a way that an inserted row takes the whole page. By default, the buffer cache size is 16,384 pages, 8 kb each. So the table must take more than 4096 pages for the scan to use a buffer ring.</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">SHOW</span> shared_buffers;</span><br><span class="line"> shared_buffers </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> <span class="number">128</span>MB</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> big(</span><br><span class="line">test(# id <span class="type">integer</span> <span class="keyword">PRIMARY KEY</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s <span class="type">char</span>(<span class="number">1000</span>)</span><br><span class="line">test(# ) <span class="keyword">WITH</span> (fillfactor <span class="operator">=</span> <span class="number">10</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">INSERT INTO</span> big(s)</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">SELECT</span> <span class="string">&#x27;FOO&#x27;</span> <span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">4096</span><span class="operator">+</span><span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">4097</span></span><br><span class="line">test<span class="operator">=</span># ANALYZE big;</span><br><span class="line">ANALYZE</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> relname, relfilenode, relpages <span class="keyword">FROM</span> pg_class</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHERE</span> relname <span class="keyword">IN</span> (<span class="string">&#x27;big&#x27;</span>, <span class="string">&#x27;big_pkey&#x27;</span>);</span><br><span class="line"> relname  <span class="operator">|</span> relfilenode <span class="operator">|</span> relpages </span><br><span class="line"><span class="comment">----------+-------------+----------</span></span><br><span class="line"> big      <span class="operator">|</span>       <span class="number">16487</span> <span class="operator">|</span>     <span class="number">4097</span></span><br><span class="line"> big_pkey <span class="operator">|</span>       <span class="number">16492</span> <span class="operator">|</span>       <span class="number">14</span></span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> big;</span><br><span class="line">                 QUERY PLAN                 </span><br><span class="line"><span class="comment">--------------------------------------------</span></span><br><span class="line"> Seq Scan <span class="keyword">on</span> big (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">4097</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache</span><br><span class="line"><span class="keyword">WHERE</span> relfilenode <span class="operator">=</span> pg_relation_filenode(<span class="string">&#x27;big&#x27;</span>::regclass);</span><br><span class="line"> count </span><br><span class="line"><span class="comment">-------</span></span><br><span class="line">    <span class="number">32</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1214,7 +1226,7 @@
         <category>postgres</category>
       </categories>
       <tags>
-        <tag>install</tag>
+        <tag>learn</tag>
       </tags>
   </entry>
   <entry>
@@ -1413,6 +1425,9 @@
 </li>
 </ol>
 <p>除了用于崩溃恢复之外，WAL 还可以用于从备份进行时间点恢复以及数据复制。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1456,6 +1471,9 @@
 <p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
 <p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1509,6 +1527,9 @@
 <h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>我已经展示了访问方法的属性，其中大多数在所有操作符类中都是相同的。但是下面两个列级别的属性值得一提：</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;mail_messages_tsv_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> f</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 <p>现在不可能进行 Index-only 扫描了，因为无法从签名中恢复出原始值。<br>不过在这个特定的场景下这是完全可以接受的：<br>tsvector 值只是用于搜索，我们真正需要的是文档本身（也就是实际的数据行）。<br>对于 tsvector_ops 类来说，也没有定义排序操作符</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1556,6 +1577,10 @@
 <p>在 <strong>异步模式</strong> 下，这个简单的基准测试显示出 显著更低的延迟（latency）和更高的吞吐量（tps）。当然，每个具体系统的数值会根据当前负载有所不同，但可以清楚地看出，对于 短事务，性能提升是相当明显的。</p>
 <p>恢复参数：</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> RESET synchronous_commit;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1602,6 +1627,9 @@
 <p>某个时刻，WAL 日志条目会被写入磁盘；此时，才能把对应的 CLOG 和数据页从缓存中淘汰（evict）。如果必须更早淘汰这些缓存页，那么系统会发现这一点，并会先强制将对应的 WAL 条目写入磁盘。<br>如果你知道两个 LSN（日志序列号）的位置，就可以通过简单地相减计算这两者之间的 WAL 日志大小（以字节为单位）。只需将它们转换为 pg_lsn 类型即可进行减法运算</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">demo<span class="operator">=</span># demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;1/EBDDC500&#x27;</span>::pg_lsn <span class="operator">-</span> <span class="string">&#x27;1/EBDDA4F8&#x27;</span>::pg_lsn;</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line">     <span class="number">8200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
 <p>在这个具体案例中，更新（update）和提交（commit）操作相关的 WAL 条目大约占用了几千字节。可以用相同的方法，估算某个工作负载在单位时间内产生的 WAL 日志量。<br>这些信息对设置检查点（checkpoint）参数非常重要。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1638,6 +1666,9 @@
 <li>尚未被复制或归档的 WAL 文件，服务器无权删除。如果启用了流复制或持续归档功能，必须持续监控这些机制，否则非常容易导致磁盘空间耗尽。</li>
 <li>你可以通过配置 wal_keep_size 参数来预留一定的磁盘空间用于存储 WAL 文件，以避免这些问题带来的风险。</li>
 </ul>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
@@ -1741,6 +1772,9 @@
       <categories>
         <category>postgres</category>
       </categories>
+      <tags>
+        <tag>learn</tag>
+      </tags>
   </entry>
   <entry>
     <title>page</title>
@@ -1803,7 +1837,7 @@
         <category>postgres</category>
       </categories>
       <tags>
-        <tag>install</tag>
+        <tag>learn</tag>
       </tags>
   </entry>
   <entry>
@@ -1832,6 +1866,9 @@
       <categories>
         <category>postgres</category>
       </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
   </entry>
   <entry>
     <title>R-tree for points</title>
@@ -1947,12 +1984,17 @@
 <p>GiST 索引允许执行索引仅扫描（Index-only scan），因为叶子节点中保留了完整的索引键值。</p>
 <p>正如前文所述，某些操作符类（operator class）提供了用于最近邻搜索的距离操作符。<br>对于 NULL 值，距离计算结果为 NULL，这种情况下这些值会排在最后返回（类似 B-tree 中的 NULLS LAST 语法）。</p>
 <p>然而，对于范围类型（range types）而言，并不存在“距离操作符”（因为它们表示的是线段，也就是线性几何体，而不是面状几何体）。所以，当索引建立在这些类型上时，上述性质会有所不同。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> reservations(during tsrange);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> reservations <span class="keyword">USING</span> gist(during);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;reservations_during_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>]]></content>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> reservations(during tsrange);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> reservations <span class="keyword">USING</span> gist(during);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;reservations_during_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
       <categories>
         <category>postgres</category>
       </categories>
       <tags>
-        <tag>index</tag>
+        <tag>pginternal</tag>
       </tags>
   </entry>
 </search>

@@ -27,7 +27,7 @@
 <meta property="og:description" content="关于全文搜索全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档 为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。  “并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-09-10T10:40:39.000Z">
-<meta property="article:modified_time" content="2025-11-24T01:56:45.054Z">
+<meta property="article:modified_time" content="2025-12-03T01:44:32.809Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -157,7 +157,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2"><span class="nav-number">1.</span> <span class="nav-text">关于全文搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Indexing-tsvector-Data"><span class="nav-number">2.</span> <span class="nav-text">Indexing tsvector Data</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Properties"><span class="nav-number">3.</span> <span class="nav-text">Properties</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2"><span class="nav-number">1.</span> <span class="nav-text">关于全文搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Indexing-tsvector-Data"><span class="nav-number">2.</span> <span class="nav-text">Indexing tsvector Data</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Properties"><span class="nav-number">3.</span> <span class="nav-text">Properties</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">4.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -183,7 +183,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -307,6 +307,9 @@
 <h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>我已经展示了访问方法的属性，其中大多数在所有操作符类中都是相同的。但是下面两个列级别的属性值得一提：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;mail_messages_tsv_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> f</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 <p>现在不可能进行 Index-only 扫描了，因为无法从签名中恢复出原始值。<br>不过在这个特定的场景下这是完全可以接受的：<br>tsvector 值只是用于搜索，我们真正需要的是文档本身（也就是实际的数据行）。<br>对于 tsvector_ops 类来说，也没有定义排序操作符</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
     </div>
 

@@ -27,7 +27,7 @@
 <meta property="og:description" content="当数据库服务正常运行时，wal文件持续不断的写入磁盘。这种写入时顺序的（sequential）：几乎没有随机访问，所以即便时hdd硬盘也能处理这样的任务。由于这种负载和典型的数据文件访问非常不一样，值得为WAL文件设置单独的物理存储，并通过符号链接替换PGDATA&#x2F;PG_WAL目录，该目录链接到mount的文件系统中的目录。  在某些情况下，需要同时写和读取WAL文件。第一种情况是崩溃恢">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-11-01T11:03:57.000Z">
-<meta property="article:modified_time" content="2025-11-24T01:56:45.055Z">
+<meta property="article:modified_time" content="2025-12-03T01:44:49.227Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -144,7 +144,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -157,6 +157,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">1.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -182,7 +183,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -300,6 +301,10 @@
 <p>在 <strong>异步模式</strong> 下，这个简单的基准测试显示出 显著更低的延迟（latency）和更高的吞吐量（tps）。当然，每个具体系统的数值会根据当前负载有所不同，但可以清楚地看出，对于 短事务，性能提升是相当明显的。</p>
 <p>恢复参数：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> RESET synchronous_commit;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 
     </div>
 
