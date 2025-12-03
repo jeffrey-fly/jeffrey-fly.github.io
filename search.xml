@@ -1751,6 +1751,10 @@
 </ul>
 <p>查看日志文件路径  </p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">demo=# SELECT pg_relation_filepath(&#x27;wal&#x27;);</span><br><span class="line"> pg_relation_filepath </span><br><span class="line">----------------------</span><br><span class="line"> base/32814/376833</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
 ]]></content>
       <categories>
         <category>postgres</category>
