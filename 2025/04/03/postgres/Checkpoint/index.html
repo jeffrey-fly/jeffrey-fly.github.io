@@ -27,7 +27,7 @@
 <meta property="og:description" content="要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-04-03T11:28:21.000Z">
-<meta property="article:modified_time" content="2025-11-22T00:48:42.647Z">
+<meta property="article:modified_time" content="2025-12-05T09:58:10.742Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -157,7 +157,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%BC%80%E5%A7%8B%EF%BC%88Checkpoint-start%EF%BC%89%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">检查点开始（Checkpoint start）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88Checkpoint-execution%EF%BC%89%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">检查点执行过程（Checkpoint execution）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%AE%8C%E6%88%90%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">检查点完成：</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%BC%80%E5%A7%8B%EF%BC%88Checkpoint-start%EF%BC%89%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">检查点开始（Checkpoint start）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88Checkpoint-execution%EF%BC%89%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">检查点执行过程（Checkpoint execution）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%AE%8C%E6%88%90%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">检查点完成：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">4.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -172,7 +172,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-count">37</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -288,6 +288,11 @@
 <p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
 <p>同样的信息也可以在 pg_control 文件中找到。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
     </div>
 
     
