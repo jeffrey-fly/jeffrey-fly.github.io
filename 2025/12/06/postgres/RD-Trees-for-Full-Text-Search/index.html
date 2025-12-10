@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -17,26 +18,32 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="关于全文搜索全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档 为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。  “并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="RD-Trees for Full-Text Search">
-<meta property="og:url" content="http://example.com/2025/09/10/postgres/RD-Trees-for-Full-Text-Search/index.html">
+<meta property="og:url" content="http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/index.html">
 <meta property="og:site_name" content="QuantumRealm">
 <meta property="og:description" content="关于全文搜索全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档 为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。  “并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2025-09-10T10:40:39.000Z">
-<meta property="article:modified_time" content="2025-12-03T01:44:32.809Z">
+<meta property="og:image" content="http://example.com/images/RDTree/rdtree1.png">
+<meta property="og:image" content="http://example.com/images/RDTree/rdtree2.png">
+<meta property="og:image" content="http://example.com/images/RDTree/rdtree3.png">
+<meta property="og:image" content="http://example.com/images/RDTree/rdtree4.png">
+<meta property="og:image" content="http://example.com/images/RDTree/rdtree5.png">
+<meta property="article:published_time" content="2025-12-06T02:05:39.000Z">
+<meta property="article:modified_time" content="2025-12-08T11:01:23.027Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/RDTree/rdtree1.png">
 
 
-<link rel="canonical" href="http://example.com/2025/09/10/postgres/RD-Trees-for-Full-Text-Search/">
+<link rel="canonical" href="http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2025/09/10/postgres/RD-Trees-for-Full-Text-Search/","path":"2025/09/10/postgres/RD-Trees-for-Full-Text-Search/","title":"RD-Trees for Full-Text Search"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/","path":"2025/12/06/postgres/RD-Trees-for-Full-Text-Search/","title":"RD-Trees for Full-Text Search"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>RD-Trees for Full-Text Search | QuantumRealm</title>
@@ -172,7 +179,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-count">38</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -215,7 +222,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/09/10/postgres/RD-Trees-for-Full-Text-Search/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -244,7 +251,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-09-10 18:40:39" itemprop="dateCreated datePublished" datetime="2025-09-10T18:40:39+08:00">2025-09-10</time>
+      <time title="Created: 2025-12-06 10:05:39" itemprop="dateCreated datePublished" datetime="2025-12-06T10:05:39+08:00">2025-12-06</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -289,10 +296,18 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> ts(doc) <span class="keyword">VALUES</span></span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>), (<span class="string">&#x27;And on his farm he had some cows&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here a moo, there a moo&#x27;</span>), (<span class="string">&#x27;Everywhere a moo moo&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>), (<span class="string">&#x27;And on his farm he had some chicks&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here a cluck, there a cluck&#x27;</span>), (<span class="string">&#x27;Everywhere a cluck cluck&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>),(<span class="string">&#x27;And on his farm he had some pigs&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here an oink, there an oink&#x27;</span>),(<span class="string">&#x27;Everywhere an oink oink&#x27;</span>)</span><br><span class="line">RETURNING doc_tsv;</span><br><span class="line">            doc_tsv             </span><br><span class="line"><span class="comment">--------------------------------</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;cow&#x27;</span>:<span class="number">8</span> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;moo&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span> <span class="string">&#x27;moo&#x27;</span>:<span class="number">3</span>,<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;chick&#x27;</span>:<span class="number">8</span> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;cluck&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;cluck&#x27;</span>:<span class="number">3</span>,<span class="number">4</span> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span> <span class="string">&#x27;pig&#x27;</span>:<span class="number">8</span></span><br><span class="line"> <span class="string">&#x27;oink&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span> <span class="string">&#x27;oink&#x27;</span>:<span class="number">3</span>,<span class="number">4</span></span><br><span class="line">(<span class="number">12</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 <p>因此，R 树不适合用于索引文档，因为边界框（bounding box）的概念对文档没有意义。因此，使用了其 RD 树（俄罗斯套娃，Russian Doll）变体。RD 树不使用边界框，而是使用边界集（bounding set），即一个包含其所有子集元素的集合。对于全文搜索，这样的集合包含文档的词素（lexemes），但在一般情况下，边界集可以是任意的。</p>
 <p>在索引条目中表示边界集有几种方法。最简单的一种是列举集合中的所有元素。如下图所示</p>
-<p>为了找到满足 DOC_TSC @@ TO_TSQUERY(‘COW’) 条件的文档，我们需要深入到那些已知包含“cow”词素的子节点的节点。</p>
-<p>这种表示方式的问题显而易见。文档中的词素数量可能非常庞大，而页面大小是有限的。即使单个文档的独特词素数量不算太多，在树的较高层级中，它们的联合集仍然可能变得过大。 全文搜索使用了另一种解决方案，即更紧凑的签名树（signature tree）。对于那些熟悉布隆过滤器（Bloom filter）的人来说，这种解决方案应该很熟悉。 每个词素可以由其签名（signature）表示：一个特定长度的位字符串，其中只有一位被置为 1。置为 1 的位由词素的哈希函数决定。 文档的签名是对该文档中所有词素签名的按位或（bitwise OR）操作结果。</p>
+<p><img src="/images/RDTree/rdtree1.png" alt="rdtree1"></p>
+<p>为了找到满足 DOC_TSV @@ TO_TSQUERY(‘COW’) 条件的文档，我们需要深入到那些已知包含“cow”词素的子节点的节点。</p>
+<p><img src="/images/RDTree/rdtree2.png" alt="rdtree2"></p>
+<p>这种表示方式的问题显而易见。文档中的词素数量可能非常庞大，而页面大小是有限的。即使单个文档的独特词素数量不算太多，在树的较高层级中，它们的联合集仍然可能变得过大。</p>
+<p>全文搜索使用了另一种解决方案，即更紧凑的签名树（signature tree）。对于那些熟悉布隆过滤器（Bloom filter）的人来说，这种解决方案应该很熟悉。 </p>
+<p>每个词素可以由其签名（signature）表示：一个特定长度的位字符串，其中只有一位被置为 1。置为 1 的位由词素的哈希函数决定。 </p>
+<p>文档的签名是对该文档中所有词素签名的按位或（bitwise OR）操作结果。</p>
+<p><img src="/images/RDTree/rdtree3.png" alt="rdtree3"></p>
 <p>这种方法的优点显而易见：索引条目大小相同且相当小，因此索引非常紧凑。但也存在一些缺点。首先，无法执行仅索引扫描（index-only scan），因为索引不再存储索引键，每个返回的 TID（行标识）都必须通过表进行重新检查。此外，准确性也会受到影响：索引可能返回许多误报（false positives），这些误报需要在重新检查阶段过滤掉。</p>
-<p>让我们再次看看 DOC_TSC @@ TO_TSQUERY(‘COW’) 条件。查询的签名（signature）以与文档相同的方式计算；在这个特定情况下，其签名等于 0000010。一致性函数（consistency function）必须找到所有签名中具有相同位被置位的子节点。</p>
+<p><img src="/images/RDTree/rdtree4.png" alt="rdtree4"></p>
+<p>让我们再次看看 DOC_TSV @@ TO_TSQUERY(‘COW’) 条件。查询的签名（signature）以与文档相同的方式计算；在这个特定情况下，其签名等于 0000010。一致性函数（consistency function）必须找到所有签名中具有相同位被置位的子节点。</p>
+<p><img src="/images/RDTree/rdtree5.png" alt="rdtree5"></p>
 <p>与前面的例子相比，这里需要扫描更多的节点，因为存在误报（false-positive）命中。由于签名的容量有限，在大型集合中，某些词素必然会具有相同的签名。在这个例子中，这样的词素是“cow”和“oink”。这意味着一个签名可能匹配多个不同的文档；在这里，查询的签名对应于三个文档。</p>
 <p>误报会降低索引的效率，但不会以任何方式影响其正确性：因为假阴性（false negatives）被保证排除，所以不会遗漏所需的值。</p>
 <p>显然，签名的实际大小要大得多。默认情况下，签名占用 123 字节（992 位），因此冲突的概率远低于本例中所示。如果需要，可以使用操作符类参数进一步将签名大小增加到大约 2000 字节。</p>
@@ -326,13 +341,13 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2025/09/05/postgres/LWLock-in-postgres/" rel="prev" title="LWLock in postgres">
-                  <i class="fa fa-angle-left"></i> LWLock in postgres
+                <a href="/2025/12/02/postgres/r-tree-for-points/" rel="prev" title="R-tree for points">
+                  <i class="fa fa-angle-left"></i> R-tree for points
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2025/10/24/postgres/Recovery/" rel="next" title="Recovery in postgres">
-                  Recovery in postgres <i class="fa fa-angle-right"></i>
+                <a href="/2025/12/07/postgres/Query-Execution-Stages/" rel="next" title="Query Execution Stages">
+                  Query Execution Stages <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
