@@ -167,7 +167,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">39</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -200,6 +200,176 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-01-15 10:44:26" itemprop="dateCreated datePublished" datetime="2025-01-15T10:44:26+08:00">2025-01-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
+<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
+<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
+<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
+<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
+</ol>
+<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
+<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
+<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
+<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
+</ul>
+<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
+<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
+<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
+<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
+</ul>
+<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
+<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
+<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
+<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
+</ul>
+<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
+<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
+<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
+</ul>
+<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
+<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
+<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
+<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
+<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
+</ol>
+<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
+<li>多实例并行运行：</li>
+</ol>
+<ul>
+<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
+<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
+</ul>
+<ol start="2">
+<li>共享底层资源：</li>
+</ol>
+<ul>
+<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
+<li>使用高效的调度机制协调实例间的资源竞争。</li>
+</ul>
+<ol start="3">
+<li>动态分片和迁移：</li>
+</ol>
+<ul>
+<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
+<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
+</ul>
+<ol start="4">
+<li>跨分片操作：</li>
+</ol>
+<ul>
+<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
+<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
+</ul>
+<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th>Raft</th>
+<th>MultiRaft</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标</td>
+<td>提供单一一致性机制</td>
+<td>提供分区一致性机制</td>
+</tr>
+<tr>
+<td>运行实例</td>
+<td>单个 Raft 集群</td>
+<td>多个独立的 Raft 集群</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小规模系统</td>
+<td>大规模分布式存储或事务场景</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>有限,单点可能成为瓶颈</td>
+<td>高扩展性，分片机制避免瓶颈</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>较低</td>
+<td>较高，需要处理跨分片事务</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 

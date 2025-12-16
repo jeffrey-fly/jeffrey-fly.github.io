@@ -167,7 +167,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">39</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -200,6 +200,138 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/16/postgres/Extended-Query-Protocol/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/16/postgres/Extended-Query-Protocol/" class="post-title-link" itemprop="url">Extended_Query_Protocol</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-16 18:47:17" itemprop="dateCreated datePublished" datetime="2025-12-16T18:47:17+08:00">2025-12-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>当使用简单查询协议时，每个命令（即使重复多次）都必须经历上述所有阶段：</p>
+<ol>
+<li>parsing</li>
+<li>transformation </li>
+<li>planning</li>
+<li>execution</li>
+</ol>
+<p>但是，一次又一次地解析相同的查询是没有意义的。重复解析仅在常量上不同的查询也没有多大意义——解析树结构仍然保持不变。</p>
+<p>简单查询协议的另一个缺点是客户端会立即收到整个结果，无论它可能包含多少行。</p>
+<p>一般来说，使用 SQL 命令可以克服这些限制。要处理第一种情况，您可以在运行 EXECUTE 命令之前PREPARE查询；第二个问题可以通过使用 DECLARE 创建游标并通过 FETCH 返回行来解决。但在这种情况下，这些新创建的对象的命名必须由客户端处理，而服务器则需要解析额外命令的额外开销</p>
+<p>扩展的客户端—服务器协议提供了一种替代方案，使得可以在协议本身的命令级别上，对各个算子执行阶段进行精确控制。</p>
+<h2 id="Preparation"><a href="#Preparation" class="headerlink" title="Preparation"></a>Preparation</h2><p>在准备阶段，查询会像往常一样被解析并进行转换，但生成的解析树会保存在后端的内存中。</p>
+<p>PostgreSQL 并不存在全局的查询缓存。这种架构的缺点是显而易见的：即使同一条查询已经被其他后端进程解析过，每个后端仍然必须重新解析其接收到的所有查询。但与此同时，这种设计也带来了一些好处。全局缓存由于需要加锁，很容易成为系统瓶颈。一个客户端如果频繁执行大量相似但不完全相同的小查询（例如仅常量不同的查询），会产生大量缓存访问流量，从而对整个实例的性能造成负面影响。在 PostgreSQL 中，查询是在各个后端本地解析的，因此不会对其他进程产生影响。</p>
+<p>一条预处理（prepared）的查询可以带参数化。下面是一个使用 SQL 命令的简单示例（尽管这与协议层的预处理不完全相同，但最终效果是一样的）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">PREPARE</span> plane(text) <span class="keyword">AS</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> aircrafts <span class="keyword">WHERE</span> aircraft_code <span class="operator">=</span> $<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>所有命名的预处理语句都显示在 pg_prepared_statements 视图中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> name, statement, parameter_types</span><br><span class="line"><span class="keyword">FROM</span> pg_prepared_statements \gx</span><br><span class="line">−[ RECORD <span class="number">1</span> ]−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">name            <span class="operator">|</span> plane</span><br><span class="line">statement       <span class="operator">|</span> <span class="keyword">PREPARE</span> plane(text) <span class="keyword">AS</span> <span class="operator">+</span></span><br><span class="line">                <span class="operator">|</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> aircrafts <span class="keyword">WHERE</span> aircraft_code <span class="operator">=</span> $<span class="number">1</span>; </span><br><span class="line">parameter_types <span class="operator">|</span> &#123;text&#125;</span><br></pre></td></tr></table></figure>
+<p>这里不会显示任何未命名语句（即使用扩展查询协议或 PL&#x2F;pgSQL 的语句）。其他后端准备的语句也不会显示：因为无法访问其他会话的内存。</p>
+<h2 id="Parameter-Binding"><a href="#Parameter-Binding" class="headerlink" title="Parameter Binding"></a>Parameter Binding</h2><p>在预处理语句被执行之前，必须先绑定实际的参数值。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;733&#x27;</span>);</span><br><span class="line">aircraft_code <span class="operator">|</span> model <span class="operator">|</span> <span class="keyword">range</span> </span><br><span class="line">−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−− </span><br><span class="line"><span class="number">733</span>            <span class="operator">|</span> Boeing <span class="number">737</span>−<span class="number">300</span> <span class="operator">|</span> <span class="number">4200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>在预处理语句中绑定参数，相比将字面量直接拼接到查询字符串中，其优势在于可以彻底杜绝 SQL 注入：绑定的参数值无法以任何方式修改已经构建完成的解析树。若不使用预处理语句而想达到同等的安全级别，就必须对来自不可信来源的每一个值进行非常谨慎的转义处理。</p>
+<h2 id="Planning-and-Execution"><a href="#Planning-and-Execution" class="headerlink" title="Planning and Execution"></a>Planning and Execution</h2><p>在执行预处理语句时，查询规划会基于实际的参数值来进行；随后生成的执行计划会交由执行器处理。</p>
+<p>由于不同的参数值可能对应不同的最优执行计划，因此在规划阶段准确考虑具体参数值是非常重要的。举例来说，在查询价格较高的预订记录时，规划器会假定符合条件的行数不多，从而选择使用索引扫描。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> bookings(total_amount);</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> bookings</span><br><span class="line"><span class="keyword">WHERE</span> total_amount <span class="operator">&gt;</span> <span class="number">1000000</span>;</span><br><span class="line">								QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Bitmap Heap Scan <span class="keyword">on</span> bookings (cost<span class="operator">=</span><span class="number">86.49</span>.<span class="number">.9245</span><span class="number">.82</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4395</span> wid... </span><br><span class="line">	Recheck Cond: (total_amount <span class="operator">&gt;</span> <span class="string">&#x27;1000000&#x27;</span>::<span class="type">numeric</span>)</span><br><span class="line">	−<span class="operator">&gt;</span> Bitmap Index Scan <span class="keyword">on</span> bookings_total_amount_idx (cost<span class="operator">=</span><span class="number">0.00</span>....</span><br><span class="line">Index Cond: (total_amount <span class="operator">&gt;</span> <span class="string">&#x27;1000000&#x27;</span>::<span class="type">numeric</span>) </span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>但如果给定的条件对所有预订记录都成立，那么使用索引就没有意义了，因为最终仍然需要扫描整张表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> bookings</span><br><span class="line"><span class="keyword">WHERE</span> total_amount <span class="operator">&gt;</span> <span class="number">100</span>;</span><br><span class="line">							QUERY PLAN</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> bookings (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.39835</span><span class="number">.88</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2111110</span> width<span class="operator">=</span><span class="number">21</span>) <span class="keyword">Filter</span>: (total_amount <span class="operator">&gt;</span> <span class="string">&#x27;100&#x27;</span>::<span class="type">numeric</span>)</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>在某些情况下，规划器可能会同时保留解析树和查询计划，以避免重复进行规划。由于这种计划不会考虑具体的参数值，因此被称为通用计划（generic plan），以区别于基于实际参数值生成的定制计划（custom plan）。</p>
+<p>参数化预处理语句的前五次执行，优化过程始终依赖于实际的参数值；规划器会基于这些参数值计算定制计划（custom plan）的平均成本。从第六次执行开始，如果通用计划（generic plan）在平均意义上比定制计划更高效（同时考虑到每次都需要重新生成定制计划的额外开销），规划器就会保留通用计划并继续使用它，从而跳过后续的优化阶段。</p>
+<p>一个显而易见的场景是：当查询不包含任何参数时，数据库可以使用通用计划而不会对性能造成影响</p>
+ <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> <span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;763&#x27;</span>);</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;773&#x27;</span>);</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;319&#x27;</span>);</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> aircrafts_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.1</span><span class="number">.39</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">52</span>)</span><br><span class="line"><span class="keyword">Filter</span>: ((aircraft_code)::text <span class="operator">=</span> <span class="string">&#x27;319&#x27;</span>::text) (<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p> 在第五次执行之后，规划器会切换为通用计划（generic plan）：该计划与之前的定制计划并无差别，成本也相同，但后端只需构建一次即可，并且可以跳过优化阶段，从而降低规划开销。此时，EXPLAIN 命令显示参数是通过位置来引用的，而不再显示其具体取值。</p>
+ <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> <span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;320&#x27;</span>);</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;321&#x27;</span>);</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> aircrafts_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.1</span><span class="number">.39</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">52</span>)</span><br><span class="line"><span class="keyword">Filter</span>: ((aircraft_code)::text <span class="operator">=</span> $<span class="number">1</span>) (<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>“优化阶段”特指每次执行时基于参数值重新生成执行计划的那一部分工作。</p>
+</blockquote>
+<p> 我们可以很容易想象这样一种不利情况：前几次生成的 custom plan 比 generic plan 更昂贵；随后可能出现的更高效的 custom plan 却完全不会被考虑。此外，规划器比较的是估算成本而非实际执行成本，这也可能导致误判。</p>
+<p>不过，如果规划器的自动决策出现偏差，你可以通过设置 plan_cache_mode 参数来覆盖自动选择，从而强制使用 generic plan 或 custom plan</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SET</span> plan_cache_mode <span class="operator">=</span> <span class="string">&#x27;force_custom_plan&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">EXECUTE</span> plane(<span class="string">&#x27;CN1&#x27;</span>);</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> aircrafts_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.1</span><span class="number">.39</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">52</span>)</span><br><span class="line"><span class="keyword">Filter</span>: ((aircraft_code)::text <span class="operator">=</span> <span class="string">&#x27;CN1&#x27;</span>::text) (<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>除了其他信息之外，pg_prepared_statements 视图还显示了所选计划的统计信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">=&gt; SELECT name, generic_plans, custom_plans</span><br><span class="line">FROM pg_prepared_statements;</span><br><span class="line">name   | generic_plans | custom_plans </span><br><span class="line">−−−−−−−+−−−−−−−−−−−−−−−+−−−−−−−−−−−−−− </span><br><span class="line">plane  | 1             | 6</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Getting-the-Results"><a href="#Getting-the-Results" class="headerlink" title="Getting the Results"></a>Getting the Results</h2><p>扩展查询协议允许按批次而不是一次性检索数据。SQL 游标（cursor）几乎具有相同效果（唯一的区别是服务器需要做一些额外处理，而且规划器只会优化前 <em>cursor_tuple_fraction</em> 行的获取，而不是整个结果集）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">BEGIN</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">DECLARE</span> cur <span class="keyword">CURSOR</span> <span class="keyword">FOR</span> <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> aircrafts</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> aircraft_code;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">FETCH</span> <span class="number">3</span> <span class="keyword">FROM</span> cur;</span><br><span class="line">aircraft_code  <span class="operator">|</span> model           <span class="operator">|</span> <span class="keyword">range</span> </span><br><span class="line">−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−</span><br><span class="line"><span class="number">319</span>            <span class="operator">|</span> Airbus A319−<span class="number">100</span> <span class="operator">|</span> <span class="number">6700</span></span><br><span class="line"><span class="number">320</span>            <span class="operator">|</span> Airbus A320−<span class="number">200</span> <span class="operator">|</span> <span class="number">5700</span></span><br><span class="line"><span class="number">321</span>            <span class="operator">|</span> Airbus A321−<span class="number">200</span> <span class="operator">|</span> <span class="number">5600</span></span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">FETCH</span> <span class="number">2</span> <span class="keyword">FROM</span> cur;</span><br><span class="line">aircraft_code  <span class="operator">|</span> model          <span class="operator">|</span> <span class="keyword">range</span> </span><br><span class="line">−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−− </span><br><span class="line"><span class="number">733</span>            <span class="operator">|</span> Boeing <span class="number">737</span>−<span class="number">300</span> <span class="operator">|</span> <span class="number">4200</span> </span><br><span class="line"><span class="number">763</span>            <span class="operator">|</span> Boeing <span class="number">767</span>−<span class="number">300</span> <span class="operator">|</span> <span class="number">7900</span></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">COMMIT</span>;</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>) </span><br></pre></td></tr></table></figure>
+
+<p>如果查询返回大量行，且客户端需要获取所有行，那么系统吞吐量高度依赖于批量大小（batch size）。批量包含的行数越多，每次访问服务器并获取响应时产生的通信开销就越小。然而，随着批量大小继续增加，这种优势会逐渐减弱：例如，将行一条条取出与每批取 10 行的差别非常明显，但将每批取 100 行与每批取 1000 行相比，性能提升就不那么显著了</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1545,111 +1677,6 @@
 </ol>
 <h2 id="What-is-Magnet"><a href="#What-is-Magnet" class="headerlink" title="What is Magnet?"></a>What is Magnet?</h2><p>Magnet (magnetic points) are those positions on the shape (Shape) that can attract the end points of the lines.<br>When you draw a line with the Line Tool, endpoints that are close to these magnetic points will “snap” to it.</p>
 <h2 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h2><p><img src="/./images/page.png" alt="page"></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/" class="post-title-link" itemprop="url">WAL设置</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-11-03 20:11:23" itemprop="dateCreated datePublished" datetime="2025-11-03T20:11:23+08:00">2025-11-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="配置checkpoint"><a href="#配置checkpoint" class="headerlink" title="配置checkpoint"></a>配置checkpoint</h2><p>checkpoint持续时间（更准确地说，是将脏缓冲区写入磁盘所需的时间）由参数 checkpoint_completion_target 决定。该参数的值表示checkpoint 期间的 I&#x2F;O 分布目标，是一个比例。避免将该参数设置为 1：否则可能会导致下一个checkpoint启动时，上一个checkpoint尚未完成。虽然不会发生灾难性的后果（因为同一时间只能执行一个checkpoint），但正常运行可能仍会受到干扰。</p>
-<p>在配置其他参数时，我们可以采用以下方法。首先，确定在两个相邻checkpoint之间应存储的 WAL 文件的合理体积。这个体积越大，系统开销就越小，但它仍然会受到可用磁盘空间和可接受的恢复时间的限制。</p>
-<p>为了估算在正常负载下生成这一体积所需的时间，你需要记录初始的 insert LSN，并定期检查它与当前 insert 位置之间的差值</p>
-<p>我们将前面计算出的数值视为checkpoint之间的典型间隔，因此将其用作 checkpoint_timeout 参数的值。默认设置往往偏小，通常会将其增加，例如设置为 30 分钟。</p>
-<p>但也很可能（甚至可以说是很常见）负载会在某些时候升高，从而导致在这个时间间隔内生成的 WAL 文件体积过大。在这种情况下，必须更频繁地执行checkpoint。为了设置这样的触发机制，我们通过 max_wal_size 参数来限制恢复时所需的 WAL 文件总量。当超过这个阈值时，服务器会额外执行一次checkpoint。</p>
-<p>恢复所需的 WAL 文件包含了上一个已完成checkpoint和当前尚未完成检查点的所有记录。因此，为了估算这些文件的总体积，应将计算出的检查点之间的 WAL 大小乘以<br>1 + checkpoint_completion_target。</p>
-<blockquote>
-<p>在 PostgreSQL 11 版本之前，系统会保留两个已完成checkpoint所对应的 WAL 文件，因此估算恢复所需 WAL 总体积的倍数是：2 + checkpoint_completion_target</p>
-</blockquote>
-<p>按照这种方式，大多数checkpoint会按计划执行，即按照 checkpoint_timeout 设置的时间间隔执行一次；但如果系统负载增加，导致生成的 WAL 文件大小超过 max_wal_size 的设定值，就会提前触发一次checkpoint。</p>
-<p>系统还会定期将实际进度与预期数值进行比较，以监控写入进度是否达标。</p>
-<p>实际进度由已处理的缓存页所占的比例来定义。</p>
-<p>按时间计算的预期进度是指已过去的时间占比，其前提假设是checkpoint必须在 checkpoint_timeout × checkpoint_completion_target 的时间内完成。</p>
-<p>按大小计算的预期进度是指已写入的 WAL 文件所占的比例，其总量根据 max_wal_size × checkpoint_completion_target 来估算。</p>
-<p>如果脏页提前写入磁盘，checkpointer 进程会暂停一段时间；如果在时间或数据大小的任何一个参数上出现延迟，它会尽快赶上进度。由于同时考虑了时间和数据大小，PostgreSQL 能够用同一套机制来管理定时checkpoint和按需checkpoint。</p>
-<p>一旦checkpoint完成，不再需要用于恢复的 WAL 文件将被删除；不过，系统会保留若干文件（总大小不超过 min_wal_size），用于重复利用，并通过重命名的方式保留。</p>
-<p>这种重命名机制减少了频繁创建和删除文件所带来的开销；如果你不需要这个功能，可以通过参数 wal_recycle 将其关闭。</p>
-<p>下图展示了在正常情况下，磁盘上 WAL 文件大小的变化趋势</p>
-<p><img src="/./images/wal.png" alt="wal"></p>
-<p>需要注意的是，磁盘上实际的 WAL 文件大小可能会超过 max_wal_size 的设定值，原因包括：</p>
-<ul>
-<li>max_wal_size 参数只是一个期望目标值，而不是严格限制。如果负载突然上升，写入速度可能会落后于计划，导致 WAL 文件积压。</li>
-<li>尚未被复制或归档的 WAL 文件，服务器无权删除。如果启用了流复制或持续归档功能，必须持续监控这些机制，否则非常容易导致磁盘空间耗尽。</li>
-<li>你可以通过配置 wal_keep_size 参数来预留一定的磁盘空间用于存储 WAL 文件，以避免这些问题带来的风险。</li>
-</ul>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
 
       
     </div>

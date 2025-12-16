@@ -167,7 +167,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">39</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -200,6 +200,111 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/" class="post-title-link" itemprop="url">WAL设置</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-03 20:11:23" itemprop="dateCreated datePublished" datetime="2025-11-03T20:11:23+08:00">2025-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="配置checkpoint"><a href="#配置checkpoint" class="headerlink" title="配置checkpoint"></a>配置checkpoint</h2><p>checkpoint持续时间（更准确地说，是将脏缓冲区写入磁盘所需的时间）由参数 checkpoint_completion_target 决定。该参数的值表示checkpoint 期间的 I&#x2F;O 分布目标，是一个比例。避免将该参数设置为 1：否则可能会导致下一个checkpoint启动时，上一个checkpoint尚未完成。虽然不会发生灾难性的后果（因为同一时间只能执行一个checkpoint），但正常运行可能仍会受到干扰。</p>
+<p>在配置其他参数时，我们可以采用以下方法。首先，确定在两个相邻checkpoint之间应存储的 WAL 文件的合理体积。这个体积越大，系统开销就越小，但它仍然会受到可用磁盘空间和可接受的恢复时间的限制。</p>
+<p>为了估算在正常负载下生成这一体积所需的时间，你需要记录初始的 insert LSN，并定期检查它与当前 insert 位置之间的差值</p>
+<p>我们将前面计算出的数值视为checkpoint之间的典型间隔，因此将其用作 checkpoint_timeout 参数的值。默认设置往往偏小，通常会将其增加，例如设置为 30 分钟。</p>
+<p>但也很可能（甚至可以说是很常见）负载会在某些时候升高，从而导致在这个时间间隔内生成的 WAL 文件体积过大。在这种情况下，必须更频繁地执行checkpoint。为了设置这样的触发机制，我们通过 max_wal_size 参数来限制恢复时所需的 WAL 文件总量。当超过这个阈值时，服务器会额外执行一次checkpoint。</p>
+<p>恢复所需的 WAL 文件包含了上一个已完成checkpoint和当前尚未完成检查点的所有记录。因此，为了估算这些文件的总体积，应将计算出的检查点之间的 WAL 大小乘以<br>1 + checkpoint_completion_target。</p>
+<blockquote>
+<p>在 PostgreSQL 11 版本之前，系统会保留两个已完成checkpoint所对应的 WAL 文件，因此估算恢复所需 WAL 总体积的倍数是：2 + checkpoint_completion_target</p>
+</blockquote>
+<p>按照这种方式，大多数checkpoint会按计划执行，即按照 checkpoint_timeout 设置的时间间隔执行一次；但如果系统负载增加，导致生成的 WAL 文件大小超过 max_wal_size 的设定值，就会提前触发一次checkpoint。</p>
+<p>系统还会定期将实际进度与预期数值进行比较，以监控写入进度是否达标。</p>
+<p>实际进度由已处理的缓存页所占的比例来定义。</p>
+<p>按时间计算的预期进度是指已过去的时间占比，其前提假设是checkpoint必须在 checkpoint_timeout × checkpoint_completion_target 的时间内完成。</p>
+<p>按大小计算的预期进度是指已写入的 WAL 文件所占的比例，其总量根据 max_wal_size × checkpoint_completion_target 来估算。</p>
+<p>如果脏页提前写入磁盘，checkpointer 进程会暂停一段时间；如果在时间或数据大小的任何一个参数上出现延迟，它会尽快赶上进度。由于同时考虑了时间和数据大小，PostgreSQL 能够用同一套机制来管理定时checkpoint和按需checkpoint。</p>
+<p>一旦checkpoint完成，不再需要用于恢复的 WAL 文件将被删除；不过，系统会保留若干文件（总大小不超过 min_wal_size），用于重复利用，并通过重命名的方式保留。</p>
+<p>这种重命名机制减少了频繁创建和删除文件所带来的开销；如果你不需要这个功能，可以通过参数 wal_recycle 将其关闭。</p>
+<p>下图展示了在正常情况下，磁盘上 WAL 文件大小的变化趋势</p>
+<p><img src="/./images/wal.png" alt="wal"></p>
+<p>需要注意的是，磁盘上实际的 WAL 文件大小可能会超过 max_wal_size 的设定值，原因包括：</p>
+<ul>
+<li>max_wal_size 参数只是一个期望目标值，而不是严格限制。如果负载突然上升，写入速度可能会落后于计划，导致 WAL 文件积压。</li>
+<li>尚未被复制或归档的 WAL 文件，服务器无权删除。如果启用了流复制或持续归档功能，必须持续监控这些机制，否则非常容易导致磁盘空间耗尽。</li>
+<li>你可以通过配置 wal_keep_size 参数来预留一定的磁盘空间用于存储 WAL 文件，以避免这些问题带来的风险。</li>
+</ul>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1312,114 +1417,6 @@
 <li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
 </ul>
 </li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/07/31/tools/wordpress/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/07/31/tools/wordpress/" class="post-title-link" itemprop="url">wordpress</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-07-31 10:59:00" itemprop="dateCreated datePublished" datetime="2025-07-31T10:59:00+08:00">2025-07-31</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Ubuntu安装wordpress"><a href="#Ubuntu安装wordpress" class="headerlink" title="Ubuntu安装wordpress"></a>Ubuntu安装wordpress</h2><ul>
-<li><p>安装apache：</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2 -y</span><br><span class="line">chown -R www-data:www-data /var/www/html</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>安装php</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y php php-mysql php-json</span><br><span class="line">yum install php php-mysqlnd php-json</span><br></pre></td></tr></table></figure>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install php libapache2-mod-php php-mysql -y</span><br><span class="line">apt install php-cli php-curl php-gd php-mbstring php-xml php-zip -y</span><br></pre></td></tr></table></figure></li>
-<li><p>安装database</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install -y mariadb-server</span><br><span class="line">yum install -y mysql-server</span><br></pre></td></tr></table></figure>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt install mysql-server -y</span><br></pre></td></tr></table></figure>
-<p>  修改密码：</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;12345&#x27;；</span><br><span class="line"></span><br><span class="line">CREATE DATABASE wordpress_db;</span><br><span class="line">CREATE USER &#x27;wp_user&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;password&#x27;;</span><br><span class="line">GRANT ALL PRIVILEGES ON wordpress_db.* TO &#x27;wp_user&#x27;@&#x27;localhost&#x27;;</span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>安装wordpress</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd /var/www/html</span><br><span class="line">wget https://wordpress.org/latest.tar.gz </span><br><span class="line">tar -xvzf latest.tar.gz</span><br><span class="line">chown -R www-data:www-data /var/www/html/wordpress</span><br><span class="line">chmod -R 755 /var/www/html/wordpress</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>编辑 Apache 默认虚拟主机配置</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/apache2/sites-available/000-default.conf</span><br></pre></td></tr></table></figure>
-<p>  找到：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html<br>  改成：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html&#x2F;wordpress</p>
-</li>
-<li><p>&#x2F;etc&#x2F;apache2&#x2F;apache2.conf 添加：</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;Directory /var/www/html/wordpress&gt;</span><br><span class="line">    Options Indexes FollowSymLinks</span><br><span class="line">    AllowOverride All</span><br><span class="line">    Require all granted</span><br><span class="line">&lt;/Directory&gt;</span><br></pre></td></tr></table></figure>
-<p>  如果你希望支持 WordPress 的 .htaccess 功能，请保留 AllowOverride All</p>
-</li>
-<li><p>固定连接</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apache2ctl -M | grep rewrite</span><br><span class="line">a2enmod rewrite</span><br><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure>
-<p>  在 WordPress 后台重新保存固定链接</p>
-</li>
-<li><p>重启服务</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
 </ul>
 
       
