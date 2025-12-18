@@ -672,6 +672,10 @@
 </tbody></table>
 <h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gdbinit:/home/gbase/.gdbinit</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gitconfig:/home/gbase/.gitconfig</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.git-credentials:/home/gbase/.git-credentials</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br></pre></td></tr></table></figure>
+
 <h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
 <thead>
 <tr>
@@ -712,13 +716,6 @@
 <td>查看当前项目的容器状态</td>
 </tr>
 </tbody></table>
-<h2 id="五-Compose优势"><a href="#五-Compose优势" class="headerlink" title="五. Compose优势"></a>五. Compose优势</h2><ol>
-<li>一条命令管理多容器：不需要每次都记 docker run … 的复杂参数。</li>
-<li>环境可移植：同一个 YAML 文件可以在 Windows、Linux、Mac 上使用。</li>
-<li>声明式管理：修改 YAML 后，up -d 自动更新容器状态，保证一致性。</li>
-<li>支持卷与网络：数据持久化和容器间通信自动配置。</li>
-<li>方便调试与扩展：可以用多个服务（数据库 + 后端 + 前端）组成完整应用。</li>
-</ol>
 ]]></content>
       <categories>
         <category>tools</category>
@@ -2228,6 +2225,88 @@
       </categories>
       <tags>
         <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>git</title>
+    <url>/2023/12/17/tools/git/</url>
+    <content><![CDATA[<ol>
+<li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
+<li>commit 合并</li>
+</ol>
+<ul>
+<li>方法1:  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br><span class="line"></span><br><span class="line">pick abc123 Commit message 1</span><br><span class="line">pick def456 Commit message 2</span><br><span class="line">pick 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  将你想合并的提交改为 squash 或简写 s，保留第一个 pick 不动：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pick abc123 Commit message 1</span><br><span class="line">squash def456 Commit message 2</span><br><span class="line">squash 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
+<li>方法2  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li>忽略所有名为 build 的目录<br>编辑.gitignore 文件 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>GIT</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Basic Statistics</title>
+    <url>/2025/12/18/postgres/Basic-Statistics/</url>
+    <content><![CDATA[<p>基本的 relation-level统计信息存储在系统目录的 pg_class 表中，包含以下数据：</p>
+<ul>
+<li>relation中的元组（记录）数量（reltuples）</li>
+<li>relation的大小，以页（page）为单位（relpages）</li>
+<li>在可见性映射（visibility map）中被标记的页数（relallvisible）</li>
+</ul>
+<p>下面是 flights 表对应的这些值：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>如果查询未施加任何过滤条件，则 reltuples 的值将作为基数（cardinality）估计：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.4772</span><span class="number">.67</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">214867</span> width<span class="operator">=</span><span class="number">63</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>统计信息是在表分析（无论是手动还是自动）过程中收集的。此外，由于基本统计信息至关重要，这些数据也会在其他操作中计算（如 VACUUM FULL 和 CLUSTER，以及 CREATE INDEX 和 REINDEX），并在常规 VACUUM 过程中进一步精化。</p>
+<p>为了分析目的，会从表中随机抽取 300 × <em>default_statistics_target</em> 行进行采样。为了构建具有特定精度的统计信息，所需的样本量与被分析数据的总体量关系不大，因此表的大小不会被考虑在内。</p>
+<p>抽样行是从同样数量的随机页（300 × <em>default_statistics_target</em> 页）中选出的。显然，如果表本身较小，则可能读取的页数更少，选取用于分析的行数也会相应减少。</p>
+<p>对于大表，统计信息收集不会包含所有行，因此估算值可能与实际值存在偏差。这是完全正常的：如果数据在不断变化，统计信息本身也不可能始终准确。通常，只要估算精度在数量级上足够，即可用来选择合理的查询执行计划。</p>
+<p>我们创建一个 flights 表的副本，并禁用 autovacuum，这样我们就可以控制自动分析（autoanalysis）的启动时间：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">CREATE TABLE</span> flights_copy(<span class="keyword">LIKE</span> flights) <span class="keyword">WITH</span> (autovacuum_enabled <span class="operator">=</span> <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<p>目前新表没有统计信息</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible</span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">        −<span class="number">1</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当 reltuples &#x3D; −1 时，用于区分尚未分析的表和真正没有行的空表。</p>
+<p>表创建后，很可能会马上插入一些行。由于优化器无法获知表的当前实际状态，它会假设该表包含 10 个页：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.14</span><span class="number">.10</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">410</span> width<span class="operator">=</span><span class="number">170</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>行数的估算是基于单行的大小（在执行计划中显示为 width）。行宽通常是在分析过程中计算的平均值，但由于此时尚未收集任何统计信息，这里只是根据列的数据类型做出的近似估算。</p>
+<p>现在，我们从 flights 表拷贝数据同时完成分析：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">=&gt; INSERT INTO flights_copy SELECT * FROM flights; INSERT 0 214867</span><br><span class="line">=&gt; ANALYZE flights_copy;</span><br></pre></td></tr></table></figure>
+
+<p>收集到的统计信息反映了实际的行数（表足够小，分析器可以对所有数据收集统计信息）：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>relallvisible 值用于估算 index-only scan 的成本。该值由 VACUUM 更新：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> VACUUM flights_copy;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line">relallvisible </span><br><span class="line">−−−−−−−−−−−−−−−</span><br><span class="line">          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>现在我们将行数翻倍，但不更新统计信息，检查查询计划中的基数估算：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">INSERT INTO</span> flights_copy <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights; </span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights_copy;</span><br><span class="line"> count </span><br><span class="line">−−−−−−−−</span><br><span class="line"><span class="number">429734</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.9545</span><span class="number">.34</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">429734</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>尽管 pg_class 中的数据已经过时，估算结果仍然准确：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>    <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>问题在于，如果优化器发现 relpages 与实际文件大小之间存在差距，它可以通过比例调整 reltuples 的值来提高估算精度。由于文件大小相比 relpages 翻了一倍，优化器会调整估算的行数，同时假设数据密度保持不变：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples <span class="operator">*</span></span><br><span class="line">(pg_relation_size(<span class="string">&#x27;flights_copy&#x27;</span>) <span class="operator">/</span> <span class="number">8192</span>) <span class="operator">/</span> relpages <span class="keyword">AS</span> tuples</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> tuples</span><br><span class="line">−−−−−−−−</span><br><span class="line"> <span class="number">429734</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当然，这种调整并不总是有效（例如，如果删除了一些行，估算值将保持不变），但在某些情况下，它可以让优化器在下一次分析触发之前仍然保持合理的估算。</p>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+        <tag>statistics</tag>
       </tags>
   </entry>
 </search>

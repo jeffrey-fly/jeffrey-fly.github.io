@@ -167,7 +167,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-count">41</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -178,7 +178,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -200,6 +200,149 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/08/05/debug/io/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/05/debug/io/" class="post-title-link" itemprop="url">IO</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-05 18:25:48" itemprop="dateCreated datePublished" datetime="2025-08-05T18:25:48+08:00">2025-08-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
+<li><p><strong><code>iostat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
+<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
+<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
+</ul>
+</li>
+<li><p><strong><code>iotop</code></strong></p>
+<ul>
+<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
+<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
+</ul>
+</li>
+<li><p><strong><code>vmstat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
+<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
+</ul>
+</li>
+<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
+<ul>
+<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
+<li><p>测试磁盘最大写入带宽：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>oflag=direct</code> 避免缓存干扰。</li>
+<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
+</ul>
+</li>
+<li><p>同理，可以测试并发读写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
+<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
+<ul>
+<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
+</ul>
+</li>
+<li><p><strong>延迟累积</strong>：</p>
+<ul>
+<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
+</ul>
+</li>
+<li><p><strong>锁与等待</strong>：</p>
+<ul>
+<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1197,92 +1340,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/" class="post-title-link" itemprop="url">gdb调试改变返回值</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-01-23 10:09:48" itemprop="dateCreated datePublished" datetime="2025-01-23T10:09:48+08:00">2025-01-23</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
-<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
-<p>步骤：</p>
-<ol>
-<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/4/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/4/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

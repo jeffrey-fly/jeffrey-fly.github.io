@@ -167,7 +167,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-count">41</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -178,7 +178,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -200,6 +200,129 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/postgres/Basic-Statistics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/18/postgres/Basic-Statistics/" class="post-title-link" itemprop="url">Basic Statistics</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-18 09:42:18" itemprop="dateCreated datePublished" datetime="2025-12-18T09:42:18+08:00">2025-12-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>基本的 relation-level统计信息存储在系统目录的 pg_class 表中，包含以下数据：</p>
+<ul>
+<li>relation中的元组（记录）数量（reltuples）</li>
+<li>relation的大小，以页（page）为单位（relpages）</li>
+<li>在可见性映射（visibility map）中被标记的页数（relallvisible）</li>
+</ul>
+<p>下面是 flights 表对应的这些值：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>如果查询未施加任何过滤条件，则 reltuples 的值将作为基数（cardinality）估计：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.4772</span><span class="number">.67</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">214867</span> width<span class="operator">=</span><span class="number">63</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>统计信息是在表分析（无论是手动还是自动）过程中收集的。此外，由于基本统计信息至关重要，这些数据也会在其他操作中计算（如 VACUUM FULL 和 CLUSTER，以及 CREATE INDEX 和 REINDEX），并在常规 VACUUM 过程中进一步精化。</p>
+<p>为了分析目的，会从表中随机抽取 300 × <em>default_statistics_target</em> 行进行采样。为了构建具有特定精度的统计信息，所需的样本量与被分析数据的总体量关系不大，因此表的大小不会被考虑在内。</p>
+<p>抽样行是从同样数量的随机页（300 × <em>default_statistics_target</em> 页）中选出的。显然，如果表本身较小，则可能读取的页数更少，选取用于分析的行数也会相应减少。</p>
+<p>对于大表，统计信息收集不会包含所有行，因此估算值可能与实际值存在偏差。这是完全正常的：如果数据在不断变化，统计信息本身也不可能始终准确。通常，只要估算精度在数量级上足够，即可用来选择合理的查询执行计划。</p>
+<p>我们创建一个 flights 表的副本，并禁用 autovacuum，这样我们就可以控制自动分析（autoanalysis）的启动时间：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">CREATE TABLE</span> flights_copy(<span class="keyword">LIKE</span> flights) <span class="keyword">WITH</span> (autovacuum_enabled <span class="operator">=</span> <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<p>目前新表没有统计信息</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible</span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">        −<span class="number">1</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当 reltuples &#x3D; −1 时，用于区分尚未分析的表和真正没有行的空表。</p>
+<p>表创建后，很可能会马上插入一些行。由于优化器无法获知表的当前实际状态，它会假设该表包含 10 个页：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.14</span><span class="number">.10</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">410</span> width<span class="operator">=</span><span class="number">170</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>行数的估算是基于单行的大小（在执行计划中显示为 width）。行宽通常是在分析过程中计算的平均值，但由于此时尚未收集任何统计信息，这里只是根据列的数据类型做出的近似估算。</p>
+<p>现在，我们从 flights 表拷贝数据同时完成分析：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">=&gt; INSERT INTO flights_copy SELECT * FROM flights; INSERT 0 214867</span><br><span class="line">=&gt; ANALYZE flights_copy;</span><br></pre></td></tr></table></figure>
+
+<p>收集到的统计信息反映了实际的行数（表足够小，分析器可以对所有数据收集统计信息）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>relallvisible 值用于估算 index-only scan 的成本。该值由 VACUUM 更新：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> VACUUM flights_copy;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line">relallvisible </span><br><span class="line">−−−−−−−−−−−−−−−</span><br><span class="line">          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>现在我们将行数翻倍，但不更新统计信息，检查查询计划中的基数估算：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">INSERT INTO</span> flights_copy <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights; </span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights_copy;</span><br><span class="line"> count </span><br><span class="line">−−−−−−−−</span><br><span class="line"><span class="number">429734</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.9545</span><span class="number">.34</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">429734</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>尽管 pg_class 中的数据已经过时，估算结果仍然准确：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>    <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>问题在于，如果优化器发现 relpages 与实际文件大小之间存在差距，它可以通过比例调整 reltuples 的值来提高估算精度。由于文件大小相比 relpages 翻了一倍，优化器会调整估算的行数，同时假设数据密度保持不变：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples <span class="operator">*</span></span><br><span class="line">(pg_relation_size(<span class="string">&#x27;flights_copy&#x27;</span>) <span class="operator">/</span> <span class="number">8192</span>) <span class="operator">/</span> relpages <span class="keyword">AS</span> tuples</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> tuples</span><br><span class="line">−−−−−−−−</span><br><span class="line"> <span class="number">429734</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当然，这种调整并不总是有效（例如，如果删除了一些行，估算值将保持不变），但在某些情况下，它可以让优化器在下一次分析触发之前仍然保持合理的估算。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1599,104 +1722,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/04/tools/how-to-use-omnigraffle/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/11/04/tools/how-to-use-omnigraffle/" class="post-title-link" itemprop="url">How to use omnigraffle</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-11-04 10:09:00" itemprop="dateCreated datePublished" datetime="2025-11-04T10:09:00+08:00">2025-11-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Here are some tips for using omnigraffle</p>
-<h2 id="Draw-curve"><a href="#Draw-curve" class="headerlink" title="Draw curve"></a>Draw curve</h2><ol>
-<li>select pen tool: draw custome sharps</li>
-<li>Click one point on the canvas, then click another point — a straight line will appear.</li>
-<li>Select the line → double-click the middle of the line → drag the new point: a curved effect will appear.</li>
-</ol>
-<h2 id="Flexible-Control-Over-Line-Arrows"><a href="#Flexible-Control-Over-Line-Arrows" class="headerlink" title="Flexible Control Over Line Arrows"></a>Flexible Control Over Line Arrows</h2><p>When the endpoint of a line (especially an endpoint with an arrow) is connected to a shape, the default mode is <strong>“Connected Line”</strong> (automatic snapping). In this mode, the endpoint is <strong>“locked”</strong> to the shape’s boundary or center, and <strong>cannot be freely dragged</strong>.</p>
-<h3 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h3><ol>
-<li><strong>Turn on Magnets</strong>   <ul>
-<li><strong>Select</strong> the target shape.</li>
-<li><strong>Menu Bar</strong> → <strong>Edit</strong> → <strong>Magnets</strong> → <strong>Show Magnets</strong></li>
-<li>You will see <strong>small red dots</strong> (magnets) appear around the shape.</li>
-<li>These are the <strong>connectable positions</strong>.</li>
-<li>Drag the <strong>endpoint of a line</strong> near the red dot, and it will <strong>snap&#x2F;attach</strong> to that point.</li>
-</ul>
-</li>
-</ol>
-<h2 id="What-is-Magnet"><a href="#What-is-Magnet" class="headerlink" title="What is Magnet?"></a>What is Magnet?</h2><p>Magnet (magnetic points) are those positions on the shape (Shape) that can attract the end points of the lines.<br>When you draw a line with the Line Tool, endpoints that are close to these magnetic points will “snap” to it.</p>
-<h2 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h2><p><img src="/./images/page.png" alt="page"></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
