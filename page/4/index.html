@@ -67,6 +67,7 @@
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
@@ -167,18 +168,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">44</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -200,6 +201,204 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/03/16/debug/How-to-use-asan-in-linux/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/03/16/debug/How-to-use-asan-in-linux/" class="post-title-link" itemprop="url">How to use asan in linux</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-03-16 10:54:41" itemprop="dateCreated datePublished" datetime="2025-03-16T10:54:41+08:00">2025-03-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="1-安装编译工具"><a href="#1-安装编译工具" class="headerlink" title="1. 安装编译工具"></a>1. 安装编译工具</h2><p>ASan 是 GCC 和 Clang 内建的功能，无需额外安装 ASan，只需要你的编译器支持即可。GCC ≥ 4.8 &#x2F; Clang ≥ 3.1 就支持 ASan  </p>
+<pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@lavm-bar1guved6:~# clang --version</span><br><span class="line">Ubuntu clang version 14.0.0-1ubuntu1.1</span><br><span class="line">Target: x86_64-pc-linux-gnu</span><br><span class="line">Thread model: posix</span><br><span class="line">InstalledDir: /usr/bin</span><br><span class="line"></span><br><span class="line">root@lavm-bar1guved6:~# gcc --version</span><br><span class="line">gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0</span><br><span class="line">Copyright (C) 2021 Free Software Foundation, Inc.</span><br><span class="line">This is free software; see the <span class="built_in">source</span> <span class="keyword">for</span> copying conditions.  There is NO</span><br><span class="line">warranty; not even <span class="keyword">for</span> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h2 id="2-how-to-use"><a href="#2-how-to-use" class="headerlink" title="2. how to use"></a>2. how to use</h2><h3 id="使用gcc"><a href="#使用gcc" class="headerlink" title="使用gcc"></a>使用gcc</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -fsanitize=address -g your_file.c -o your_program</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h3 id="使用cmake"><a href="#使用cmake" class="headerlink" title="使用cmake"></a>使用cmake</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译阶段（C/C++）加 ASan 插桩</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_C_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_C_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_CXX_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_CXX_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 链接阶段链接 libasan</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_EXE_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_EXE_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_SHARED_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_SHARED_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#or</span></span><br><span class="line">cmake -DCMAKE_C_FLAGS=<span class="string">&quot;-fsanitize=address -fno-omit-frame-pointer -g&quot;</span> \</span><br><span class="line">    -DCMAKE_EXE_LINKER_FLAGS=<span class="string">&quot;-fsanitize=address&quot;</span> \</span><br><span class="line">    -DCMAKE_BUILD_TYPE=Debug \</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
+</code></pre>
+<h3 id="使用-Makefile"><a href="#使用-Makefile" class="headerlink" title="使用 Makefile"></a>使用 Makefile</h3><p>可以在 CFLAGS 中添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS += -fsanitize=address -g -fno-omit-frame-pointer</span><br><span class="line">LDFLAGS += -fsanitize=address</span><br></pre></td></tr></table></figure>
+<h3 id="使用-LSAN（泄漏检测）"><a href="#使用-LSAN（泄漏检测）" class="headerlink" title="使用 LSAN（泄漏检测）"></a>使用 LSAN（泄漏检测）</h3><p>GCC 和 Clang 中 ASan 自动包含 LeakSanitizer（LSan），但某些情况下要确保：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-fsanitize=address -fno-omit-frame-pointer</span><br></pre></td></tr></table></figure>
+<p>加上 -fno-omit-frame-pointer 可以让调用栈更完整。</p>
+<h2 id="3-运行程序"><a href="#3-运行程序" class="headerlink" title="3. 运行程序"></a>3. 运行程序</h2><p>编译好的程序可以直接运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./your_program</span><br></pre></td></tr></table></figure>
+<h2 id="4-设置环境变量"><a href="#4-设置环境变量" class="headerlink" title="4. 设置环境变量"></a>4. 设置环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:symbolize=1:quarantine_size=1024:log_path=/home/postgres/asan/asan.log</span><br></pre></td></tr></table></figure>
+<h2 id="5-Example"><a href="#5-Example" class="headerlink" title="5. Example"></a>5. Example</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">=================================================================</span><br><span class="line">==791265==ERROR: LeakSanitizer: detected memory leaks</span><br><span class="line"></span><br><span class="line">Direct leak of 1024 byte(s) in 1 object(s) allocated from:</span><br><span class="line">    #0 0x7f6fcee65887 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:145</span><br><span class="line">    #1 0x55adcdfee87a in main /home/postgres/codes/sample/epoll_server.c:54</span><br><span class="line">    #2 0x7f6fcebb1d8f in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58</span><br><span class="line"></span><br><span class="line">SUMMARY: AddressSanitizer: 1024 byte(s) leaked in 1 allocation(s).</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/27/postgres/Logging/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/02/27/postgres/Logging/" class="post-title-link" itemprop="url">Logging</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-02-27 18:40:39" itemprop="dateCreated datePublished" datetime="2025-02-27T18:40:39+08:00">2025-02-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在发生故障（例如停电、操作系统错误或数据库服务器崩溃）时，RAM 中的所有内容都将丢失；只有写入磁盘的数据会保留下来。要在故障后启动服务器，您必须恢复数据一致性。如果磁盘本身已损坏，则必须通过备份恢复来解决相同的问题。</p>
+<p>理论上，您可以始终保持磁盘上的数据一致性。但实际上，这意味着服务器必须不断地将随机页面写入磁盘（尽管顺序写入成本更低），并且此类写入的顺序必须保证在任何特定时刻都不会损害一致性（这很难实现，尤其是当您处理复杂的索引结构时）。</p>
+<p>与大多数数据库系统一样，PostgreSQL 采用了一种不同的方法。</p>
+<p>服务器运行时，部分当前数据仅存在于 RAM 中，其写入永久存储的操作被推迟。因此，服务器运行时存储在磁盘上的数据始终是不一致的，因为页面从不会一次性全部刷新。但是，RAM 中发生的每个更改（例如在缓冲区缓存中执行的页面更新）都会被记录下来：PostgreSQL 会创建一个日志条目，其中包含在需要时重复此操作所需的所有基本信息。</p>
+<p>页面修改相关的日志条目必须先于修改后的页面本身写入磁盘。这就是日志名称的由来：预写式日志（write-ahead log），简称 WAL。这项要求保证了在发生故障时，PostgreSQL 可以从磁盘读取 WAL 条目并重放它们，以重复那些已完成但结果仍在 RAM 中且在崩溃前未写入磁盘的操作。</p>
+<p>保留预写式日志通常比将随机页面写入磁盘更高效。WAL 条目构成一个连续的数据流，即使是硬盘驱动器 (HDD) 也能很好地处理。此外，WAL 条目通常比页面大小更小。</p>
+<p>为了在发生故障时避免数据不一致，所有可能破坏数据一致性的操作都需要记录下来。具体来说，以下操作会记录在 预写式日志 (WAL) 中：</p>
+<ul>
+<li>WAL 记录的操作</li>
+</ul>
+<ol>
+<li>缓冲区缓存中的页面修改：由于写入是延迟的，这些修改需要记录下来以备恢复。</li>
+<li>事务提交和回滚：事务状态的变化发生在 CLOG 缓冲区中，不会立即写入磁盘，因此需要记录。</li>
+<li>文件操作：当添加或删除表时，文件和目录的创建与删除等操作必须与数据更改同步，所以也要记录。</li>
+</ol>
+<ul>
+<li>WAL 不记录的操作</li>
+</ul>
+<ol>
+<li>unlogged表相关操作</li>
+<li>临时表上的操作：由于临时表的生命周期仅限于创建它们的会话，所以它们的操作不会被记录。<blockquote>
+<p>在 PostgreSQL 10 之前，哈希索引的操作也不会被记录。它们的主要目的是将哈希函数与不同的数据类型匹配。</p>
+</blockquote>
+</li>
+</ol>
+<p>除了用于崩溃恢复之外，WAL 还可以用于从备份进行时间点恢复以及数据复制。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1014,188 +1213,6 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
 <p>登录你要使用的数据库，然后执行：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line">\dx</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/11/tools/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/05/11/tools/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-05-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-05-11T10:59:00+08:00">2024-05-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
-
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2023/12/17/tools/git/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/12/17/tools/git/" class="post-title-link" itemprop="url">git</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-12-17 19:57:11" itemprop="dateCreated datePublished" datetime="2023-12-17T19:57:11+08:00">2023-12-17</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ol>
-<li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
-<li>commit 合并</li>
-</ol>
-<ul>
-<li>方法1:  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br><span class="line"></span><br><span class="line">pick abc123 Commit message 1</span><br><span class="line">pick def456 Commit message 2</span><br><span class="line">pick 789abc Commit message 3</span><br></pre></td></tr></table></figure>
-  将你想合并的提交改为 squash 或简写 s，保留第一个 pick 不动：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pick abc123 Commit message 1</span><br><span class="line">squash def456 Commit message 2</span><br><span class="line">squash 789abc Commit message 3</span><br></pre></td></tr></table></figure>
-  保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
-<li>方法2  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
-</ul>
-<ol start="3">
-<li>忽略所有名为 build 的目录<br>编辑.gitignore 文件 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure></li>
-</ol>
-
       
     </div>
 

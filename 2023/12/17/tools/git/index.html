@@ -20,15 +20,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="合并提交（本地未push） 123git statusgit add -ugit commit --amend --no-edit commit 合并   方法1:  12345git rebase -i HEAD~3pick abc123 Commit message 1pick def456 Commit message 2pick 789abc Commit message 3   将你想">
+    <meta name="description" content="配置 123456git config --global user.name &quot;Jeffrey&quot;git config --global user.email &quot;jeffreyfly@icloud.com&quot;git config --global pull.rebase truegit config --global credential.helper sto">
 <meta property="og:type" content="article">
 <meta property="og:title" content="git">
 <meta property="og:url" content="http://example.com/2023/12/17/tools/git/index.html">
 <meta property="og:site_name" content="QuantumRealm">
-<meta property="og:description" content="合并提交（本地未push） 123git statusgit add -ugit commit --amend --no-edit commit 合并   方法1:  12345git rebase -i HEAD~3pick abc123 Commit message 1pick def456 Commit message 2pick 789abc Commit message 3   将你想">
+<meta property="og:description" content="配置 123456git config --global user.name &quot;Jeffrey&quot;git config --global user.email &quot;jeffreyfly@icloud.com&quot;git config --global pull.rebase truegit config --global credential.helper sto">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-12-17T11:57:11.000Z">
-<meta property="article:modified_time" content="2025-12-18T01:41:30.309Z">
+<meta property="article:modified_time" content="2025-12-24T05:30:13.677Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="GIT">
 <meta name="twitter:card" content="summary">
@@ -72,6 +72,7 @@
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
@@ -172,18 +173,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">44</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -266,6 +267,7 @@
     
     
     <div class="post-body" itemprop="articleBody"><ol>
+<li>配置 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.name <span class="string">&quot;Jeffrey&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;jeffreyfly@icloud.com&quot;</span></span><br><span class="line">git config --global pull.rebase <span class="literal">true</span></span><br><span class="line">git config --global credential.helper store</span><br><span class="line">git config --global push.default simple</span><br><span class="line">git config --global -l</span><br></pre></td></tr></table></figure></li>
 <li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
 <li>commit 合并</li>
 </ol>
@@ -275,8 +277,12 @@
   保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
 <li>方法2  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
 </ul>
-<ol start="3">
-<li>忽略所有名为 build 的目录<br>编辑.gitignore 文件 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure></li>
+<ol start="4">
+<li><p>忽略所有名为 build 的目录<br>编辑.gitignore 文件</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>rebase</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git fetch origin</span><br><span class="line">git rebase origin/main</span><br><span class="line">git add xxx.cpp</span><br><span class="line">git rebase --<span class="built_in">continue</span> / abort</span><br><span class="line">git push --force-with-lease</span><br><span class="line">git push orign &lt;localbranch&gt;:&lt;remotebranch&gt;</span><br></pre></td></tr></table></figure></li>
 </ol>
 
     </div>
