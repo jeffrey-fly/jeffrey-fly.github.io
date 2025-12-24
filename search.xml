@@ -69,6 +69,24 @@
       </tags>
   </entry>
   <entry>
+    <title>gdb调试改变返回值</title>
+    <url>/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
+<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
+<p>步骤：</p>
+<ol>
+<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
+]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+      <tags>
+        <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>IO</title>
     <url>/2025/08/05/debug/io/</url>
     <content><![CDATA[<h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
@@ -146,17 +164,6 @@
       </tags>
   </entry>
   <entry>
-    <title>gdb 异步调试</title>
-    <url>/2024/11/11/debug/nonstop/</url>
-    <content><![CDATA[<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>debug</category>
-      </categories>
-      <tags>
-        <tag>gdb</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>分析tcmalloc 内存增长 —- pprof</title>
     <url>/2024/10/27/debug/pprof/</url>
     <content><![CDATA[<p>有时候程序莫名内存上涨厉害，但不是泄漏，如何定位哪申请使用的大量内存呢？</p>
@@ -191,6 +198,17 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install graphviz</span><br></pre></td></tr></table></figure>
 <h3 id="sample"><a href="#sample" class="headerlink" title="sample"></a>sample</h3><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    HeapProfilerStart(<span class="string">&quot;/tmp/test_heap&quot;</span>);</span><br><span class="line">    <span class="type">void</span>* p = <span class="built_in">malloc</span>(<span class="number">16</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 分配 16MB</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;Allocated 16MB\n&quot;</span>;</span><br><span class="line">    HeapProfilerDump(<span class="string">&quot;after_alloc&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(p);</span><br><span class="line">    HeapProfilerStop();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">g++ test_heap.cc -ltcmalloc -lpthread -lunwind -o test_heap</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+      <tags>
+        <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>gdb 异步调试</title>
+    <url>/2024/11/11/debug/nonstop/</url>
+    <content><![CDATA[<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>debug</category>
       </categories>
@@ -240,420 +258,6 @@
       </tags>
   </entry>
   <entry>
-    <title>gdb调试改变返回值</title>
-    <url>/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
-<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
-<p>步骤：</p>
-<ol>
-<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
-]]></content>
-      <categories>
-        <category>debug</category>
-      </categories>
-      <tags>
-        <tag>gdb</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>B树索引（postgres）</title>
-    <url>/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/</url>
-    <content><![CDATA[<p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
-<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
-<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
-<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
-<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
-<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
-<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
-</ol>
-<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
-<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
-<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
-<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
-</ul>
-<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
-<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
-<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
-<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
-<p>PostgreSQL 当前 不支持 Skip Scan</p>
-<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
-<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
-<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
-<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
-<li>聚簇后的表，在按该索引扫描时性能更好</li>
-</ul>
-<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
-<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
-<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
-<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
-</ul>
-<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
-<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
-<ol>
-<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
-<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
-</ol>
-<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
-<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
-<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
-<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
-</ol>
-<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
-<li>适合返回大量结果的索引查询；</li>
-<li>通过减少随机访问，降低 I&#x2F;O；</li>
-<li>支持多个索引结果合并，提高复杂查询效率。</li>
-</ol>
-<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
-<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
-<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
-</ol>
-<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
-<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
-<ol>
-<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
-<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
-<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
-</ol>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Raft协议</title>
-    <url>/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</url>
-    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
-<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
-<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
-<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
-<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
-</ol>
-<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
-<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
-<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
-<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
-</ul>
-<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
-<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
-<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
-<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
-</ul>
-<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
-<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
-<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
-<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
-</ul>
-<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
-<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
-<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
-</ul>
-<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
-<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
-<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
-<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
-<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
-</ol>
-<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
-<li>多实例并行运行：</li>
-</ol>
-<ul>
-<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
-<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
-</ul>
-<ol start="2">
-<li>共享底层资源：</li>
-</ol>
-<ul>
-<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
-<li>使用高效的调度机制协调实例间的资源竞争。</li>
-</ul>
-<ol start="3">
-<li>动态分片和迁移：</li>
-</ol>
-<ul>
-<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
-<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
-</ul>
-<ol start="4">
-<li>跨分片操作：</li>
-</ol>
-<ul>
-<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
-<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
-</ul>
-<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
-<thead>
-<tr>
-<th><strong>特性</strong></th>
-<th>Raft</th>
-<th>MultiRaft</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>目标</td>
-<td>提供单一一致性机制</td>
-<td>提供分区一致性机制</td>
-</tr>
-<tr>
-<td>运行实例</td>
-<td>单个 Raft 集群</td>
-<td>多个独立的 Raft 集群</td>
-</tr>
-<tr>
-<td>适用场景</td>
-<td>小规模系统</td>
-<td>大规模分布式存储或事务场景</td>
-</tr>
-<tr>
-<td>扩展性</td>
-<td>有限,单点可能成为瓶颈</td>
-<td>高扩展性，分片机制避免瓶颈</td>
-</tr>
-<tr>
-<td>复杂度</td>
-<td>较低</td>
-<td>较高，需要处理跨分片事务</td>
-</tr>
-</tbody></table>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SSTables and LSM Trees</title>
-    <url>/2025/11/08/database/SSTables-and-LSM-Trees/</url>
-    <content><![CDATA[<p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p>
-<ul>
-<li>merge简单高效</li>
-<li>因为有序，不需要维护所有记录的索引，可以是稀疏索引</li>
-<li>因为有序，可以按block进行压缩同时维护索引，除了降低磁盘占用以外，还可以降低磁盘io</li>
-</ul>
-<h2 id="构建和管理SSTables"><a href="#构建和管理SSTables" class="headerlink" title="构建和管理SSTables"></a>构建和管理SSTables</h2><p>因为写入是无序的，所以我们需要在内存中借助于红黑树或者avl树等数据结构来保证：任意写入，有序读取.</p>
-<p>构建步骤如下:</p>
-<ol>
-<li>当写入发生时，将写入的key-value加入内存平衡树（如红黑树）中，称为”memtable”</li>
-<li>当memtable增大到一定阈值后（a few megabytes），将memtable写入磁盘生成一个SSTable文件。新写入的SSTable成为数据库中最新的segment文件。 写入SSTable到磁盘时，写入可以继续写入新的memtable</li>
-<li>读请求来时，优先在memtable中查找，然后按顺序从新到老查找磁盘上的segment文件</li>
-<li>随着时间的推移，可以后台启动合并和压缩segment文件、丢弃或者覆盖掉老的文件</li>
-</ol>
-<p>这种机制工作的很好，但是存在一个问题，如果数据库宕机了，内存中的memtable还没有来得及写入磁盘，可能造成数据丢失。可以通过一个单独的log文件来记录所有的操作，这个log的作用只是用于宕机恢复memtable，每当memtable被写入磁盘，相应的log文件就可以被丢弃了</p>
-<h2 id="用SSTables构建LSM-tree"><a href="#用SSTables构建LSM-tree" class="headerlink" title="用SSTables构建LSM-tree"></a>用SSTables构建LSM-tree</h2><p>LSM-Tree用于 LevelDB 和 RocksDB、嵌入其他应用的key-value存储引擎。参考：Google’s Bigtable paper</p>
-<p>SSTables + log &#x3D; “Log-Structured Merge-Tree ”</p>
-<h3 id="LSM-tree两种文件管理策略："><a href="#LSM-tree两种文件管理策略：" class="headerlink" title="LSM-tree两种文件管理策略："></a>LSM-tree两种文件管理策略：</h3><ol>
-<li><p>Size-Tiered Compaction（STC） </p>
-<ul>
-<li><p>基本思想<br>  “当某一层（或同一大小区间）的 SSTable 文件数达到阈值时，将它们合并成一个更大的文件。”<br> 也就是说，不是按“层级”，而是按“文件大小”来触发 compaction。</p>
-</li>
-<li><p>结构示意<br> MemTable → SSTable</p>
-</li>
-<li><p>优点</p>
-<ul>
-<li>写放大低<br>  每条数据在被 flush 后只会参与少数几次合并；每次合并是“几块 → 一块”，合并次数较少。</li>
-<li>写入吞吐高<br>  flush 后直接落地；合并是批量异步进行；对写性能非常友好。</li>
-</ul>
-</li>
-<li><p>缺点</p>
-<ul>
-<li>读放大高<br>  同一 key 可能存在于多个 SSTable 中；读时需要查多个文件（除非借助 Bloom Filter）。</li>
-<li>空间放大高<br>  合并不够积极；多个旧版本的数据同时存在；临时文件和重复 key 较多。</li>
-</ul>
-</li>
-<li><p>应用场景<br> 适合写多读少的场景；比如日志系统、时间序列数据库（TSDB）、写入密集的监控系统Cassandra 默认采用 STCS（Size-Tiered Compaction Strategy）</p>
-</li>
-</ul>
-</li>
-<li><p>Level Compaction（LC）<br> 这种策略是 LevelDB、RocksDB 采用的，更现代化。又叫 leveled compaction 或 分层压实。</p>
-<ul>
-<li><p>基本思想：<br> 数据被组织成多个层级（Level 0, Level 1, Level 2…），每一层都有固定大小的空间限制，同一层内文件的 key 范围 互不重叠。</p>
-</li>
-<li><p>层次结构：<br> Level 0: 多个小 SSTable，key 范围可能重叠。<br> Level 1: 较大文件，key 范围不重叠。<br> Level 2: 更大文件，key 范围不重叠。<br> …</p>
-</li>
-<li><p>Compaction 逻辑：<br> 当某一层（如 Level 0）容量超标；就选择一个 SSTable（或一组）与下一层（如 Level 1）中 key 范围重叠的文件；合并、去重、重写为更大的 SSTable，放入下一层。</p>
-</li>
-<li><p>优点</p>
-<ul>
-<li>读性能优异<br>  除 Level 0 外，其余层内文件 key 范围不重叠；读取某个 key 只需查找每层最多一个文件；查找代价从 O(n_files) 降到 O(levels)。</li>
-<li>空间利用率高<br>  去重及时；每层占用空间接近固定比例；不容易膨胀。</li>
-</ul>
-</li>
-<li><p>缺点</p>
-<ul>
-<li>写放大高<br>  每条数据会多次参与合并（从 L0 → L1 → L2…）；每次都要重写到下一层； 磁盘写入量是原始写入的数倍。</li>
-<li>Compaction 代价大<br>  大文件之间的合并非常消耗 I&#x2F;O；RocksDB 必须限制后台 compaction 线程数量。</li>
-</ul>
-</li>
-<li><p>应用场景<br> 适合读写比较均衡、查询多的系统；比如 RocksDB、LevelDB、TiKV、ClickHouse 的部分引擎。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><p>当查找的key在数据库中不存在时，LSM-Tree算法可能会变慢：在你确认key不存在之前，你需要检查所有memtable，所有sstable对应的磁盘文件。可以使用bloom filters：它可以检查key不在数据库中（每个sstable固化时，生成对应的bloom filter文件）</p>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>storage</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>TPCC</title>
-    <url>/2025/06/04/database/TPCC/</url>
-    <content><![CDATA[<ol>
-<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
-</ol>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>MVCC</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>innodb and heap table</title>
-    <url>/2025/10/25/database/innodb-and-pg/</url>
-    <content><![CDATA[<p>昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。</p>
-<h2 id="概念介绍"><a href="#概念介绍" class="headerlink" title="概念介绍"></a>概念介绍</h2><p>InnoDB：MySQL 的主要存储引擎<br>heap table：postgres数据库P表在物理上的存储（Heap File）</p>
-<h2 id="数据存储方式"><a href="#数据存储方式" class="headerlink" title="数据存储方式"></a>数据存储方式</h2><h3 id="innodb-底层存储"><a href="#innodb-底层存储" class="headerlink" title="innodb 底层存储"></a>innodb 底层存储</h3><p>innodb是一个基于聚簇索引（Clustered Index）的存储引擎。</p>
-<h4 id="数据存储方式-1"><a href="#数据存储方式-1" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
-<li>聚簇索引存储表数据  <ul>
-<li>表的主键索引就是数据本身的物理存储顺序。</li>
-<li>每个页（page）一般 16KB，页内数据按主键顺序排列。</li>
-<li>非主键列数据和行信息都在叶子节点。</li>
-</ul>
-</li>
-<li>二级索引<ul>
-<li>非主键索引存储的是主键值而不是行指针。</li>
-<li>查询非主键列时，需要先通过二级索引拿到主键，再去主键聚簇索引里查数据（回表，row lookup）。</li>
-</ul>
-</li>
-</ul>
-<h4 id="页与数据组织"><a href="#页与数据组织" class="headerlink" title="页与数据组织"></a>页与数据组织</h4><ul>
-<li>数据按 B+ 树页组织。</li>
-<li>插入&#x2F;更新可能导致页分裂。</li>
-</ul>
-<h3 id="postgres-heap-table"><a href="#postgres-heap-table" class="headerlink" title="postgres heap table"></a>postgres heap table</h3><h4 id="数据存储方式-2"><a href="#数据存储方式-2" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
-<li>数据按插入顺序存放，没有聚簇索引。</li>
-<li>行标识符 TID（tuple id） 用于指向表的页和行。</li>
-<li>页（默认 8KB）内存储多行 tuple。</li>
-<li>没有聚簇索引，非索引扫描可能会更慢，但插入非常快。</li>
-</ul>
-<h4 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h4><ul>
-<li>B+ 树、哈希、GIN、GiST 等索引都是附加结构，存储独立于表。</li>
-<li>回表操作是通过 TID 定位行。</li>
-</ul>
-<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
-<thead>
-<tr>
-<th>特性</th>
-<th>InnoDB</th>
-<th>PostgreSQL 堆表</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>数据组织</td>
-<td>聚簇索引（主键决定物理顺序）</td>
-<td>堆表，顺序插入</td>
-</tr>
-<tr>
-<td>主键访问</td>
-<td>快（顺序扫描&#x2F;范围查询）</td>
-<td>需要 B+ 树索引或全表扫描</td>
-</tr>
-<tr>
-<td>二级索引访问</td>
-<td>回表（先索引后主键查行）</td>
-<td>回表（索引 -&gt; TID -&gt; 行）</td>
-</tr>
-<tr>
-<td>插入性能</td>
-<td>如果主键顺序插入快，否则可能页分裂</td>
-<td>快，顺序写入，几乎不分裂</td>
-</tr>
-<tr>
-<td>更新&#x2F;删除</td>
-<td>支持 in-place 更新，但大行更新可能迁移</td>
-<td>创建新行，旧行留存，需要 vacuum</td>
-</tr>
-<tr>
-<td>MVCC</td>
-<td>Undo log + hidden columns</td>
-<td>xmin&#x2F;xmax + heap tuple</td>
-</tr>
-<tr>
-<td>表膨胀</td>
-<td>自动管理页空间</td>
-<td>容易膨胀，需要 vacuum</td>
-</tr>
-<tr>
-<td>查询优化</td>
-<td>聚簇索引优化范围查询</td>
-<td>多依赖索引，或者全表扫描</td>
-</tr>
-</tbody></table>
-<p>因为pg的存储结构导致访问数据，多了许多随机io：从索引到数据文件。导致pg的查询性能不如innnodb</p>
-<h3 id="pg的一些优化"><a href="#pg的一些优化" class="headerlink" title="pg的一些优化"></a>pg的一些优化</h3><h4 id="CLUSTER-命令（物理重排）"><a href="#CLUSTER-命令（物理重排）" class="headerlink" title="CLUSTER 命令（物理重排）"></a>CLUSTER 命令（物理重排）</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLUSTER t USING idx_id;</span><br></pre></td></tr></table></figure>
-<p>把表物理顺序按照索引顺序重排 —— 效果类似 InnoDB 聚簇索引。<br>缺点：</p>
-<ul>
-<li>是离线操作；</li>
-<li>之后新插入的行会破坏顺序（除非周期性 recluster）</li>
-</ul>
-<h4 id="索引仅扫描（Index-Only-Scan）"><a href="#索引仅扫描（Index-Only-Scan）" class="headerlink" title="索引仅扫描（Index Only Scan）"></a>索引仅扫描（Index Only Scan）</h4><p>如果查询的字段都在索引里且可见性检查通过（可见性 map 中标记为 all-visible），可以不访问堆表，直接从索引返回结果。</p>
-<h4 id="BRIN-索引"><a href="#BRIN-索引" class="headerlink" title="BRIN 索引"></a>BRIN 索引</h4><p>BRIN 全称是 Block Range INdex，是一种 非常轻量级的索引，设计理念与 B-Tree 不同：<br>不是存储每一行的索引它只存储堆表的一段范围（block range）内的最小值和最大值等摘要信息。每个 BRIN 索引条目覆盖 多个物理数据页（例如 128 个 8KB 页面 &#x3D; 1MB 的行数据）。<br>通过这些范围信息，可以快速排除不可能匹配的块，再去 heap 查找具体 tuple。<br>简单理解：BRIN 是“粗粒度索引”，通过块范围（block range）而非单行建立索引<br>非常适合 大表 + 顺序或局部相关数据：大表 + 顺序或局部相关数据：</p>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>storage</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>install_oceanbase</title>
-    <url>/2025/11/11/database/install-oceanbase/</url>
-    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
-
-<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
-<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
-<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
-
-<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
-<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
-<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
-<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
-
-<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-  </entry>
-  <entry>
     <title>File Descriptor Limits</title>
     <url>/2024/10/24/linux/File%20Descriptor%20Limits/</url>
     <content><![CDATA[<p><a href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
@@ -664,279 +268,6 @@
       <tags>
         <tag>os</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Lehman–Yao B-tree</title>
-    <url>/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/</url>
-    <content><![CDATA[<h2 id="1-Lehman–Yao-B-Trees"><a href="#1-Lehman–Yao-B-Trees" class="headerlink" title="1. Lehman–Yao B*-Trees"></a>1. Lehman–Yao B*-Trees</h2><p>Lehman–Yao构造了一个供并发进程使用的数据结构。该数据结构是 Wedekind提出的 B*-树的一个简单变体（其基础是 Bayer 和 McCreight定义的 B 树）。<br>Lehman–Yao B*-树定义如下。</p>
-<h3 id="1-1-定义"><a href="#1-1-定义" class="headerlink" title="1.1 定义"></a>1.1 定义</h3><ol>
-<li>Each path from the root to any leaf has the same length, h.</li>
-<li>内部节点（非 root、非叶子）至少要有 k + 1 个孩子（sons）。 (k is a tree parameter; 2k is the maximum number of elements in a node, neglecting the “high key,” which is explained below.)</li>
-<li>root要么是页节点要么至少有两个孩子（sons）</li>
-<li>每个node最多有2k+1个孩子（sons）</li>
-<li>Lehman–Yao B-tree中的所有数据的键（key）都存储在叶子节点中，叶子节点还包含指向数据库记录的指针（每一条记录都与一个 key 对应）。<br>非叶子节点包含指针，以及用于沿着这些指针继续查找的 key 值（b+ tree）。</li>
-</ol>
-<p>B*-树的节点看起来如图 1 所示。Ki 表示 key 域的实例Pi 表示指针。Pi 可以指向其他节点，或者——在叶子节点的情况下——指向与存储在叶子节点中的 key 值关联的记录。这种安排使得在我们的模型中，叶子节点和非叶子节点的结构基本相同。M 是一个标记，用于指示该节点是叶子节点，它占据了非叶子节点中第一个指针的位置。图 2 显示了一个 B*-树示例。</p>
-<h3 id="1-2-Sequencing（顺序规则）"><a href="#1-2-Sequencing（顺序规则）" class="headerlink" title="1.2 Sequencing（顺序规则）"></a>1.2 Sequencing（顺序规则）</h3><ol>
-<li>每个节点内部，key 按升序排列。</li>
-<li>在 B*-tree 中，有时会在非叶子节点追加一个额外的值，称为 “high key”（见图 3）。</li>
-<li>在任意节点 N 中，每个指针 Pi 指向一个子树 Ti（Pi 指向的节点为 Ti 的根）。Ti 中存储的 key 值被 Pi 左右的两个 key （Ki 和 Ki+1）界定。 这就给非叶子节点提供了一组 (pointer, value) 对    <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">key(Ti) ∈ (Ki-1, Ki]</span><br></pre></td></tr></table></figure>
- 其中，k0 &#x3D; -∞（在 N 中物理上不存在），K2k+1 &#x3D; high key（如果存在），high key 提供了 Pi 指向的子树的上界，因此它也是以 N 为根的子树中所有值的上界。<br>叶子节点 定义类似（见图 3）：Ki &#x3D; 叶子中存储的 key；Pi &#x3D; 指向对应记录的指针</li>
-</ol>
-<h3 id="1-3-Insertion-Rule-插入规则"><a href="#1-3-Insertion-Rule-插入规则" class="headerlink" title="1.3 Insertion Rule(插入规则)"></a>1.3 Insertion Rule(插入规则)</h3><ol>
-<li>如果一个叶子节点的条目（entries）少于 2k 个，那么一个新的条目以及指向其对应记录的指针可以直接插入到该节点中。</li>
-<li>如果一个叶子节点已有 2k 个条目，则插入新的条目时，需要通过将该节点分裂为两个节点来进行，每个新节点包含原节点一半的条目。新的条目会被插入到这两个节点中的一个（在合适的位置）。由于其中一个节点是新创建的，因此必须在原单节点的父节点中插入一个新的指针。这个新的指针指向新节点；新的键值是对应于原节点拆分后左半部分的键值。此外，需要为这两个新节点分别设置高键（high key）。图 4 展示了一个节点分裂的示例。</li>
-<li>对非叶子节点的插入操作与叶子节点完全相同，只是指针指向的是子节点，而不是数据记录。</li>
-</ol>
-<p>一个节点（按照上面给出的规则），如果条目数少于 2k，则称其为“安全节点”（就插入操作而言），因为插入可以通过对该节点的简单操作完成。同样，如果一个节点有 2k 个条目，则称其为“非安全节点”，因为必须进行分裂操作。对节点的删除操作也有类似的定义：如果删除可以在节点内完成而不会影响其他节点，则该节点称为“安全节点”；反之，如果删除会影响其他节点，则称为“非安全节点”。也就是说，如果节点的条目数多于 k + 1，则安全；如果恰好有 k + 1 条目，则非安全。</p>
-<p>一个简单的例子就足以说明，对 B*-树进行并发操作的简单做法是错误的。<br>考虑图 5a 所示的 B*-树片段。假设有两个进程：一个搜索值 15，另一个插入值 9。插入操作应当导致树结构修改为图 5b 所示的样子。现在考虑下面这一系列操作：  </p>
-<table>
-<thead>
-<tr>
-<th>select(15)</th>
-<th>insert(9)</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>C&lt;-read(x)</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>A&lt;-read(x)</td>
-</tr>
-<tr>
-<td>exam C;get ptr to y</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>exam A;get ptr to y</td>
-</tr>
-<tr>
-<td></td>
-<td>A &lt;- read(y)</td>
-</tr>
-<tr>
-<td></td>
-<td>insert 9 into A; must split into A, B</td>
-</tr>
-<tr>
-<td></td>
-<td>PUT(B, Y’)</td>
-</tr>
-<tr>
-<td></td>
-<td>PUT(A, Y)</td>
-</tr>
-<tr>
-<td></td>
-<td>Add to node x a pointer to node y’.</td>
-</tr>
-<tr>
-<td>C &lt;- read(y)</td>
-<td></td>
-</tr>
-<tr>
-<td>error!15 not found</td>
-<td></td>
-</tr>
-</tbody></table>
-<p>问题在于，搜索操作首先返回指向 y 的指针（从 X 获得），然后才读取包含 y 的页面。在这两个操作之间，插入操作已经修改了树的结构。</p>
-<h2 id="2-Previous-Approaches"><a href="#2-Previous-Approaches" class="headerlink" title="2. Previous Approaches"></a>2. Previous Approaches</h2><p>前面的例子表明，对并发 B 树问题采取简单做法是行不通的：如果不防范并发操作带来的潜在问题，多个进程的操作可能导致结果不正确。为了更好地理解这个问题，我们在此简要概述一些已经提出的其他方法和解决方案。</p>
-<p>针对并发 B 树问题的第一个解决方案是由 Samadi 提出的.他的做法是最直接的一种，并且是最早考虑并发问题的方法。该方案简单地使用信号量来独占锁定任何一次树结构修改可能经过的整条路径。这实际上锁定了受影响的最高节点所在的整个子树</p>
-<p>Bayer 和 Schkolnick 提出的算法对 Samadi 的方法进行了实质性的改进。他们提出了一种用于 B*-树并发操作的方案；该方案包含一些参数，可以根据所需的并发程度和类型进行设置。<br>首先，修改操作会对树的上部节点加写者排他锁（writer-exclusion locks）（这种锁只排斥其他写者，而不会阻止读者）。<br>当需要真正进行修改操作时，会施加独占锁（exclusive locks），大多应用在树的下部节点。<br>这种对独占锁的稀疏使用提高了算法的并发性能。</p>
-<p>Miller 和 Snyder [12] 研究了一种方案，该方案锁定树中一个有界大小的区域。该算法使用先导锁（pioneer locks）和跟随锁（follower locks），以防止其他进程进入当前进程正在修改的树区域。被锁定的区域沿树向上移动，同时执行相应的修改操作.在使用队列管理的锁策略的帮助下，沿树向下移动的读者可以“越过”被锁定的区域，从而避免死锁。这种算法与本文提出的算法的权衡在于：本文的算法锁定树的区域明显更小，但需要对普通的 B-tree 或 B*-tree 结构进行稍微的修改，以便支持并发。</p>
-<p>Ellis [6] 提出了一种针对 2-3 树的并发解决方案。文中采用了几种方法以提高并发能力，并且（据称）这些方法可以很容易地推广到 B 树。<br>该论文应用了两种思想：一是在相反方向上对一组数据进行读写（由 Lamport [11] 提出）；二是允许数据结构暂时出现轻微退化，同时允许进程不必立即完成操作，可以将工作推迟到更合适的时间再执行。</p>
-<p>Guibas 和 Sedgewick [6a] 提出了一种针对平衡树的统一“双色框架”（dichromatic framework）。这是一种研究平衡树的简化方法：它将所有平衡树方案归约为“带颜色”的二叉树的特例，并具有概念上的清晰性。这些作者利用他们的框架研究一种自上而下的并发锁定方案，其中包括在沿树向下访问时对“几乎满的”节点进行分裂。我们预计，他们的方案将锁定比我们的方案更多的节点（降低并发性），并且需要略多的存储空间。</p>
-<p>另一种针对 B 树并发操作的方法目前正在由 Kwong 和 Wood [10] 进行研究。</p>
-<h2 id="3-Blink-Tree-for-Concurrency"><a href="#3-Blink-Tree-for-Concurrency" class="headerlink" title="3. Blink-Tree for Concurrency"></a>3. Blink-Tree for Concurrency</h2><p>B-link 树是一种在 B*-树基础上修改而成的结构，它在每个节点中增加了一个“链接（link）”指针字段（记作 P2k+1 ——见图 6）。<br>（B-link-tree 的发音是 “Blink-tree”。）   </p>
-<p>这个链接指针指向当前节点所在层的下一个节点；只有在该层最右侧的节点中，这个链接指针才是空指针（null）。这样的链接指针定义是自洽的，因为所有叶子节点都位于树的同一层。  </p>
-<p>因此，在 B-link 树中，同一层的所有节点都被连接成一条链表，如图 7 所示。</p>
-<p>Link 指针的目的，是提供一种到达某个节点的额外途径。<br>当一个节点因为数据溢出而被分裂时，原来的单一节点会被两个新的节点取代。</p>
-<p>在分裂后：</p>
-<ul>
-<li><p>第一个新节点的 link 指针指向第二个新节点；</p>
-</li>
-<li><p>第二个新节点的 link 指针则保存了原来旧节点的 link 指针内容。</p>
-</li>
-</ul>
-<p>通常情况下，第一个新节点会占用旧节点在磁盘上的同一个物理页面。</p>
-<p>设计这个方案的意图是：<br>因为这两个新节点被 link 指针连接起来，在父节点中的正确指针尚未更新之前，它们在功能上仍然等价于原来的那个单一节点。<br>Blink-tree 的精确查找与插入算法将在接下来的两个章节中给出。</p>
-<p>对于树中的任意一个节点（处于某一层且不是该层的第一个节点），通常会有两种指针指向它：</p>
-<p>来自其父节点的“子指针”（son pointer），以及</p>
-<p>来自其左兄弟节点的 link 指针。</p>
-<p>当一个节点被插入到树中时，这两个指针之中必定有一个会先被创建。<br>我们规定：在这两个指针中，link 指针必须最先存在。<br>也就是说，一个节点在树中出现时，可以暂时没有父节点的指针指向它，但必须已经有一个左兄弟指向它的 link 指针。</p>
-<p>这种结构依然被定义为一个合法的树结构，因为新的“右兄弟”节点可以通过“左兄弟”到达。（这两个兄弟节点在功能上仍然可以视作一个节点。）</p>
-<p>当然，为了保证良好的查找效率，来自父节点的指针必须尽快补上。</p>
-<p>Link 指针的优势在于：它会在节点发生分裂时同步建立。<br>因此，即使针对新节点的常规树指针尚未全部更新完毕，link 指针仍可作为一种“临时修补”机制，使并发操作保持正确性。</p>
-<p>当查找键大于节点的最大键值（由 high key 标识）时，这表明树结构已经发生变化，此时应通过 link 指针继续访问右兄弟节点。<br>虽然这种方式略低效一些（因为需要额外一次磁盘读取来跟随 link 指针），但它仍然是到达目标叶子节点的正确路径。</p>
-<p>由于节点分裂本身属于例外情况，link 指针的实际使用频率应该非常低。</p>
-<p>Blink-tree 结构的另一个优点是：在对树进行顺序遍历时，link 指针可以用于快速按“按层次优先（level-major）”的顺序检索树中的所有节点，或者，例如，只检索所有叶子节点。</p>
-<h2 id="4-THE-SEARCH-ALGORITHM"><a href="#4-THE-SEARCH-ALGORITHM" class="headerlink" title="4. THE SEARCH ALGORITHM"></a>4. THE SEARCH ALGORITHM</h2><h3 id="4-1-算法示意图（Algorithm-Sketch）"><a href="#4-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="4.1 算法示意图（Algorithm Sketch）"></a>4.1 算法示意图（Algorithm Sketch）</h3><p>要在树中查找一个值 v，搜索过程从根节点开始，沿树向下比较 v 与每个节点中的键值。在每个节点中，比较键值后，决定沿节点中哪条现有指针继续向下搜索，指示应沿该指针前往下一层节点，或直接到达叶子（记录）节点。</p>
-<p>如果搜索过程中检查某个节点时，发现该节点中的最大值小于 v，则可以推断出当前节点发生了一些变化，而这些变化在搜索检查其父节点时尚未反映到父节点中。</p>
-<p>这意味着当前节点已经被分裂成两个（或更多）新的节点。<br>此时，搜索必须纠正其在树中的位置错误：不再按照普通的父节点子指针（son pointer）前进，而是沿新分裂节点的 link 指针继续搜索。</p>
-<p>搜索过程最终会到达 v 应该所在的叶子节点（如果 v 存在的话）。此时，该节点要么包含 v，要么不包含 v 且节点中的最大值大于 v。<br>因此，该算法能够正确地判断 v 是否存在于树中。</p>
-<h2 id="4-2-算法"><a href="#4-2-算法" class="headerlink" title="4.2 算法"></a>4.2 算法</h2><p><strong>搜索（Search）</strong><br>该过程用于在树中查找一个值 𝑣。如果 𝑣 存在于树中，过程结束时：𝐴包含包含 𝑣 的节点 𝑡<br>包含指向与 𝑣 关联的记录的指针；如果 𝑣 不存在于树中，𝐴 将包含 𝑣 如果存在的话应该所在的节点。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Search(v):</span><br><span class="line">    ...</span><br><span class="line">    if v exists:</span><br><span class="line">        A = 节点页 containing v</span><br><span class="line">        t = 指向 v 的记录</span><br><span class="line">    else:</span><br><span class="line">        A = 节点页 where v would be</span><br><span class="line">        t = null</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>下文算法中使用的符号在第 2 节中定义。<br>在此过程中，我们使用了一个辅助操作 scannode，其定义如下：</p>
-<blockquote>
-<p>x &lt;- scannode(u, A) denotes the operation of examining the tree node in memory block A for value u and returning the appropriate pointer from A (into x).</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure search(u)</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do </span><br><span class="line">begin</span><br><span class="line">  current &lt;- scannode(u, A);</span><br><span class="line">  A &lt;- get(current) </span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">while t &lt;- scannode(u, A) = link ptr of A do</span><br><span class="line">begin</span><br><span class="line">  current + t ;</span><br><span class="line">  A &lt;- get(current)</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">if v is in A then done “success” else done “failure”</span><br></pre></td></tr></table></figure>
-<p>请注意，这种搜索过程非常简单，其行为与非并发搜索完全相同，将 link 指针与其他指针同等对待。</p>
-<p>还要注意，该过程不进行任何形式的加锁。<br>这与传统的数据库搜索算法形成对比（例如 Bayer 和 Schkolnick [3] 所述），在那些算法中，所有搜索操作都会对它们访问的节点进行读锁。</p>
-<h2 id="5-THE-INSERTION-ALGORITHM"><a href="#5-THE-INSERTION-ALGORITHM" class="headerlink" title="5. THE INSERTION ALGORITHM"></a>5. THE INSERTION ALGORITHM</h2><h3 id="5-1-算法示意图（Algorithm-Sketch）"><a href="#5-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="5.1 算法示意图（Algorithm Sketch）"></a>5.1 算法示意图（Algorithm Sketch）</h3><p>要在树中插入一个值 𝑢 我们执行的操作与前面描述的搜索过程类似。从根节点开始，沿树向下扫描，直到到达应该包含 𝑢 的叶子节点。同时，我们在下降过程中记录每一层中被访问过的最右节点。沿树的下降过程实际上就是在搜索 𝑢 的正确插入位置（比如称该节点为节点 𝑎 ）。</p>
-<p>将值 u 插入叶子节点时，可能需要对该节点进行分裂（当节点不安全时）。<br>在这种情况下，我们对节点进行分裂（如图 8 所示），用两个新节点 a’（a 的新版本，写回同一磁盘页面）和 b’ 替换原来的节点 a。节点 a’ 和 b’ 的内容与原节点 a 相同，只是增加了值 u。随后，我们沿着先前记录的搜索路径回溯树的上层，在叶子节点的父节点中插入新节点 b’ 的条目以及 a’ 的新 high key。</p>
-<p>死锁的避免是由锁定方案的良序性（well-ordering）所保证的，如下所示。<br>需要注意的是，当我们沿树向上回溯时，由于节点可能被分裂，我们必须插入新指针的节点可能并不是下降过程中经过的那个节点。换句话说，我们在下降过程中使用的旧节点可能已经被分裂；此时，正确的插入位置就在原预期插入位置右侧的某个节点。我们通过 link 指针 来找到这个节点。</p>
-<h3 id="5-2-算法"><a href="#5-2-算法" class="headerlink" title="5.2 算法"></a>5.2 算法</h3><p>在下文的算法中，有些过程被视为原语操作（就像上文的 scannode 一样），因为它们容易实现，并且其具体操作对本文的目的而言并不重要。例如：</p>
-<blockquote>
-<p>A &lt;- node.insert (A, w, v) denotes the operation of inserting the pointer w and the value v into the node contained in A.<br>u &lt;- allocate(2 newpage for B) denotes the operation of allocating a new page on the disk. The node contained in B will be written onto this page, using the pointer u.<br>“A, B &lt;- rearrange old A, adding ..” denotes the operation of splitting A into two nodes, A and B, in core.</p>
-</blockquote>
-<p><strong>插入（Insert）</strong>。该算法负责将一个值 v（以及其关联的记录）插入到树中。当算法结束时，值 v 已成功插入到树中，并且在必要的情况下，算法会在从叶子向上回溯的过程中对相应的节点进行分裂。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure insert(v)</span><br><span class="line">initialize stack;</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do</span><br><span class="line">begin</span><br><span class="line">  t &lt;-  current;</span><br><span class="line">  current &lt;- scannode( v, A);</span><br><span class="line">  if new current was not link pointer in A then</span><br><span class="line">    push(t);</span><br><span class="line">  A &lt;- get(current);</span><br><span class="line">end;</span><br><span class="line">lock(current);</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">move.right;</span><br><span class="line">if v is in A then stop “v already exists in tree”;</span><br><span class="line">w &lt;- pointer to pages allocated for record associated with v; </span><br><span class="line">Doinsertion:</span><br><span class="line">if A is safe then</span><br><span class="line">begin</span><br><span class="line">  A &lt;-  node.insert(A, w, v); </span><br><span class="line">  put(A, current); </span><br><span class="line">  unLock(current);</span><br><span class="line">end else begin</span><br><span class="line">  u &lt;- allocate(1 new page for B);</span><br><span class="line">  A, B &lt;- rearrange old A, adding v and w, to make 2 nodes,</span><br><span class="line">    where (link ptr of A, link ptr of B) &lt;- (u, link ptr of old A);</span><br><span class="line">  y &lt;- max value stored in new A;</span><br><span class="line">  put(B, u)</span><br><span class="line">  put(A, current); </span><br><span class="line">  oldnode &lt;- current;</span><br><span class="line">  v &lt;- Y;</span><br><span class="line">  w &lt;- u;</span><br><span class="line">  current &lt;- pop(stack); </span><br><span class="line">  lock(current);</span><br><span class="line">  A &lt;- get(current); </span><br><span class="line">  move.right; </span><br><span class="line">  unlock(oldnode);</span><br><span class="line">  goto Doinsertion</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
-<p>Move.right. This procedure, which is called by insert, follows link pointers at a given level, if necessary.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure move.right</span><br><span class="line">while t &lt;- scannode(u, A) is a link pointer of A do</span><br><span class="line">begin</span><br><span class="line">  lock(t); </span><br><span class="line">  unlock(current); </span><br><span class="line">  current &lt;- t;</span><br><span class="line">A &lt;- get(current); </span><br><span class="line">end</span><br></pre></td></tr></table></figure>
-
-<p>需要注意的是，该过程在向上回溯树时是 逐层进行的。此外，同时最多只会锁定三个节点，而这种情况发生的频率相对较低：仅在插入分裂节点的指针时，需要沿 link 指针向右移动 的情况下才会出现。此时，被锁定的节点包括：</p>
-<ul>
-<li><p>分裂节点的原始左半部分</p>
-</li>
-<li><p>分裂节点上一层的两个节点</p>
-</li>
-</ul>
-<p>在插入沿右链移动的过程中需要锁定它们。</p>
-<p>与传统方法相比（即只有在确定节点为安全节点时才释放锁），这种做法在 锁粒度和并发性能上都有显著改进。</p>
-<p>该算法的正确性依赖于以下事实：树结构的任何变化（即任何节点的分裂）都会伴随一个 link 指针。节点分裂时，条目总是被移动到树的右侧，在右侧的新节点可以通过 link 指针被访问到，从而保证树的结构在并发操作下仍然可达且正确。</p>
-<p>具体来说，对于任何层级的一个对象（与某个值相关联），我们总能大致知道它的正确插入位置，即我们在该层搜索时经过的“记录节点”。如果该对象的正确插入位置发生了移动，这种移动方式是可预知的：也就是节点分裂向右，留下的 link 指针使得搜索或插入操作仍然能够找到它。因此，从旧的“预期”插入位置开始，始终可以访问到对象的正确插入位置。</p>
-<h2 id="6-CORRECTNESS-PROOF"><a href="#6-CORRECTNESS-PROOF" class="headerlink" title="6 CORRECTNESS PROOF"></a>6 CORRECTNESS PROOF</h2><p>为了证明系统的正确性，我们需要证明以下两个命题对每个进程都成立：</p>
-<ol>
-<li>该进程不会发生死锁（定理 1）；</li>
-<li>当进程终止时，它已经正确地完成了所需的操作。<br>  更具体地说：</li>
-</ol>
-<ul>
-<li>所有磁盘操作都保持树结构的正确性（定理 2）</li>
-<li>除正在进行修改的进程之外，所有其他进程看到的树都是一致的（交互定理 3）。</li>
-</ul>
-<h3 id="6-1-无死锁性（Freedom-from-Deadlock-）"><a href="#6-1-无死锁性（Freedom-from-Deadlock-）" class="headerlink" title="6.1 无死锁性（Freedom from Deadlock ）"></a>6.1 无死锁性（Freedom from Deadlock ）</h3><p>首先，我们开始证明系统不存在死锁。<br>为此，我们对节点施加一个顺序：跨层从下到上、同层从左到右。下面的引理（Lemma：一种 辅助性结论，用于证明后续更大、更重要的定理（Theorem））对这一点进行了严格定义。<br><strong>引理 1</strong> 插入操作对节点加锁遵循一个良序（well-ordering：严格定义的、有序的顺序关系）关系<br><strong>证明</strong> 考虑在树的节点集合上定义如下顺序关系（&lt;）：</p>
-<ol>
-<li>在任意时刻 t，如果两个节点 a 和 b 与树根的距离不同（不在同一层级），那么当且仅当 b 离树根更近（处于更高层级）时，我们称 a &lt; b。</li>
-<li>如果 a 和 b 与树根的距离相同（在同一层级），那么当且仅当 b 能通过从 a 开始沿着一条或多条链接指针到达（即 b 在 a 的右侧）时，我们称 a &lt; b。</li>
-</ol>
-<p>通过检查插入算法我们可以看到：如果在时间 t₀ 时 a &lt; b，那么在所有 t &gt; t₀ 的时间点都仍然有 a &lt; b。因为节点创建过程只是把一个节点 x 分裂成两个新节点 x′ 和 x″，并且满足 x′ &lt; x″，而且</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">y&lt;x⟺y&lt;x′</span><br></pre></td></tr></table></figure>
-<p>和</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x&lt;y⟺x′′&lt;y</span><br></pre></td></tr></table></figure>
-<p>因此，这些节点形成了一个良序关系，插入者按照良序对节点加锁。一旦在某个节点上加锁，它不会再对该节点之下的任何节点加锁，也不会对同一层中位于左侧的节点加锁。<br>因此，插入者按照给定的良序对节点加锁。证毕。<br>由于插入者是唯一对节点加锁的过程，我们可以立即得到以下定理。  </p>
-<p><strong>定理 1</strong>：无死锁性。 给定的系统不会产生死锁。</p>
-<h3 id="6-2-树结构修改的正确性"><a href="#6-2-树结构修改的正确性" class="headerlink" title="6.2 树结构修改的正确性"></a>6.2 树结构修改的正确性</h3><p>为了确保树结构的完整性，我们必须检查所有修改树结构的操作。首先，需要注意的是，树结构的修改只能通过 “put” 操作 来完成。插入过程中算法中有三个地方会执行 put 操作：</p>
-<ol>
-<li>对安全节点重写时使用 “put(A, current)”。</li>
-<li>对不安全节点的最右节点使用 “put(B, u)”。通过该操作，我们写入由节点分裂形成的两个新节点中的第二个节点。</li>
-<li>对不安全节点使用 “put(A, current)”。这里写入的是两个新节点中的第一个（最左节点）。实际上，我们重写了树中已存在的页面（节点），并修改该页面的链接指针，使其指向由 “put(B, …)” 写入的新节点。</li>
-</ol>
-<p>注意，在算法中（针对不安全节点），“put(B, u)” 紧接在 “put(A, current)” 之前执行。我们将在下面的引理中证明，这种顺序实际上将两个 put 操作简化为本质上的一次操作。 </p>
-<p><strong>引理 2</strong>. 操作 ‘put(B, u); put(A, current)’ 相当于对树结构的一次修改。<br>证明. 假设这两个操作分别写入节点 b 和 a。在执行 “put(B, u)” 时，没有其他节点指向正在写入的节点 b，因此该 put 操作对树结构没有影响。现在，当执行 “put(A, current)” 时，该操作修改了 current 指向的节点（节点 a）。修改内容包括将节点 a 的链接指针指向 b。此时，b 已经存在，并且 b 的链接指针指向与 a 的旧版本相同的节点。这样就实现了同时修改 a 并将 b 引入树结构。证毕。</p>
-<p><strong>定理 2</strong>. 所有 put 操作都能正确地修改树结构。<br><strong>证明</strong><br>case 1： 对安全节点执行 “put(A, current)”。该操作只修改树中一个已加锁的节点，因此树的正确性得到保持。<br>case 2： 对不安全节点执行 “put(B, u)”。该操作不会改变树结构。<br>case 3： 对不安全节点执行 “put(A, current)”。根据引理，该操作既修改了当前节点（比如 a），又将另一个节点（比如 b，通过 “put(B, u)” 写入）引入树结构。与情况 1 类似，节点 a 在执行 “put(A, current)” 时已加锁。本例的区别在于该节点是不安全的，需要分裂。但根据引理，我们可以通过一次操作完成，保持树结构的正确性。证毕</p>
-<h3 id="6-3-正确的交互"><a href="#6-3-正确的交互" class="headerlink" title="6.3 正确的交互"></a>6.3 正确的交互</h3><p>我们还需要证明，无论插入过程对树进行何种修改，其他进程仍能正确操作。<br><strong>定理 3</strong>：交互定理。 插入过程的操作不会破坏其他进程操作的正确性。</p>
-<p>为了证明该定理，我们首先考虑搜索过程与插入操作的交互情况，然后考虑两个插入过程的交互情况。一般来说，为了证明插入者的操作不会破坏其他进程的正确性，我们需要考虑该进程相对于该操作的行为。在所有情况下，该操作都是原子的。</p>
-<p>假设插入者在时间 t0 对节点 a 执行一次 “put” 操作。考虑另一个进程在时间 t′从磁盘读取节点 a 的情况。由于假设 “get” 和 “put” 操作是不可分割的，要么 t′&lt;t0​，要么  t0​ &lt; t′。我们将在下面的引理中证明，后一种情况不会产生问题。</p>
-<p><strong>引理 3</strong><br>如果进程 𝑃 在某个时间 𝑡′ &gt; 𝑡0 读取节点 𝑎，其中 𝑡0 是插入进程 I 修改节点 𝑎 的时间，那么这一修改不会影响进程 𝑃 的正确性。</p>
-<p><strong>证明</strong>. 考虑进程 P 通过节点 a 的路径。进程 P 在到达节点 a 之前所经过的路径不会被插入进程 I 改变。此外，根据上面的定理 2，进程 I 对树结构所做的任何修改都会产生一个正确的树（well-ording）。因此，进程 P 在 a 节点开始的路径（在时间 t&gt;t′t &gt; t’t&gt;t′）将无论修改如何都能正确执行。证毕。</p>
-<p>为了便于将定理的证明分解成不同情况，这里列出在一个节点上对一个值可能执行的三种插入类型。</p>
-<p>类型 1. 简单地将一个值及其关联指针添加到节点中。当节点是安全的（safe）时发生这种类型的插入。<br>类型 2. 对节点进行分裂，并将插入值放入分裂节点的左半部分。左半部分仍然是原来被分裂的节点。<br>类型 3. 类似地，对节点进行分裂，并将插入值放入分裂节点的右半部分。右半部分是新分配的节点。</p>
-<p>现在我们开始定理的证明。我们注意到，定理的正确性涉及几个方面（情况），并将分别证明这些情况。</p>
-<p>证明. 根据引理 3，只需考虑搜索或插入进程 𝑃 在插入进程 𝐼 修改节点之前开始读取该节点的情况。</p>
-<p>第 1 部分. 考虑插入进程 I（在时间 t0 修改节点 n）与搜索进程 S（在时间 t′&lt; t0读取节点 n）之间的交互。记 n′ 为修改后的节点。（本节的论证同样适用于另一插入进程 I′与进程 I 交互的情况，且 I′正在执行搜索。）需要考虑的操作顺序是：S 读取节点 n；然后 I 将节点 n 修改为 n′；然后 S 根据 n 的内容继续搜索。<br>考虑三种插入类型：  </p>
-<table>
-<thead>
-<tr>
-<th align="left"></th>
-<th align="left"></th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Type 1</td>
-<td align="left">进程 I 对节点 n 执行一次简单插入。如果 n 是叶子节点，插入进程不会改变任何指针。其结果等同于序列调度中 S 在 I 之前运行的情况。如果 n 是非叶子节点，则在 n 中插入一个指向下一层某节点 m′的指针&#x2F;值对。假设 m′是通过将 I 分裂为 I′ 和 m′ 创建的。唯一可能的交互是 S 在插入指向 m′ 的指针之前已经获得了指向 I 的指针。此时指向 I 的指针指向了 I′，而 S 将使用 I′中的 link pointer 访问 m′。因此搜索仍然是正确的。</td>
-</tr>
-<tr>
-<td align="left">Types 2 and 3</td>
-<td align="left">节点 n 在插入过程中被分裂为节点 n1′ 和 n2′。对于叶子节点的情况，搜索在 n 上的结果与在 n1′和 n2′上的结果相同，除了新插入的值 S 无法找到。 如果 n 不是叶子节点，则其下层的某个节点发生了分裂，导致一个新的指针&#x2F;值对被插入节点 n，从而使 n 本身也分裂。根据归纳法，下层节点的分裂是正确的。根据引理 3，下层节点的搜索也是正确的。因此，我们只需证明节点 n 的分裂是正确的。假设节点 n 分裂为节点 n1′ 和 n2′，它们包含与原节点 n 相同的指针集合，并增加了新插入的节点。则从节点 n 开始搜索，将到达下一层与从 n1′（带有指向 n2′的 link pointer）开始搜索时相同的节点集合。特殊情况是：如果搜索在读取节点 n 时，新插入的指针已经存在，本应沿该指针继续。此时实际跟随的指针位于新指针的左侧，这会将搜索引导到某个节点（假设为 k），它位于新指针指向的节点（假设为 m）左侧。然后沿 k 的 link pointer 最终到达 m，这仍然是正确的结果。（类型 3 的论证与类型 2 相同，只是新条目插入到新创建的半节点中，而不是旧半节点。但这对论证没有影响，因为节点在分裂发生前已被S读取。）</td>
-</tr>
-</tbody></table>
-<p>第2部分。接下来我们考虑插入进程 I 与另一个插入进程 I’ 的交互情况。进程 I’ 可能正在搜索用于插入的正确节点、回溯到另一层，或者实际尝试将一个值&#x2F;指针对插入节点 n。如果 I’ 正在搜索一个用于插入值&#x2F;指针对的节点，则该搜索行为与普通搜索进程完全相同。因此，证明与上文针对搜索进程的证明相同。</p>
-<p>第3部分。如果 I’ 因为下层节点分裂而需要回溯上行树，则 I’ 需要回到上层以便将指针插入到分裂节点的新半部分。</p>
-<ul>
-<li>回溯是使用在下降过程中记录在栈中的信息完成的。</li>
-<li>在每一层，被压入栈的节点是该层被检查过的最右侧节点。</li>
-<li>考虑在将某个节点 n 压入栈和回溯时再次访问该节点之间可能发生的情况：该节点可能已经分裂过一次或多次，这些分裂会在节点 n 的“右侧”产生新的节点。</li>
-<li>由于节点 n 右侧的所有节点都可以通过 link 指针访问，因此插入算法能够找到适当的位置插入值。</li>
-</ul>
-<p>第四部分。如果进程 I’ 试图在节点 n 上进行插入，它会尝试锁定该节点。但进程 I 已经持有节点 n 的锁。最终，I 会释放该锁，I’ 再锁定该节点并将其读入内存。根据上面的引理，该交互是正确的，因为 I’ 的读取发生在 I 的插入之前。节点 n 要么就是插入的正确位置——此时 I’ 会执行插入；要么搜索必须沿节点的 link 指针访问其右兄弟。</p>
-<h3 id="LiveLock"><a href="#LiveLock" class="headerlink" title="LiveLock"></a>LiveLock</h3><p>我们在此指出，我们的算法并不能完全避免活锁(LiveLock)的可能性（即某个进程无限运行）。<br>如果一个进程因为不断跟随其他进程创建的 link 指针而无法终止，就可能发生这种情况。<br>然而，根据以下观察，我们认为在实际实现中这种情况极不可能成为问题。<br>在多处理器系统中，如果该进程运行在相对非常慢的处理器上，这种情况可能发生。</p>
-<p>(1) 在我们所知的大多数系统中，处理器的运行速度大致相当。<br>(2) 在 B 树中，节点的创建和删除只占很小的比例，因此即使是较慢的处理器，也不太可能因节点的创建或删除而遇到困难（也就是说，它只需要跟随少量的 link 指针）。<br>(3) 在树的任意给定层上，只能创建固定数量的节点，从而限制了较慢处理器需要“追赶”的量。  </p>
-<p>我们认为，这些想法结合起来可以使实际系统中进程发生活锁的概率几乎为零（除非涉及的进程速度差异极大）。模拟可以帮助我们验证系统在“合理”条件下能够正常工作，并帮助确定进程相对速度的可接受范围。</p>
-<p>在进程速度确实存在极大差异的情况下，我们可能会引入一些额外机制来防止活锁。实现这种机制有多种选择。本文不讨论避免活锁的完整方法，但其中一种方法可能是为每个进程分配优先级，优先级可能基于进程的“存在时间”。这将保证每个进程最终会终止，因为它最终会成为最“老”的进程，从而成为拥有最高优先级的进程。</p>
-<h2 id="7-DELETION"><a href="#7-DELETION" class="headerlink" title="7. DELETION"></a>7. DELETION</h2><p>一种处理删除操作的简单方法是允许叶子节点中的条目少于 K 个。对于非叶子节点则不需要这样做，因为删除操作仅会移除叶子节点中的键；非叶子节点中的键仅作为其对应指针的上界，它在删除过程中并不会被移除。</p>
-<p>因此，为了从叶子节点中删除一个条目，我们对该节点执行的操作与插入操作（尤其是插入情况 1）非常类似。具体来说，我们首先搜索出值 u 所在的节点，然后锁定该节点，将其读入内存，对内存中的副本删除值 u 后再将节点重写回磁盘。有时，这样会导致节点中条目数量少于 K。<br>该算法的正确性证明与插入操作类似。例如，死锁自由性的证明非常简单，因为删除操作只需要锁定一个节点。对于操作的正确性，如果一个搜索进程在删除值 u 之前读取了节点，它仍然会报告节点中存在 u，这与序列化调度（搜索操作先于删除操作执行）是一致的，因此搜索结果仍然正确。</p>
-<p>我们刚描述的这种删除处理方法比需要处理节点下溢（underflow）和合并（concatenation）的方案要简单得多。在假设插入操作发生频率高于删除操作的情况下，这种方法几乎不需要额外存储空间。</p>
-<p>当然，在删除操作过多导致树节点存储利用率过低的情况下，可以执行批量重组（batch reorganization）或者全树锁定的下溢操作（underflow operation）来重新组织树结构，以保证空间的合理利用。</p>
-<h2 id="8-锁定效率（LOCKING-EFFICIENCY）"><a href="#8-锁定效率（LOCKING-EFFICIENCY）" class="headerlink" title="8. 锁定效率（LOCKING EFFICIENCY）"></a>8. 锁定效率（LOCKING EFFICIENCY）</h2><p>显然，在并发方案中，至少需要一个锁，以防止不同进程同时更新同一个节点。</p>
-<p>上文给出的插入操作方案，在任何时刻对任意进程使用的锁数量最多是一个常数（最多三个）。这种情况仅在特定情况下发生：当插入进程刚刚向某个节点（叶子节点或非叶子节点）插入条目，并导致该节点分裂时。在回溯树的过程中，为了向新分裂节点的一半插入指针，插入进程发现旧的父节点已经不再是正确的插入位置，因此必须沿包含父节点的这一层节点进行链式查找，以找到正确的插入位置。在整个操作过程中，同时锁定三个节点。</p>
-<p>在每个节点容量较大的 B*-树中，这种类型的锁定操作发生的频率非常低。因此，除非有大量并发进程运行，否则该结构的锁冲突概率极低。</p>
-<p>这种系统的行为可以通过模拟进行量化，模拟参数包括并发进程数量、每个节点的容量，以及搜索、插入和删除操作的相对频率。这样的模拟不仅可以评估当前方案的性能，也可用于与其他并发控制方案进行比较。</p>
-<h2 id="9-SUMMARY-AND-CONCLUSIONS"><a href="#9-SUMMARY-AND-CONCLUSIONS" class="headerlink" title="9. SUMMARY AND CONCLUSIONS"></a>9. SUMMARY AND CONCLUSIONS</h2><p>B 树在维护大型数据库时被发现非常有用。并发操作这样的数据具有明显优势，因为它允许多个用户同时共享数据；而且在大规模数据库中，用户的数据需求通常不会产生冲突，因此并发访问是可行的。</p>
-<p>本文给出了一个算法，可以在 B 树的一种变体上执行正确的并发操作。该算法的特点是任意进程在任何时刻只需使用少量常数个锁。算法本身非常直接，其流程与顺序执行的算法仅有轻微差别。（可以通过模拟来量化本文算法与顺序算法或其他并发算法相比的效率提升。）</p>
-<p>这一性能的实现依赖于对数据结构的一个小改动，使得当一个进程的位置因其他进程的操作而失效时，能够进行恢复（参见 [8]）。</p>
-<p>我们希望将这项工作扩展到更通用的并发数据库操作方案。理想的方案应当仅需对数据结构和顺序算法做极少量修改，同时能够保证当其他进程对数据结构做出改变使某进程的操作失效时，该进程能够正确恢复。</p>
-<p>另一条未来研究方向是对算法的“并行化”：研究将一个（已充分理解的）顺序算法转换为并发算法的通用方法。目标是尽可能充分利用问题的并发特性，同时保证算法的正确性不受影响。</p>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>paper</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>python_tricks</title>
-    <url>/2022/06/20/python/python-tricks/</url>
-    <content><![CDATA[<h2 id="python参数灵活性"><a href="#python参数灵活性" class="headerlink" title="python参数灵活性"></a>python参数灵活性</h2><p>位置参数 + 默认参数 + *args + **kwargs</p>
-<table>
-<thead>
-<tr>
-<th>语法</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>*args</code></td>
-<td>收集所有 <strong>位置参数</strong>，组成元组</td>
-</tr>
-<tr>
-<td><code>**kwargs</code></td>
-<td>收集所有 <strong>关键字参数</strong>，组成字典</td>
-</tr>
-</tbody></table>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">func</span>(<span class="params">a, b=<span class="number">2</span>, **kwargs</span>):</span><br><span class="line">    <span class="built_in">print</span>(a, b, kwargs)</span><br><span class="line"></span><br><span class="line">func(<span class="number">1</span>, c=<span class="number">3</span>, d=<span class="number">4</span>)</span><br><span class="line"><span class="comment"># 输出：1 2 &#123;&#x27;c&#x27;: 3, &#x27;d&#x27;: 4&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="返回值灵活性"><a href="#返回值灵活性" class="headerlink" title="返回值灵活性"></a>返回值灵活性</h2><p>Python 函数没有固定返回类型。可以返回任意对象：数字、字符串、列表、字典、对象，甚至函数本身。调用方只要按照约定处理即可</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">example</span>(<span class="params">x</span>):</span><br><span class="line">    <span class="keyword">if</span> x &gt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;negative&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="虚拟环境的使用"><a href="#虚拟环境的使用" class="headerlink" title="虚拟环境的使用"></a>虚拟环境的使用</h2><ul>
-<li>创建虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python3<span class="number">.14</span> -m venv .venv</span><br></pre></td></tr></table></figure></li>
-<li>终端激活虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">source .venv/<span class="built_in">bin</span>/activate</span><br><span class="line">python --version</span><br><span class="line">which python</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="导出第三方依赖"><a href="#导出第三方依赖" class="headerlink" title="导出第三方依赖"></a>导出第三方依赖</h2><ul>
-<li>激活虚拟环境</li>
-<li>使用 pip freeze 导出  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip freeze --local &gt; requirements.txt</span><br></pre></td></tr></table></figure></li>
-<li>复现环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-      <categories>
-        <category>python</category>
-      </categories>
   </entry>
   <entry>
     <title>Background Writing</title>
@@ -1021,6 +352,44 @@
       </tags>
   </entry>
   <entry>
+    <title>Checkpoint</title>
+    <url>/2025/04/03/postgres/Checkpoint/</url>
+    <content><![CDATA[<p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
+<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
+<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
+<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
+<ul>
+<li>CLOG（提交日志）中的事务状态信息，</li>
+<li>子事务的元数据，</li>
+<li>以及其他一些结构。</li>
+</ul>
+<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
+<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
+<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
+<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
+<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
+<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
+<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
+<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
+<p>Example：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
+<p>同样的信息也可以在 pg_control 文件中找到。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Buffer Bulk Eviction</title>
     <url>/2024/12/31/postgres/Buffer-Bulk-Eviction/</url>
     <content><![CDATA[<p>If bulk reads or writes are performed, there is a risk that one-time data can quickly oust useful pages from the buffer cache.</p>
@@ -1068,41 +437,19 @@
       </tags>
   </entry>
   <entry>
-    <title>Checkpoint</title>
-    <url>/2025/04/03/postgres/Checkpoint/</url>
-    <content><![CDATA[<p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
-<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
-<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
-<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
-<ul>
-<li>CLOG（提交日志）中的事务状态信息，</li>
-<li>子事务的元数据，</li>
-<li>以及其他一些结构。</li>
-</ul>
-<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
-<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
-<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
-<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
-<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
-<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
-<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
-<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
-<p>Example：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
-<p>同样的信息也可以在 pg_control 文件中找到。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
+    <title>Distinct_Values</title>
+    <url>/2025/12/22/postgres/Distinct-Values/</url>
+    <content><![CDATA[<p>pg_stats 视图中的 n_distinct 字段表示某一列中不同取值（distinct values）的数量。</p>
+<p>如果 n_distinct 为负数，其绝对值表示该列中不同取值所占的比例，而不是实际的不同值个数。例如，−1 表示该列中所有值都是唯一的；−3 表示平均而言，每个不同的值大约出现在 3 行中。当估计的不同值数量超过表中总行数的 10% 时，分析器（analyzer）会使用这种“比例”的表示方式。</p>
+<p>如果预期数据是均匀分布的，则会直接使用不同值的数量。例如，在估算 column &#x3D; expression 这种条件的基数（cardinality）时，如果在规划阶段无法确定表达式的具体取值，查询规划器会假设该表达式可以以相同的概率取列中的任意一个值。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> flights</span><br><span class="line"><span class="keyword">WHERE</span> departure_airport <span class="operator">=</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> airport_code</span><br><span class="line">	<span class="keyword">FROM</span> airports</span><br><span class="line">	<span class="keyword">WHERE</span> city <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span></span><br><span class="line">);</span><br><span class="line">                          QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">30.56</span>.<span class="number">.5340</span><span class="number">.40</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2066</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">	<span class="keyword">Filter</span>: (departure_airport <span class="operator">=</span> $<span class="number">0</span>)</span><br><span class="line">	InitPlan <span class="number">1</span> (<span class="keyword">returns</span> $<span class="number">0</span>)</span><br><span class="line">		−<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> airports_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.30</span><span class="number">.56</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> wi... </span><br><span class="line">			<span class="keyword">Filter</span>: ((city −<span class="operator">&gt;&gt;</span> lang()) <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span>::text)</span><br><span class="line">(<span class="number">5</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>postgres</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
+        <tag>plan</tag>
       </tags>
   </entry>
   <entry>
@@ -1959,37 +1306,6 @@
       </tags>
   </entry>
   <entry>
-    <title>page</title>
-    <url>/2025/08/11/postgres/page/</url>
-    <content><![CDATA[<p>Each page has a certain inner layout that usually consists of the following parts:<br>page header</p>
-<ul>
-<li>page header</li>
-<li>an array of item pointers</li>
-<li>free space</li>
-<li>items (row versions)</li>
-<li>special space</li>
-</ul>
-<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><img src="/images/page.png" alt="page.png" style="zoom:100%;" />
-
-<h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
-
-
-
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * disk page organization</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * space management information generic to any page</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *		pd_lsn		- identifies xlog record for last change to this page.</span></span><br><span class="line"><span class="comment"> *		pd_checksum - page checksum, if set.</span></span><br><span class="line"><span class="comment"> *		pd_flags	- flag bits.</span></span><br><span class="line"><span class="comment"> *		pd_lower	- offset to start of free space.</span></span><br><span class="line"><span class="comment"> *		pd_upper	- offset to end of free space.</span></span><br><span class="line"><span class="comment"> *		pd_special	- offset to start of special space.</span></span><br><span class="line"><span class="comment"> *		pd_pagesize_version - size in bytes and page layout version number.</span></span><br><span class="line"><span class="comment"> *		pd_prune_xid - oldest XID among potentially prunable tuples on page.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The LSN is used by the buffer manager to enforce the basic rule of WAL:</span></span><br><span class="line"><span class="comment"> * &quot;thou shalt write xlog before data&quot;.  A dirty buffer cannot be dumped</span></span><br><span class="line"><span class="comment"> * to disk until xlog has been flushed at least as far as the page&#x27;s LSN.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_checksum stores the page checksum, if it has been set for this page;</span></span><br><span class="line"><span class="comment"> * zero is a valid value for a checksum. If a checksum is not in use then</span></span><br><span class="line"><span class="comment"> * we leave the field unset. This will typically mean the field is zero</span></span><br><span class="line"><span class="comment"> * though non-zero values may also be present if databases have been</span></span><br><span class="line"><span class="comment"> * pg_upgraded from releases prior to 9.3, when the same byte offset was</span></span><br><span class="line"><span class="comment"> * used to store the current timelineid when the page was last updated.</span></span><br><span class="line"><span class="comment"> * Note that there is no indication on a page as to whether the checksum</span></span><br><span class="line"><span class="comment"> * is valid or not, a deliberate design choice which avoids the problem</span></span><br><span class="line"><span class="comment"> * of relying on the page contents to decide whether to verify it. Hence</span></span><br><span class="line"><span class="comment"> * there are no flag bits relating to checksums.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_prune_xid is a hint field that helps determine whether pruning will be</span></span><br><span class="line"><span class="comment"> * useful.  It is currently unused in index pages.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The page version number and page size are packed together into a single</span></span><br><span class="line"><span class="comment"> * uint16 field.  This is for historical reasons: before PostgreSQL 7.3,</span></span><br><span class="line"><span class="comment"> * there was no concept of a page version number, and doing it this way</span></span><br><span class="line"><span class="comment"> * lets us pretend that pre-7.3 databases have page version number zero.</span></span><br><span class="line"><span class="comment"> * We constrain page sizes to be multiples of 256, leaving the low eight</span></span><br><span class="line"><span class="comment"> * bits available for a version number.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Minimum possible page size is perhaps 64B to fit page header, opaque space</span></span><br><span class="line"><span class="comment"> * and a minimal tuple; of course, in reality you want it much bigger, so</span></span><br><span class="line"><span class="comment"> * the constraint on pagesize mod 256 is not an important restriction.</span></span><br><span class="line"><span class="comment"> * On the high end, we can only support pages up to 32KB because lp_off/lp_len</span></span><br><span class="line"><span class="comment"> * are 15 bits.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">PageHeaderData</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="comment">/* XXX LSN is member of *any* block, not only page-organized ones */</span></span><br><span class="line">	PageXLogRecPtr pd_lsn;		<span class="comment">/* LSN: next byte after last byte of xlog</span></span><br><span class="line"><span class="comment">														 * record for last change to this page */</span></span><br><span class="line">	uint16		pd_checksum;	  <span class="comment">/* checksum */</span></span><br><span class="line">	uint16		pd_flags;		    <span class="comment">/* flag bits, see below */</span></span><br><span class="line">	LocationIndex pd_lower;		<span class="comment">/* offset to start of free space */</span></span><br><span class="line">	LocationIndex pd_upper;		<span class="comment">/* offset to end of free space */</span></span><br><span class="line">	LocationIndex pd_special;	<span class="comment">/* offset to start of special space */</span></span><br><span class="line">	uint16		pd_pagesize_version;</span><br><span class="line">	TransactionId pd_prune_xid; <span class="comment">/* oldest prunable XID, or zero if none */</span></span><br><span class="line">	ItemIdData	pd_linp[FLEXIBLE_ARRAY_MEMBER]; <span class="comment">/* line pointer array */</span></span><br><span class="line">&#125; PageHeaderData;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> PageHeaderData *PageHeader;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Record"><a href="#Record" class="headerlink" title="Record"></a>Record</h2><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> t(</span><br><span class="line">test(# id <span class="type">integer</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s text</span><br><span class="line">test(# );</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> t(s);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">INSERT INTO</span> t(s) <span class="keyword">VALUES</span> (<span class="string">&#x27;FOO&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_xact_id();</span><br><span class="line"> pg_current_xact_id </span><br><span class="line"><span class="comment">--------------------</span></span><br><span class="line">                <span class="number">766</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>))\gx</span><br><span class="line"><span class="operator">-</span>[ RECORD <span class="number">1</span> ]<span class="comment">-------------------</span></span><br><span class="line">lp          <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_off      <span class="operator">|</span> <span class="number">8160</span></span><br><span class="line">lp_flags    <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_len      <span class="operator">|</span> <span class="number">32</span></span><br><span class="line">t_xmin      <span class="operator">|</span> <span class="number">766</span></span><br><span class="line">t_xmax      <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_field3    <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_ctid      <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">t_infomask2 <span class="operator">|</span> <span class="number">2</span></span><br><span class="line">t_infomask  <span class="operator">|</span> <span class="number">2050</span></span><br><span class="line">t_hoff      <span class="operator">|</span> <span class="number">24</span></span><br><span class="line">t_bits      <span class="operator">|</span> </span><br><span class="line">t_oid       <span class="operator">|</span> </span><br><span class="line">t_data      <span class="operator">|</span> \x0100000009464f4f</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;(0,&#x27;</span><span class="operator">||</span>lp<span class="operator">||</span><span class="string">&#x27;)&#x27;</span> <span class="keyword">AS</span> ctid,</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">CASE</span> lp_flags</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;unused&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">1</span> <span class="keyword">THEN</span> <span class="string">&#x27;normal&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">2</span> <span class="keyword">THEN</span> <span class="string">&#x27;redirect to &#x27;</span><span class="operator">||</span>lp_off</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">3</span> <span class="keyword">THEN</span> <span class="string">&#x27;dead&#x27;</span> </span><br><span class="line">test<span class="operator">-</span># <span class="keyword">END</span> <span class="keyword">AS</span> state,</span><br><span class="line">test<span class="operator">-</span># t_xmin <span class="keyword">as</span> xmin,</span><br><span class="line">test<span class="operator">-</span># t_xmax <span class="keyword">as</span> xmax,</span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">256</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">512</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_aborted, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">1024</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">2048</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_aborted</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> ctid  <span class="operator">|</span> state  <span class="operator">|</span> xmin <span class="operator">|</span> xmax <span class="operator">|</span> xmin_committed <span class="operator">|</span> xmin_aborted <span class="operator">|</span> xmax_committed <span class="operator">|</span> xmax_aborted </span><br><span class="line"><span class="comment">-------+--------+------+------+----------------+--------------+----------------+--------------</span></span><br><span class="line"> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> normal <span class="operator">|</span>  <span class="number">766</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> f              <span class="operator">|</span> f            <span class="operator">|</span> f              <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>Reference:</p>
-<p><a href="https://blog.csdn.net/u010217262/article/details/123879205">【转】AntDB&#x2F;PostgreSQL内部原理：表Page结构解析_postgresql对应antdb的版本-CSDN博客</a></p>
-]]></content>
-      <categories>
-        <category>postgres</category>
-      </categories>
-      <tags>
-        <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>How to use pgbench</title>
     <url>/2025/05/14/postgres/pgbench-md/</url>
     <content><![CDATA[<p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
@@ -2021,6 +1337,76 @@
       <tags>
         <tag>learn</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>page</title>
+    <url>/2025/08/11/postgres/page/</url>
+    <content><![CDATA[<p>Each page has a certain inner layout that usually consists of the following parts:<br>page header</p>
+<ul>
+<li>page header</li>
+<li>an array of item pointers</li>
+<li>free space</li>
+<li>items (row versions)</li>
+<li>special space</li>
+</ul>
+<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><img src="/images/page.png" alt="page.png" style="zoom:100%;" />
+
+<h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * disk page organization</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * space management information generic to any page</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *		pd_lsn		- identifies xlog record for last change to this page.</span></span><br><span class="line"><span class="comment"> *		pd_checksum - page checksum, if set.</span></span><br><span class="line"><span class="comment"> *		pd_flags	- flag bits.</span></span><br><span class="line"><span class="comment"> *		pd_lower	- offset to start of free space.</span></span><br><span class="line"><span class="comment"> *		pd_upper	- offset to end of free space.</span></span><br><span class="line"><span class="comment"> *		pd_special	- offset to start of special space.</span></span><br><span class="line"><span class="comment"> *		pd_pagesize_version - size in bytes and page layout version number.</span></span><br><span class="line"><span class="comment"> *		pd_prune_xid - oldest XID among potentially prunable tuples on page.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The LSN is used by the buffer manager to enforce the basic rule of WAL:</span></span><br><span class="line"><span class="comment"> * &quot;thou shalt write xlog before data&quot;.  A dirty buffer cannot be dumped</span></span><br><span class="line"><span class="comment"> * to disk until xlog has been flushed at least as far as the page&#x27;s LSN.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_checksum stores the page checksum, if it has been set for this page;</span></span><br><span class="line"><span class="comment"> * zero is a valid value for a checksum. If a checksum is not in use then</span></span><br><span class="line"><span class="comment"> * we leave the field unset. This will typically mean the field is zero</span></span><br><span class="line"><span class="comment"> * though non-zero values may also be present if databases have been</span></span><br><span class="line"><span class="comment"> * pg_upgraded from releases prior to 9.3, when the same byte offset was</span></span><br><span class="line"><span class="comment"> * used to store the current timelineid when the page was last updated.</span></span><br><span class="line"><span class="comment"> * Note that there is no indication on a page as to whether the checksum</span></span><br><span class="line"><span class="comment"> * is valid or not, a deliberate design choice which avoids the problem</span></span><br><span class="line"><span class="comment"> * of relying on the page contents to decide whether to verify it. Hence</span></span><br><span class="line"><span class="comment"> * there are no flag bits relating to checksums.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_prune_xid is a hint field that helps determine whether pruning will be</span></span><br><span class="line"><span class="comment"> * useful.  It is currently unused in index pages.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The page version number and page size are packed together into a single</span></span><br><span class="line"><span class="comment"> * uint16 field.  This is for historical reasons: before PostgreSQL 7.3,</span></span><br><span class="line"><span class="comment"> * there was no concept of a page version number, and doing it this way</span></span><br><span class="line"><span class="comment"> * lets us pretend that pre-7.3 databases have page version number zero.</span></span><br><span class="line"><span class="comment"> * We constrain page sizes to be multiples of 256, leaving the low eight</span></span><br><span class="line"><span class="comment"> * bits available for a version number.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Minimum possible page size is perhaps 64B to fit page header, opaque space</span></span><br><span class="line"><span class="comment"> * and a minimal tuple; of course, in reality you want it much bigger, so</span></span><br><span class="line"><span class="comment"> * the constraint on pagesize mod 256 is not an important restriction.</span></span><br><span class="line"><span class="comment"> * On the high end, we can only support pages up to 32KB because lp_off/lp_len</span></span><br><span class="line"><span class="comment"> * are 15 bits.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">PageHeaderData</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="comment">/* XXX LSN is member of *any* block, not only page-organized ones */</span></span><br><span class="line">	PageXLogRecPtr pd_lsn;		<span class="comment">/* LSN: next byte after last byte of xlog</span></span><br><span class="line"><span class="comment">														 * record for last change to this page */</span></span><br><span class="line">	uint16		pd_checksum;	  <span class="comment">/* checksum */</span></span><br><span class="line">	uint16		pd_flags;		    <span class="comment">/* flag bits, see below */</span></span><br><span class="line">	LocationIndex pd_lower;		<span class="comment">/* offset to start of free space */</span></span><br><span class="line">	LocationIndex pd_upper;		<span class="comment">/* offset to end of free space */</span></span><br><span class="line">	LocationIndex pd_special;	<span class="comment">/* offset to start of special space */</span></span><br><span class="line">	uint16		pd_pagesize_version;</span><br><span class="line">	TransactionId pd_prune_xid; <span class="comment">/* oldest prunable XID, or zero if none */</span></span><br><span class="line">	ItemIdData	pd_linp[FLEXIBLE_ARRAY_MEMBER]; <span class="comment">/* line pointer array */</span></span><br><span class="line">&#125; PageHeaderData;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> PageHeaderData *PageHeader;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Record"><a href="#Record" class="headerlink" title="Record"></a>Record</h2><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> t(</span><br><span class="line">test(# id <span class="type">integer</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s text</span><br><span class="line">test(# );</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> t(s);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">INSERT INTO</span> t(s) <span class="keyword">VALUES</span> (<span class="string">&#x27;FOO&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_xact_id();</span><br><span class="line"> pg_current_xact_id </span><br><span class="line"><span class="comment">--------------------</span></span><br><span class="line">                <span class="number">766</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>))\gx</span><br><span class="line"><span class="operator">-</span>[ RECORD <span class="number">1</span> ]<span class="comment">-------------------</span></span><br><span class="line">lp          <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_off      <span class="operator">|</span> <span class="number">8160</span></span><br><span class="line">lp_flags    <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_len      <span class="operator">|</span> <span class="number">32</span></span><br><span class="line">t_xmin      <span class="operator">|</span> <span class="number">766</span></span><br><span class="line">t_xmax      <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_field3    <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_ctid      <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">t_infomask2 <span class="operator">|</span> <span class="number">2</span></span><br><span class="line">t_infomask  <span class="operator">|</span> <span class="number">2050</span></span><br><span class="line">t_hoff      <span class="operator">|</span> <span class="number">24</span></span><br><span class="line">t_bits      <span class="operator">|</span> </span><br><span class="line">t_oid       <span class="operator">|</span> </span><br><span class="line">t_data      <span class="operator">|</span> \x0100000009464f4f</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;(0,&#x27;</span><span class="operator">||</span>lp<span class="operator">||</span><span class="string">&#x27;)&#x27;</span> <span class="keyword">AS</span> ctid,</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">CASE</span> lp_flags</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;unused&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">1</span> <span class="keyword">THEN</span> <span class="string">&#x27;normal&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">2</span> <span class="keyword">THEN</span> <span class="string">&#x27;redirect to &#x27;</span><span class="operator">||</span>lp_off</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">3</span> <span class="keyword">THEN</span> <span class="string">&#x27;dead&#x27;</span> </span><br><span class="line">test<span class="operator">-</span># <span class="keyword">END</span> <span class="keyword">AS</span> state,</span><br><span class="line">test<span class="operator">-</span># t_xmin <span class="keyword">as</span> xmin,</span><br><span class="line">test<span class="operator">-</span># t_xmax <span class="keyword">as</span> xmax,</span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">256</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">512</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_aborted, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">1024</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">2048</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_aborted</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> ctid  <span class="operator">|</span> state  <span class="operator">|</span> xmin <span class="operator">|</span> xmax <span class="operator">|</span> xmin_committed <span class="operator">|</span> xmin_aborted <span class="operator">|</span> xmax_committed <span class="operator">|</span> xmax_aborted </span><br><span class="line"><span class="comment">-------+--------+------+------+----------------+--------------+----------------+--------------</span></span><br><span class="line"> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> normal <span class="operator">|</span>  <span class="number">766</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> f              <span class="operator">|</span> f            <span class="operator">|</span> f              <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>Reference:</p>
+<p><a href="https://blog.csdn.net/u010217262/article/details/123879205">【转】AntDB&#x2F;PostgreSQL内部原理：表Page结构解析_postgresql对应antdb的版本-CSDN博客</a></p>
+]]></content>
+      <categories>
+        <category>postgres</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python_tricks</title>
+    <url>/2022/06/20/python/python-tricks/</url>
+    <content><![CDATA[<h2 id="python参数灵活性"><a href="#python参数灵活性" class="headerlink" title="python参数灵活性"></a>python参数灵活性</h2><p>位置参数 + 默认参数 + *args + **kwargs</p>
+<table>
+<thead>
+<tr>
+<th>语法</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>*args</code></td>
+<td>收集所有 <strong>位置参数</strong>，组成元组</td>
+</tr>
+<tr>
+<td><code>**kwargs</code></td>
+<td>收集所有 <strong>关键字参数</strong>，组成字典</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">func</span>(<span class="params">a, b=<span class="number">2</span>, **kwargs</span>):</span><br><span class="line">    <span class="built_in">print</span>(a, b, kwargs)</span><br><span class="line"></span><br><span class="line">func(<span class="number">1</span>, c=<span class="number">3</span>, d=<span class="number">4</span>)</span><br><span class="line"><span class="comment"># 输出：1 2 &#123;&#x27;c&#x27;: 3, &#x27;d&#x27;: 4&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="返回值灵活性"><a href="#返回值灵活性" class="headerlink" title="返回值灵活性"></a>返回值灵活性</h2><p>Python 函数没有固定返回类型。可以返回任意对象：数字、字符串、列表、字典、对象，甚至函数本身。调用方只要按照约定处理即可</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">example</span>(<span class="params">x</span>):</span><br><span class="line">    <span class="keyword">if</span> x &gt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;negative&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="虚拟环境的使用"><a href="#虚拟环境的使用" class="headerlink" title="虚拟环境的使用"></a>虚拟环境的使用</h2><ul>
+<li>创建虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python3<span class="number">.14</span> -m venv .venv</span><br></pre></td></tr></table></figure></li>
+<li>终端激活虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">source .venv/<span class="built_in">bin</span>/activate</span><br><span class="line">python --version</span><br><span class="line">which python</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="导出第三方依赖"><a href="#导出第三方依赖" class="headerlink" title="导出第三方依赖"></a>导出第三方依赖</h2><ul>
+<li>激活虚拟环境</li>
+<li>使用 pip freeze 导出  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip freeze --local &gt; requirements.txt</span><br></pre></td></tr></table></figure></li>
+<li>复现环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
   </entry>
   <entry>
     <title>R-tree for points</title>
@@ -2244,6 +1630,32 @@
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2024/05/11/tools/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
+
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>git</title>
     <url>/2023/12/17/tools/git/</url>
     <content><![CDATA[<ol>
@@ -2270,32 +1682,6 @@
       </categories>
       <tags>
         <tag>GIT</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2024/05/11/tools/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
-
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
@@ -2371,19 +1757,633 @@
       </tags>
   </entry>
   <entry>
-    <title>Distinct_Values</title>
-    <url>/2025/12/22/postgres/Distinct-Values/</url>
-    <content><![CDATA[<p>pg_stats 视图中的 n_distinct 字段表示某一列中不同取值（distinct values）的数量。</p>
-<p>如果 n_distinct 为负数，其绝对值表示该列中不同取值所占的比例，而不是实际的不同值个数。例如，−1 表示该列中所有值都是唯一的；−3 表示平均而言，每个不同的值大约出现在 3 行中。当估计的不同值数量超过表中总行数的 10% 时，分析器（analyzer）会使用这种“比例”的表示方式。</p>
-<p>如果预期数据是均匀分布的，则会直接使用不同值的数量。例如，在估算 column &#x3D; expression 这种条件的基数（cardinality）时，如果在规划阶段无法确定表达式的具体取值，查询规划器会假设该表达式可以以相同的概率取列中的任意一个值。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> flights</span><br><span class="line"><span class="keyword">WHERE</span> departure_airport <span class="operator">=</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> airport_code</span><br><span class="line">	<span class="keyword">FROM</span> airports</span><br><span class="line">	<span class="keyword">WHERE</span> city <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span></span><br><span class="line">);</span><br><span class="line">                          QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">30.56</span>.<span class="number">.5340</span><span class="number">.40</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2066</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">	<span class="keyword">Filter</span>: (departure_airport <span class="operator">=</span> $<span class="number">0</span>)</span><br><span class="line">	InitPlan <span class="number">1</span> (<span class="keyword">returns</span> $<span class="number">0</span>)</span><br><span class="line">		−<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> airports_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.30</span><span class="number">.56</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> wi... </span><br><span class="line">			<span class="keyword">Filter</span>: ((city −<span class="operator">&gt;&gt;</span> lang()) <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span>::text)</span><br><span class="line">(<span class="number">5</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+    <title>B树索引（postgres）</title>
+    <url>/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/</url>
+    <content><![CDATA[<p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
+<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
+<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
+<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
+<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
+<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
+<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
+</ol>
+<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
+<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
+<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
+<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
+</ul>
+<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
+<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
+<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
+<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
+<p>PostgreSQL 当前 不支持 Skip Scan</p>
+<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
+<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
+<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
+<li>聚簇后的表，在按该索引扫描时性能更好</li>
+</ul>
+<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
+<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
+<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
+<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
+</ul>
+<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
+<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
+<ol>
+<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
+<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
+</ol>
+<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
+<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
+<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
+<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
+</ol>
+<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
+<li>适合返回大量结果的索引查询；</li>
+<li>通过减少随机访问，降低 I&#x2F;O；</li>
+<li>支持多个索引结果合并，提高复杂查询效率。</li>
+</ol>
+<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
+<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
+<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
+</ol>
+<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
+<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
+<ol>
+<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
+<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
+<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
+</ol>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>database</category>
       </categories>
       <tags>
-        <tag>pginternal</tag>
-        <tag>plan</tag>
+        <tag>algorithm</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Raft协议</title>
+    <url>/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</url>
+    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
+<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
+<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
+<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
+<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
+</ol>
+<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
+<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
+<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
+<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
+</ul>
+<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
+<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
+<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
+<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
+</ul>
+<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
+<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
+<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
+<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
+</ul>
+<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
+<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
+<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
+</ul>
+<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
+<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
+<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
+<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
+<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
+</ol>
+<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
+<li>多实例并行运行：</li>
+</ol>
+<ul>
+<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
+<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
+</ul>
+<ol start="2">
+<li>共享底层资源：</li>
+</ol>
+<ul>
+<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
+<li>使用高效的调度机制协调实例间的资源竞争。</li>
+</ul>
+<ol start="3">
+<li>动态分片和迁移：</li>
+</ol>
+<ul>
+<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
+<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
+</ul>
+<ol start="4">
+<li>跨分片操作：</li>
+</ol>
+<ul>
+<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
+<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
+</ul>
+<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th>Raft</th>
+<th>MultiRaft</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标</td>
+<td>提供单一一致性机制</td>
+<td>提供分区一致性机制</td>
+</tr>
+<tr>
+<td>运行实例</td>
+<td>单个 Raft 集群</td>
+<td>多个独立的 Raft 集群</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小规模系统</td>
+<td>大规模分布式存储或事务场景</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>有限,单点可能成为瓶颈</td>
+<td>高扩展性，分片机制避免瓶颈</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>较低</td>
+<td>较高，需要处理跨分片事务</td>
+</tr>
+</tbody></table>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Lehman–Yao B-tree</title>
+    <url>/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/</url>
+    <content><![CDATA[<h2 id="1-Lehman–Yao-B-Trees"><a href="#1-Lehman–Yao-B-Trees" class="headerlink" title="1. Lehman–Yao B*-Trees"></a>1. Lehman–Yao B*-Trees</h2><p>Lehman–Yao构造了一个供并发进程使用的数据结构。该数据结构是 Wedekind提出的 B*-树的一个简单变体（其基础是 Bayer 和 McCreight定义的 B 树）。<br>Lehman–Yao B*-树定义如下。</p>
+<h3 id="1-1-定义"><a href="#1-1-定义" class="headerlink" title="1.1 定义"></a>1.1 定义</h3><ol>
+<li>Each path from the root to any leaf has the same length, h.</li>
+<li>内部节点（非 root、非叶子）至少要有 k + 1 个孩子（sons）。 (k is a tree parameter; 2k is the maximum number of elements in a node, neglecting the “high key,” which is explained below.)</li>
+<li>root要么是页节点要么至少有两个孩子（sons）</li>
+<li>每个node最多有2k+1个孩子（sons）</li>
+<li>Lehman–Yao B-tree中的所有数据的键（key）都存储在叶子节点中，叶子节点还包含指向数据库记录的指针（每一条记录都与一个 key 对应）。<br>非叶子节点包含指针，以及用于沿着这些指针继续查找的 key 值（b+ tree）。</li>
+</ol>
+<p>B*-树的节点看起来如图 1 所示。Ki 表示 key 域的实例Pi 表示指针。Pi 可以指向其他节点，或者——在叶子节点的情况下——指向与存储在叶子节点中的 key 值关联的记录。这种安排使得在我们的模型中，叶子节点和非叶子节点的结构基本相同。M 是一个标记，用于指示该节点是叶子节点，它占据了非叶子节点中第一个指针的位置。图 2 显示了一个 B*-树示例。</p>
+<h3 id="1-2-Sequencing（顺序规则）"><a href="#1-2-Sequencing（顺序规则）" class="headerlink" title="1.2 Sequencing（顺序规则）"></a>1.2 Sequencing（顺序规则）</h3><ol>
+<li>每个节点内部，key 按升序排列。</li>
+<li>在 B*-tree 中，有时会在非叶子节点追加一个额外的值，称为 “high key”（见图 3）。</li>
+<li>在任意节点 N 中，每个指针 Pi 指向一个子树 Ti（Pi 指向的节点为 Ti 的根）。Ti 中存储的 key 值被 Pi 左右的两个 key （Ki 和 Ki+1）界定。 这就给非叶子节点提供了一组 (pointer, value) 对    <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">key(Ti) ∈ (Ki-1, Ki]</span><br></pre></td></tr></table></figure>
+ 其中，k0 &#x3D; -∞（在 N 中物理上不存在），K2k+1 &#x3D; high key（如果存在），high key 提供了 Pi 指向的子树的上界，因此它也是以 N 为根的子树中所有值的上界。<br>叶子节点 定义类似（见图 3）：Ki &#x3D; 叶子中存储的 key；Pi &#x3D; 指向对应记录的指针</li>
+</ol>
+<h3 id="1-3-Insertion-Rule-插入规则"><a href="#1-3-Insertion-Rule-插入规则" class="headerlink" title="1.3 Insertion Rule(插入规则)"></a>1.3 Insertion Rule(插入规则)</h3><ol>
+<li>如果一个叶子节点的条目（entries）少于 2k 个，那么一个新的条目以及指向其对应记录的指针可以直接插入到该节点中。</li>
+<li>如果一个叶子节点已有 2k 个条目，则插入新的条目时，需要通过将该节点分裂为两个节点来进行，每个新节点包含原节点一半的条目。新的条目会被插入到这两个节点中的一个（在合适的位置）。由于其中一个节点是新创建的，因此必须在原单节点的父节点中插入一个新的指针。这个新的指针指向新节点；新的键值是对应于原节点拆分后左半部分的键值。此外，需要为这两个新节点分别设置高键（high key）。图 4 展示了一个节点分裂的示例。</li>
+<li>对非叶子节点的插入操作与叶子节点完全相同，只是指针指向的是子节点，而不是数据记录。</li>
+</ol>
+<p>一个节点（按照上面给出的规则），如果条目数少于 2k，则称其为“安全节点”（就插入操作而言），因为插入可以通过对该节点的简单操作完成。同样，如果一个节点有 2k 个条目，则称其为“非安全节点”，因为必须进行分裂操作。对节点的删除操作也有类似的定义：如果删除可以在节点内完成而不会影响其他节点，则该节点称为“安全节点”；反之，如果删除会影响其他节点，则称为“非安全节点”。也就是说，如果节点的条目数多于 k + 1，则安全；如果恰好有 k + 1 条目，则非安全。</p>
+<p>一个简单的例子就足以说明，对 B*-树进行并发操作的简单做法是错误的。<br>考虑图 5a 所示的 B*-树片段。假设有两个进程：一个搜索值 15，另一个插入值 9。插入操作应当导致树结构修改为图 5b 所示的样子。现在考虑下面这一系列操作：  </p>
+<table>
+<thead>
+<tr>
+<th>select(15)</th>
+<th>insert(9)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C&lt;-read(x)</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>A&lt;-read(x)</td>
+</tr>
+<tr>
+<td>exam C;get ptr to y</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>exam A;get ptr to y</td>
+</tr>
+<tr>
+<td></td>
+<td>A &lt;- read(y)</td>
+</tr>
+<tr>
+<td></td>
+<td>insert 9 into A; must split into A, B</td>
+</tr>
+<tr>
+<td></td>
+<td>PUT(B, Y’)</td>
+</tr>
+<tr>
+<td></td>
+<td>PUT(A, Y)</td>
+</tr>
+<tr>
+<td></td>
+<td>Add to node x a pointer to node y’.</td>
+</tr>
+<tr>
+<td>C &lt;- read(y)</td>
+<td></td>
+</tr>
+<tr>
+<td>error!15 not found</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>问题在于，搜索操作首先返回指向 y 的指针（从 X 获得），然后才读取包含 y 的页面。在这两个操作之间，插入操作已经修改了树的结构。</p>
+<h2 id="2-Previous-Approaches"><a href="#2-Previous-Approaches" class="headerlink" title="2. Previous Approaches"></a>2. Previous Approaches</h2><p>前面的例子表明，对并发 B 树问题采取简单做法是行不通的：如果不防范并发操作带来的潜在问题，多个进程的操作可能导致结果不正确。为了更好地理解这个问题，我们在此简要概述一些已经提出的其他方法和解决方案。</p>
+<p>针对并发 B 树问题的第一个解决方案是由 Samadi 提出的.他的做法是最直接的一种，并且是最早考虑并发问题的方法。该方案简单地使用信号量来独占锁定任何一次树结构修改可能经过的整条路径。这实际上锁定了受影响的最高节点所在的整个子树</p>
+<p>Bayer 和 Schkolnick 提出的算法对 Samadi 的方法进行了实质性的改进。他们提出了一种用于 B*-树并发操作的方案；该方案包含一些参数，可以根据所需的并发程度和类型进行设置。<br>首先，修改操作会对树的上部节点加写者排他锁（writer-exclusion locks）（这种锁只排斥其他写者，而不会阻止读者）。<br>当需要真正进行修改操作时，会施加独占锁（exclusive locks），大多应用在树的下部节点。<br>这种对独占锁的稀疏使用提高了算法的并发性能。</p>
+<p>Miller 和 Snyder [12] 研究了一种方案，该方案锁定树中一个有界大小的区域。该算法使用先导锁（pioneer locks）和跟随锁（follower locks），以防止其他进程进入当前进程正在修改的树区域。被锁定的区域沿树向上移动，同时执行相应的修改操作.在使用队列管理的锁策略的帮助下，沿树向下移动的读者可以“越过”被锁定的区域，从而避免死锁。这种算法与本文提出的算法的权衡在于：本文的算法锁定树的区域明显更小，但需要对普通的 B-tree 或 B*-tree 结构进行稍微的修改，以便支持并发。</p>
+<p>Ellis [6] 提出了一种针对 2-3 树的并发解决方案。文中采用了几种方法以提高并发能力，并且（据称）这些方法可以很容易地推广到 B 树。<br>该论文应用了两种思想：一是在相反方向上对一组数据进行读写（由 Lamport [11] 提出）；二是允许数据结构暂时出现轻微退化，同时允许进程不必立即完成操作，可以将工作推迟到更合适的时间再执行。</p>
+<p>Guibas 和 Sedgewick [6a] 提出了一种针对平衡树的统一“双色框架”（dichromatic framework）。这是一种研究平衡树的简化方法：它将所有平衡树方案归约为“带颜色”的二叉树的特例，并具有概念上的清晰性。这些作者利用他们的框架研究一种自上而下的并发锁定方案，其中包括在沿树向下访问时对“几乎满的”节点进行分裂。我们预计，他们的方案将锁定比我们的方案更多的节点（降低并发性），并且需要略多的存储空间。</p>
+<p>另一种针对 B 树并发操作的方法目前正在由 Kwong 和 Wood [10] 进行研究。</p>
+<h2 id="3-Blink-Tree-for-Concurrency"><a href="#3-Blink-Tree-for-Concurrency" class="headerlink" title="3. Blink-Tree for Concurrency"></a>3. Blink-Tree for Concurrency</h2><p>B-link 树是一种在 B*-树基础上修改而成的结构，它在每个节点中增加了一个“链接（link）”指针字段（记作 P2k+1 ——见图 6）。<br>（B-link-tree 的发音是 “Blink-tree”。）   </p>
+<p>这个链接指针指向当前节点所在层的下一个节点；只有在该层最右侧的节点中，这个链接指针才是空指针（null）。这样的链接指针定义是自洽的，因为所有叶子节点都位于树的同一层。  </p>
+<p>因此，在 B-link 树中，同一层的所有节点都被连接成一条链表，如图 7 所示。</p>
+<p>Link 指针的目的，是提供一种到达某个节点的额外途径。<br>当一个节点因为数据溢出而被分裂时，原来的单一节点会被两个新的节点取代。</p>
+<p>在分裂后：</p>
+<ul>
+<li><p>第一个新节点的 link 指针指向第二个新节点；</p>
+</li>
+<li><p>第二个新节点的 link 指针则保存了原来旧节点的 link 指针内容。</p>
+</li>
+</ul>
+<p>通常情况下，第一个新节点会占用旧节点在磁盘上的同一个物理页面。</p>
+<p>设计这个方案的意图是：<br>因为这两个新节点被 link 指针连接起来，在父节点中的正确指针尚未更新之前，它们在功能上仍然等价于原来的那个单一节点。<br>Blink-tree 的精确查找与插入算法将在接下来的两个章节中给出。</p>
+<p>对于树中的任意一个节点（处于某一层且不是该层的第一个节点），通常会有两种指针指向它：</p>
+<p>来自其父节点的“子指针”（son pointer），以及</p>
+<p>来自其左兄弟节点的 link 指针。</p>
+<p>当一个节点被插入到树中时，这两个指针之中必定有一个会先被创建。<br>我们规定：在这两个指针中，link 指针必须最先存在。<br>也就是说，一个节点在树中出现时，可以暂时没有父节点的指针指向它，但必须已经有一个左兄弟指向它的 link 指针。</p>
+<p>这种结构依然被定义为一个合法的树结构，因为新的“右兄弟”节点可以通过“左兄弟”到达。（这两个兄弟节点在功能上仍然可以视作一个节点。）</p>
+<p>当然，为了保证良好的查找效率，来自父节点的指针必须尽快补上。</p>
+<p>Link 指针的优势在于：它会在节点发生分裂时同步建立。<br>因此，即使针对新节点的常规树指针尚未全部更新完毕，link 指针仍可作为一种“临时修补”机制，使并发操作保持正确性。</p>
+<p>当查找键大于节点的最大键值（由 high key 标识）时，这表明树结构已经发生变化，此时应通过 link 指针继续访问右兄弟节点。<br>虽然这种方式略低效一些（因为需要额外一次磁盘读取来跟随 link 指针），但它仍然是到达目标叶子节点的正确路径。</p>
+<p>由于节点分裂本身属于例外情况，link 指针的实际使用频率应该非常低。</p>
+<p>Blink-tree 结构的另一个优点是：在对树进行顺序遍历时，link 指针可以用于快速按“按层次优先（level-major）”的顺序检索树中的所有节点，或者，例如，只检索所有叶子节点。</p>
+<h2 id="4-THE-SEARCH-ALGORITHM"><a href="#4-THE-SEARCH-ALGORITHM" class="headerlink" title="4. THE SEARCH ALGORITHM"></a>4. THE SEARCH ALGORITHM</h2><h3 id="4-1-算法示意图（Algorithm-Sketch）"><a href="#4-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="4.1 算法示意图（Algorithm Sketch）"></a>4.1 算法示意图（Algorithm Sketch）</h3><p>要在树中查找一个值 v，搜索过程从根节点开始，沿树向下比较 v 与每个节点中的键值。在每个节点中，比较键值后，决定沿节点中哪条现有指针继续向下搜索，指示应沿该指针前往下一层节点，或直接到达叶子（记录）节点。</p>
+<p>如果搜索过程中检查某个节点时，发现该节点中的最大值小于 v，则可以推断出当前节点发生了一些变化，而这些变化在搜索检查其父节点时尚未反映到父节点中。</p>
+<p>这意味着当前节点已经被分裂成两个（或更多）新的节点。<br>此时，搜索必须纠正其在树中的位置错误：不再按照普通的父节点子指针（son pointer）前进，而是沿新分裂节点的 link 指针继续搜索。</p>
+<p>搜索过程最终会到达 v 应该所在的叶子节点（如果 v 存在的话）。此时，该节点要么包含 v，要么不包含 v 且节点中的最大值大于 v。<br>因此，该算法能够正确地判断 v 是否存在于树中。</p>
+<h2 id="4-2-算法"><a href="#4-2-算法" class="headerlink" title="4.2 算法"></a>4.2 算法</h2><p><strong>搜索（Search）</strong><br>该过程用于在树中查找一个值 𝑣。如果 𝑣 存在于树中，过程结束时：𝐴包含包含 𝑣 的节点 𝑡<br>包含指向与 𝑣 关联的记录的指针；如果 𝑣 不存在于树中，𝐴 将包含 𝑣 如果存在的话应该所在的节点。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Search(v):</span><br><span class="line">    ...</span><br><span class="line">    if v exists:</span><br><span class="line">        A = 节点页 containing v</span><br><span class="line">        t = 指向 v 的记录</span><br><span class="line">    else:</span><br><span class="line">        A = 节点页 where v would be</span><br><span class="line">        t = null</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>下文算法中使用的符号在第 2 节中定义。<br>在此过程中，我们使用了一个辅助操作 scannode，其定义如下：</p>
+<blockquote>
+<p>x &lt;- scannode(u, A) denotes the operation of examining the tree node in memory block A for value u and returning the appropriate pointer from A (into x).</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure search(u)</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do </span><br><span class="line">begin</span><br><span class="line">  current &lt;- scannode(u, A);</span><br><span class="line">  A &lt;- get(current) </span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">while t &lt;- scannode(u, A) = link ptr of A do</span><br><span class="line">begin</span><br><span class="line">  current + t ;</span><br><span class="line">  A &lt;- get(current)</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">if v is in A then done “success” else done “failure”</span><br></pre></td></tr></table></figure>
+<p>请注意，这种搜索过程非常简单，其行为与非并发搜索完全相同，将 link 指针与其他指针同等对待。</p>
+<p>还要注意，该过程不进行任何形式的加锁。<br>这与传统的数据库搜索算法形成对比（例如 Bayer 和 Schkolnick [3] 所述），在那些算法中，所有搜索操作都会对它们访问的节点进行读锁。</p>
+<h2 id="5-THE-INSERTION-ALGORITHM"><a href="#5-THE-INSERTION-ALGORITHM" class="headerlink" title="5. THE INSERTION ALGORITHM"></a>5. THE INSERTION ALGORITHM</h2><h3 id="5-1-算法示意图（Algorithm-Sketch）"><a href="#5-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="5.1 算法示意图（Algorithm Sketch）"></a>5.1 算法示意图（Algorithm Sketch）</h3><p>要在树中插入一个值 𝑢 我们执行的操作与前面描述的搜索过程类似。从根节点开始，沿树向下扫描，直到到达应该包含 𝑢 的叶子节点。同时，我们在下降过程中记录每一层中被访问过的最右节点。沿树的下降过程实际上就是在搜索 𝑢 的正确插入位置（比如称该节点为节点 𝑎 ）。</p>
+<p>将值 u 插入叶子节点时，可能需要对该节点进行分裂（当节点不安全时）。<br>在这种情况下，我们对节点进行分裂（如图 8 所示），用两个新节点 a’（a 的新版本，写回同一磁盘页面）和 b’ 替换原来的节点 a。节点 a’ 和 b’ 的内容与原节点 a 相同，只是增加了值 u。随后，我们沿着先前记录的搜索路径回溯树的上层，在叶子节点的父节点中插入新节点 b’ 的条目以及 a’ 的新 high key。</p>
+<p>死锁的避免是由锁定方案的良序性（well-ordering）所保证的，如下所示。<br>需要注意的是，当我们沿树向上回溯时，由于节点可能被分裂，我们必须插入新指针的节点可能并不是下降过程中经过的那个节点。换句话说，我们在下降过程中使用的旧节点可能已经被分裂；此时，正确的插入位置就在原预期插入位置右侧的某个节点。我们通过 link 指针 来找到这个节点。</p>
+<h3 id="5-2-算法"><a href="#5-2-算法" class="headerlink" title="5.2 算法"></a>5.2 算法</h3><p>在下文的算法中，有些过程被视为原语操作（就像上文的 scannode 一样），因为它们容易实现，并且其具体操作对本文的目的而言并不重要。例如：</p>
+<blockquote>
+<p>A &lt;- node.insert (A, w, v) denotes the operation of inserting the pointer w and the value v into the node contained in A.<br>u &lt;- allocate(2 newpage for B) denotes the operation of allocating a new page on the disk. The node contained in B will be written onto this page, using the pointer u.<br>“A, B &lt;- rearrange old A, adding ..” denotes the operation of splitting A into two nodes, A and B, in core.</p>
+</blockquote>
+<p><strong>插入（Insert）</strong>。该算法负责将一个值 v（以及其关联的记录）插入到树中。当算法结束时，值 v 已成功插入到树中，并且在必要的情况下，算法会在从叶子向上回溯的过程中对相应的节点进行分裂。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure insert(v)</span><br><span class="line">initialize stack;</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do</span><br><span class="line">begin</span><br><span class="line">  t &lt;-  current;</span><br><span class="line">  current &lt;- scannode( v, A);</span><br><span class="line">  if new current was not link pointer in A then</span><br><span class="line">    push(t);</span><br><span class="line">  A &lt;- get(current);</span><br><span class="line">end;</span><br><span class="line">lock(current);</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">move.right;</span><br><span class="line">if v is in A then stop “v already exists in tree”;</span><br><span class="line">w &lt;- pointer to pages allocated for record associated with v; </span><br><span class="line">Doinsertion:</span><br><span class="line">if A is safe then</span><br><span class="line">begin</span><br><span class="line">  A &lt;-  node.insert(A, w, v); </span><br><span class="line">  put(A, current); </span><br><span class="line">  unLock(current);</span><br><span class="line">end else begin</span><br><span class="line">  u &lt;- allocate(1 new page for B);</span><br><span class="line">  A, B &lt;- rearrange old A, adding v and w, to make 2 nodes,</span><br><span class="line">    where (link ptr of A, link ptr of B) &lt;- (u, link ptr of old A);</span><br><span class="line">  y &lt;- max value stored in new A;</span><br><span class="line">  put(B, u)</span><br><span class="line">  put(A, current); </span><br><span class="line">  oldnode &lt;- current;</span><br><span class="line">  v &lt;- Y;</span><br><span class="line">  w &lt;- u;</span><br><span class="line">  current &lt;- pop(stack); </span><br><span class="line">  lock(current);</span><br><span class="line">  A &lt;- get(current); </span><br><span class="line">  move.right; </span><br><span class="line">  unlock(oldnode);</span><br><span class="line">  goto Doinsertion</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<p>Move.right. This procedure, which is called by insert, follows link pointers at a given level, if necessary.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">procedure move.right</span><br><span class="line">while t &lt;- scannode(u, A) is a link pointer of A do</span><br><span class="line">begin</span><br><span class="line">  lock(t); </span><br><span class="line">  unlock(current); </span><br><span class="line">  current &lt;- t;</span><br><span class="line">A &lt;- get(current); </span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，该过程在向上回溯树时是 逐层进行的。此外，同时最多只会锁定三个节点，而这种情况发生的频率相对较低：仅在插入分裂节点的指针时，需要沿 link 指针向右移动 的情况下才会出现。此时，被锁定的节点包括：</p>
+<ul>
+<li><p>分裂节点的原始左半部分</p>
+</li>
+<li><p>分裂节点上一层的两个节点</p>
+</li>
+</ul>
+<p>在插入沿右链移动的过程中需要锁定它们。</p>
+<p>与传统方法相比（即只有在确定节点为安全节点时才释放锁），这种做法在 锁粒度和并发性能上都有显著改进。</p>
+<p>该算法的正确性依赖于以下事实：树结构的任何变化（即任何节点的分裂）都会伴随一个 link 指针。节点分裂时，条目总是被移动到树的右侧，在右侧的新节点可以通过 link 指针被访问到，从而保证树的结构在并发操作下仍然可达且正确。</p>
+<p>具体来说，对于任何层级的一个对象（与某个值相关联），我们总能大致知道它的正确插入位置，即我们在该层搜索时经过的“记录节点”。如果该对象的正确插入位置发生了移动，这种移动方式是可预知的：也就是节点分裂向右，留下的 link 指针使得搜索或插入操作仍然能够找到它。因此，从旧的“预期”插入位置开始，始终可以访问到对象的正确插入位置。</p>
+<h2 id="6-CORRECTNESS-PROOF"><a href="#6-CORRECTNESS-PROOF" class="headerlink" title="6 CORRECTNESS PROOF"></a>6 CORRECTNESS PROOF</h2><p>为了证明系统的正确性，我们需要证明以下两个命题对每个进程都成立：</p>
+<ol>
+<li>该进程不会发生死锁（定理 1）；</li>
+<li>当进程终止时，它已经正确地完成了所需的操作。<br>  更具体地说：</li>
+</ol>
+<ul>
+<li>所有磁盘操作都保持树结构的正确性（定理 2）</li>
+<li>除正在进行修改的进程之外，所有其他进程看到的树都是一致的（交互定理 3）。</li>
+</ul>
+<h3 id="6-1-无死锁性（Freedom-from-Deadlock-）"><a href="#6-1-无死锁性（Freedom-from-Deadlock-）" class="headerlink" title="6.1 无死锁性（Freedom from Deadlock ）"></a>6.1 无死锁性（Freedom from Deadlock ）</h3><p>首先，我们开始证明系统不存在死锁。<br>为此，我们对节点施加一个顺序：跨层从下到上、同层从左到右。下面的引理（Lemma：一种 辅助性结论，用于证明后续更大、更重要的定理（Theorem））对这一点进行了严格定义。<br><strong>引理 1</strong> 插入操作对节点加锁遵循一个良序（well-ordering：严格定义的、有序的顺序关系）关系<br><strong>证明</strong> 考虑在树的节点集合上定义如下顺序关系（&lt;）：</p>
+<ol>
+<li>在任意时刻 t，如果两个节点 a 和 b 与树根的距离不同（不在同一层级），那么当且仅当 b 离树根更近（处于更高层级）时，我们称 a &lt; b。</li>
+<li>如果 a 和 b 与树根的距离相同（在同一层级），那么当且仅当 b 能通过从 a 开始沿着一条或多条链接指针到达（即 b 在 a 的右侧）时，我们称 a &lt; b。</li>
+</ol>
+<p>通过检查插入算法我们可以看到：如果在时间 t₀ 时 a &lt; b，那么在所有 t &gt; t₀ 的时间点都仍然有 a &lt; b。因为节点创建过程只是把一个节点 x 分裂成两个新节点 x′ 和 x″，并且满足 x′ &lt; x″，而且</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">y&lt;x⟺y&lt;x′</span><br></pre></td></tr></table></figure>
+<p>和</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x&lt;y⟺x′′&lt;y</span><br></pre></td></tr></table></figure>
+<p>因此，这些节点形成了一个良序关系，插入者按照良序对节点加锁。一旦在某个节点上加锁，它不会再对该节点之下的任何节点加锁，也不会对同一层中位于左侧的节点加锁。<br>因此，插入者按照给定的良序对节点加锁。证毕。<br>由于插入者是唯一对节点加锁的过程，我们可以立即得到以下定理。  </p>
+<p><strong>定理 1</strong>：无死锁性。 给定的系统不会产生死锁。</p>
+<h3 id="6-2-树结构修改的正确性"><a href="#6-2-树结构修改的正确性" class="headerlink" title="6.2 树结构修改的正确性"></a>6.2 树结构修改的正确性</h3><p>为了确保树结构的完整性，我们必须检查所有修改树结构的操作。首先，需要注意的是，树结构的修改只能通过 “put” 操作 来完成。插入过程中算法中有三个地方会执行 put 操作：</p>
+<ol>
+<li>对安全节点重写时使用 “put(A, current)”。</li>
+<li>对不安全节点的最右节点使用 “put(B, u)”。通过该操作，我们写入由节点分裂形成的两个新节点中的第二个节点。</li>
+<li>对不安全节点使用 “put(A, current)”。这里写入的是两个新节点中的第一个（最左节点）。实际上，我们重写了树中已存在的页面（节点），并修改该页面的链接指针，使其指向由 “put(B, …)” 写入的新节点。</li>
+</ol>
+<p>注意，在算法中（针对不安全节点），“put(B, u)” 紧接在 “put(A, current)” 之前执行。我们将在下面的引理中证明，这种顺序实际上将两个 put 操作简化为本质上的一次操作。 </p>
+<p><strong>引理 2</strong>. 操作 ‘put(B, u); put(A, current)’ 相当于对树结构的一次修改。<br>证明. 假设这两个操作分别写入节点 b 和 a。在执行 “put(B, u)” 时，没有其他节点指向正在写入的节点 b，因此该 put 操作对树结构没有影响。现在，当执行 “put(A, current)” 时，该操作修改了 current 指向的节点（节点 a）。修改内容包括将节点 a 的链接指针指向 b。此时，b 已经存在，并且 b 的链接指针指向与 a 的旧版本相同的节点。这样就实现了同时修改 a 并将 b 引入树结构。证毕。</p>
+<p><strong>定理 2</strong>. 所有 put 操作都能正确地修改树结构。<br><strong>证明</strong><br>case 1： 对安全节点执行 “put(A, current)”。该操作只修改树中一个已加锁的节点，因此树的正确性得到保持。<br>case 2： 对不安全节点执行 “put(B, u)”。该操作不会改变树结构。<br>case 3： 对不安全节点执行 “put(A, current)”。根据引理，该操作既修改了当前节点（比如 a），又将另一个节点（比如 b，通过 “put(B, u)” 写入）引入树结构。与情况 1 类似，节点 a 在执行 “put(A, current)” 时已加锁。本例的区别在于该节点是不安全的，需要分裂。但根据引理，我们可以通过一次操作完成，保持树结构的正确性。证毕</p>
+<h3 id="6-3-正确的交互"><a href="#6-3-正确的交互" class="headerlink" title="6.3 正确的交互"></a>6.3 正确的交互</h3><p>我们还需要证明，无论插入过程对树进行何种修改，其他进程仍能正确操作。<br><strong>定理 3</strong>：交互定理。 插入过程的操作不会破坏其他进程操作的正确性。</p>
+<p>为了证明该定理，我们首先考虑搜索过程与插入操作的交互情况，然后考虑两个插入过程的交互情况。一般来说，为了证明插入者的操作不会破坏其他进程的正确性，我们需要考虑该进程相对于该操作的行为。在所有情况下，该操作都是原子的。</p>
+<p>假设插入者在时间 t0 对节点 a 执行一次 “put” 操作。考虑另一个进程在时间 t′从磁盘读取节点 a 的情况。由于假设 “get” 和 “put” 操作是不可分割的，要么 t′&lt;t0​，要么  t0​ &lt; t′。我们将在下面的引理中证明，后一种情况不会产生问题。</p>
+<p><strong>引理 3</strong><br>如果进程 𝑃 在某个时间 𝑡′ &gt; 𝑡0 读取节点 𝑎，其中 𝑡0 是插入进程 I 修改节点 𝑎 的时间，那么这一修改不会影响进程 𝑃 的正确性。</p>
+<p><strong>证明</strong>. 考虑进程 P 通过节点 a 的路径。进程 P 在到达节点 a 之前所经过的路径不会被插入进程 I 改变。此外，根据上面的定理 2，进程 I 对树结构所做的任何修改都会产生一个正确的树（well-ording）。因此，进程 P 在 a 节点开始的路径（在时间 t&gt;t′t &gt; t’t&gt;t′）将无论修改如何都能正确执行。证毕。</p>
+<p>为了便于将定理的证明分解成不同情况，这里列出在一个节点上对一个值可能执行的三种插入类型。</p>
+<p>类型 1. 简单地将一个值及其关联指针添加到节点中。当节点是安全的（safe）时发生这种类型的插入。<br>类型 2. 对节点进行分裂，并将插入值放入分裂节点的左半部分。左半部分仍然是原来被分裂的节点。<br>类型 3. 类似地，对节点进行分裂，并将插入值放入分裂节点的右半部分。右半部分是新分配的节点。</p>
+<p>现在我们开始定理的证明。我们注意到，定理的正确性涉及几个方面（情况），并将分别证明这些情况。</p>
+<p>证明. 根据引理 3，只需考虑搜索或插入进程 𝑃 在插入进程 𝐼 修改节点之前开始读取该节点的情况。</p>
+<p>第 1 部分. 考虑插入进程 I（在时间 t0 修改节点 n）与搜索进程 S（在时间 t′&lt; t0读取节点 n）之间的交互。记 n′ 为修改后的节点。（本节的论证同样适用于另一插入进程 I′与进程 I 交互的情况，且 I′正在执行搜索。）需要考虑的操作顺序是：S 读取节点 n；然后 I 将节点 n 修改为 n′；然后 S 根据 n 的内容继续搜索。<br>考虑三种插入类型：  </p>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left"></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Type 1</td>
+<td align="left">进程 I 对节点 n 执行一次简单插入。如果 n 是叶子节点，插入进程不会改变任何指针。其结果等同于序列调度中 S 在 I 之前运行的情况。如果 n 是非叶子节点，则在 n 中插入一个指向下一层某节点 m′的指针&#x2F;值对。假设 m′是通过将 I 分裂为 I′ 和 m′ 创建的。唯一可能的交互是 S 在插入指向 m′ 的指针之前已经获得了指向 I 的指针。此时指向 I 的指针指向了 I′，而 S 将使用 I′中的 link pointer 访问 m′。因此搜索仍然是正确的。</td>
+</tr>
+<tr>
+<td align="left">Types 2 and 3</td>
+<td align="left">节点 n 在插入过程中被分裂为节点 n1′ 和 n2′。对于叶子节点的情况，搜索在 n 上的结果与在 n1′和 n2′上的结果相同，除了新插入的值 S 无法找到。 如果 n 不是叶子节点，则其下层的某个节点发生了分裂，导致一个新的指针&#x2F;值对被插入节点 n，从而使 n 本身也分裂。根据归纳法，下层节点的分裂是正确的。根据引理 3，下层节点的搜索也是正确的。因此，我们只需证明节点 n 的分裂是正确的。假设节点 n 分裂为节点 n1′ 和 n2′，它们包含与原节点 n 相同的指针集合，并增加了新插入的节点。则从节点 n 开始搜索，将到达下一层与从 n1′（带有指向 n2′的 link pointer）开始搜索时相同的节点集合。特殊情况是：如果搜索在读取节点 n 时，新插入的指针已经存在，本应沿该指针继续。此时实际跟随的指针位于新指针的左侧，这会将搜索引导到某个节点（假设为 k），它位于新指针指向的节点（假设为 m）左侧。然后沿 k 的 link pointer 最终到达 m，这仍然是正确的结果。（类型 3 的论证与类型 2 相同，只是新条目插入到新创建的半节点中，而不是旧半节点。但这对论证没有影响，因为节点在分裂发生前已被S读取。）</td>
+</tr>
+</tbody></table>
+<p>第2部分。接下来我们考虑插入进程 I 与另一个插入进程 I’ 的交互情况。进程 I’ 可能正在搜索用于插入的正确节点、回溯到另一层，或者实际尝试将一个值&#x2F;指针对插入节点 n。如果 I’ 正在搜索一个用于插入值&#x2F;指针对的节点，则该搜索行为与普通搜索进程完全相同。因此，证明与上文针对搜索进程的证明相同。</p>
+<p>第3部分。如果 I’ 因为下层节点分裂而需要回溯上行树，则 I’ 需要回到上层以便将指针插入到分裂节点的新半部分。</p>
+<ul>
+<li>回溯是使用在下降过程中记录在栈中的信息完成的。</li>
+<li>在每一层，被压入栈的节点是该层被检查过的最右侧节点。</li>
+<li>考虑在将某个节点 n 压入栈和回溯时再次访问该节点之间可能发生的情况：该节点可能已经分裂过一次或多次，这些分裂会在节点 n 的“右侧”产生新的节点。</li>
+<li>由于节点 n 右侧的所有节点都可以通过 link 指针访问，因此插入算法能够找到适当的位置插入值。</li>
+</ul>
+<p>第四部分。如果进程 I’ 试图在节点 n 上进行插入，它会尝试锁定该节点。但进程 I 已经持有节点 n 的锁。最终，I 会释放该锁，I’ 再锁定该节点并将其读入内存。根据上面的引理，该交互是正确的，因为 I’ 的读取发生在 I 的插入之前。节点 n 要么就是插入的正确位置——此时 I’ 会执行插入；要么搜索必须沿节点的 link 指针访问其右兄弟。</p>
+<h3 id="LiveLock"><a href="#LiveLock" class="headerlink" title="LiveLock"></a>LiveLock</h3><p>我们在此指出，我们的算法并不能完全避免活锁(LiveLock)的可能性（即某个进程无限运行）。<br>如果一个进程因为不断跟随其他进程创建的 link 指针而无法终止，就可能发生这种情况。<br>然而，根据以下观察，我们认为在实际实现中这种情况极不可能成为问题。<br>在多处理器系统中，如果该进程运行在相对非常慢的处理器上，这种情况可能发生。</p>
+<p>(1) 在我们所知的大多数系统中，处理器的运行速度大致相当。<br>(2) 在 B 树中，节点的创建和删除只占很小的比例，因此即使是较慢的处理器，也不太可能因节点的创建或删除而遇到困难（也就是说，它只需要跟随少量的 link 指针）。<br>(3) 在树的任意给定层上，只能创建固定数量的节点，从而限制了较慢处理器需要“追赶”的量。  </p>
+<p>我们认为，这些想法结合起来可以使实际系统中进程发生活锁的概率几乎为零（除非涉及的进程速度差异极大）。模拟可以帮助我们验证系统在“合理”条件下能够正常工作，并帮助确定进程相对速度的可接受范围。</p>
+<p>在进程速度确实存在极大差异的情况下，我们可能会引入一些额外机制来防止活锁。实现这种机制有多种选择。本文不讨论避免活锁的完整方法，但其中一种方法可能是为每个进程分配优先级，优先级可能基于进程的“存在时间”。这将保证每个进程最终会终止，因为它最终会成为最“老”的进程，从而成为拥有最高优先级的进程。</p>
+<h2 id="7-DELETION"><a href="#7-DELETION" class="headerlink" title="7. DELETION"></a>7. DELETION</h2><p>一种处理删除操作的简单方法是允许叶子节点中的条目少于 K 个。对于非叶子节点则不需要这样做，因为删除操作仅会移除叶子节点中的键；非叶子节点中的键仅作为其对应指针的上界，它在删除过程中并不会被移除。</p>
+<p>因此，为了从叶子节点中删除一个条目，我们对该节点执行的操作与插入操作（尤其是插入情况 1）非常类似。具体来说，我们首先搜索出值 u 所在的节点，然后锁定该节点，将其读入内存，对内存中的副本删除值 u 后再将节点重写回磁盘。有时，这样会导致节点中条目数量少于 K。<br>该算法的正确性证明与插入操作类似。例如，死锁自由性的证明非常简单，因为删除操作只需要锁定一个节点。对于操作的正确性，如果一个搜索进程在删除值 u 之前读取了节点，它仍然会报告节点中存在 u，这与序列化调度（搜索操作先于删除操作执行）是一致的，因此搜索结果仍然正确。</p>
+<p>我们刚描述的这种删除处理方法比需要处理节点下溢（underflow）和合并（concatenation）的方案要简单得多。在假设插入操作发生频率高于删除操作的情况下，这种方法几乎不需要额外存储空间。</p>
+<p>当然，在删除操作过多导致树节点存储利用率过低的情况下，可以执行批量重组（batch reorganization）或者全树锁定的下溢操作（underflow operation）来重新组织树结构，以保证空间的合理利用。</p>
+<h2 id="8-锁定效率（LOCKING-EFFICIENCY）"><a href="#8-锁定效率（LOCKING-EFFICIENCY）" class="headerlink" title="8. 锁定效率（LOCKING EFFICIENCY）"></a>8. 锁定效率（LOCKING EFFICIENCY）</h2><p>显然，在并发方案中，至少需要一个锁，以防止不同进程同时更新同一个节点。</p>
+<p>上文给出的插入操作方案，在任何时刻对任意进程使用的锁数量最多是一个常数（最多三个）。这种情况仅在特定情况下发生：当插入进程刚刚向某个节点（叶子节点或非叶子节点）插入条目，并导致该节点分裂时。在回溯树的过程中，为了向新分裂节点的一半插入指针，插入进程发现旧的父节点已经不再是正确的插入位置，因此必须沿包含父节点的这一层节点进行链式查找，以找到正确的插入位置。在整个操作过程中，同时锁定三个节点。</p>
+<p>在每个节点容量较大的 B*-树中，这种类型的锁定操作发生的频率非常低。因此，除非有大量并发进程运行，否则该结构的锁冲突概率极低。</p>
+<p>这种系统的行为可以通过模拟进行量化，模拟参数包括并发进程数量、每个节点的容量，以及搜索、插入和删除操作的相对频率。这样的模拟不仅可以评估当前方案的性能，也可用于与其他并发控制方案进行比较。</p>
+<h2 id="9-SUMMARY-AND-CONCLUSIONS"><a href="#9-SUMMARY-AND-CONCLUSIONS" class="headerlink" title="9. SUMMARY AND CONCLUSIONS"></a>9. SUMMARY AND CONCLUSIONS</h2><p>B 树在维护大型数据库时被发现非常有用。并发操作这样的数据具有明显优势，因为它允许多个用户同时共享数据；而且在大规模数据库中，用户的数据需求通常不会产生冲突，因此并发访问是可行的。</p>
+<p>本文给出了一个算法，可以在 B 树的一种变体上执行正确的并发操作。该算法的特点是任意进程在任何时刻只需使用少量常数个锁。算法本身非常直接，其流程与顺序执行的算法仅有轻微差别。（可以通过模拟来量化本文算法与顺序算法或其他并发算法相比的效率提升。）</p>
+<p>这一性能的实现依赖于对数据结构的一个小改动，使得当一个进程的位置因其他进程的操作而失效时，能够进行恢复（参见 [8]）。</p>
+<p>我们希望将这项工作扩展到更通用的并发数据库操作方案。理想的方案应当仅需对数据结构和顺序算法做极少量修改，同时能够保证当其他进程对数据结构做出改变使某进程的操作失效时，该进程能够正确恢复。</p>
+<p>另一条未来研究方向是对算法的“并行化”：研究将一个（已充分理解的）顺序算法转换为并发算法的通用方法。目标是尽可能充分利用问题的并发特性，同时保证算法的正确性不受影响。</p>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>paper</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SSTables and LSM Trees</title>
+    <url>/2025/11/08/database/SSTables-and-LSM-Trees/</url>
+    <content><![CDATA[<p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p>
+<ul>
+<li>merge简单高效</li>
+<li>因为有序，不需要维护所有记录的索引，可以是稀疏索引</li>
+<li>因为有序，可以按block进行压缩同时维护索引，除了降低磁盘占用以外，还可以降低磁盘io</li>
+</ul>
+<h2 id="构建和管理SSTables"><a href="#构建和管理SSTables" class="headerlink" title="构建和管理SSTables"></a>构建和管理SSTables</h2><p>因为写入是无序的，所以我们需要在内存中借助于红黑树或者avl树等数据结构来保证：任意写入，有序读取.</p>
+<p>构建步骤如下:</p>
+<ol>
+<li>当写入发生时，将写入的key-value加入内存平衡树（如红黑树）中，称为”memtable”</li>
+<li>当memtable增大到一定阈值后（a few megabytes），将memtable写入磁盘生成一个SSTable文件。新写入的SSTable成为数据库中最新的segment文件。 写入SSTable到磁盘时，写入可以继续写入新的memtable</li>
+<li>读请求来时，优先在memtable中查找，然后按顺序从新到老查找磁盘上的segment文件</li>
+<li>随着时间的推移，可以后台启动合并和压缩segment文件、丢弃或者覆盖掉老的文件</li>
+</ol>
+<p>这种机制工作的很好，但是存在一个问题，如果数据库宕机了，内存中的memtable还没有来得及写入磁盘，可能造成数据丢失。可以通过一个单独的log文件来记录所有的操作，这个log的作用只是用于宕机恢复memtable，每当memtable被写入磁盘，相应的log文件就可以被丢弃了</p>
+<h2 id="用SSTables构建LSM-tree"><a href="#用SSTables构建LSM-tree" class="headerlink" title="用SSTables构建LSM-tree"></a>用SSTables构建LSM-tree</h2><p>LSM-Tree用于 LevelDB 和 RocksDB、嵌入其他应用的key-value存储引擎。参考：Google’s Bigtable paper</p>
+<p>SSTables + log &#x3D; “Log-Structured Merge-Tree ”</p>
+<h3 id="LSM-tree两种文件管理策略："><a href="#LSM-tree两种文件管理策略：" class="headerlink" title="LSM-tree两种文件管理策略："></a>LSM-tree两种文件管理策略：</h3><ol>
+<li><p>Size-Tiered Compaction（STC） </p>
+<ul>
+<li><p>基本思想<br>  “当某一层（或同一大小区间）的 SSTable 文件数达到阈值时，将它们合并成一个更大的文件。”<br> 也就是说，不是按“层级”，而是按“文件大小”来触发 compaction。</p>
+</li>
+<li><p>结构示意<br> MemTable → SSTable</p>
+</li>
+<li><p>优点</p>
+<ul>
+<li>写放大低<br>  每条数据在被 flush 后只会参与少数几次合并；每次合并是“几块 → 一块”，合并次数较少。</li>
+<li>写入吞吐高<br>  flush 后直接落地；合并是批量异步进行；对写性能非常友好。</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>读放大高<br>  同一 key 可能存在于多个 SSTable 中；读时需要查多个文件（除非借助 Bloom Filter）。</li>
+<li>空间放大高<br>  合并不够积极；多个旧版本的数据同时存在；临时文件和重复 key 较多。</li>
+</ul>
+</li>
+<li><p>应用场景<br> 适合写多读少的场景；比如日志系统、时间序列数据库（TSDB）、写入密集的监控系统Cassandra 默认采用 STCS（Size-Tiered Compaction Strategy）</p>
+</li>
+</ul>
+</li>
+<li><p>Level Compaction（LC）<br> 这种策略是 LevelDB、RocksDB 采用的，更现代化。又叫 leveled compaction 或 分层压实。</p>
+<ul>
+<li><p>基本思想：<br> 数据被组织成多个层级（Level 0, Level 1, Level 2…），每一层都有固定大小的空间限制，同一层内文件的 key 范围 互不重叠。</p>
+</li>
+<li><p>层次结构：<br> Level 0: 多个小 SSTable，key 范围可能重叠。<br> Level 1: 较大文件，key 范围不重叠。<br> Level 2: 更大文件，key 范围不重叠。<br> …</p>
+</li>
+<li><p>Compaction 逻辑：<br> 当某一层（如 Level 0）容量超标；就选择一个 SSTable（或一组）与下一层（如 Level 1）中 key 范围重叠的文件；合并、去重、重写为更大的 SSTable，放入下一层。</p>
+</li>
+<li><p>优点</p>
+<ul>
+<li>读性能优异<br>  除 Level 0 外，其余层内文件 key 范围不重叠；读取某个 key 只需查找每层最多一个文件；查找代价从 O(n_files) 降到 O(levels)。</li>
+<li>空间利用率高<br>  去重及时；每层占用空间接近固定比例；不容易膨胀。</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>写放大高<br>  每条数据会多次参与合并（从 L0 → L1 → L2…）；每次都要重写到下一层； 磁盘写入量是原始写入的数倍。</li>
+<li>Compaction 代价大<br>  大文件之间的合并非常消耗 I&#x2F;O；RocksDB 必须限制后台 compaction 线程数量。</li>
+</ul>
+</li>
+<li><p>应用场景<br> 适合读写比较均衡、查询多的系统；比如 RocksDB、LevelDB、TiKV、ClickHouse 的部分引擎。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><p>当查找的key在数据库中不存在时，LSM-Tree算法可能会变慢：在你确认key不存在之前，你需要检查所有memtable，所有sstable对应的磁盘文件。可以使用bloom filters：它可以检查key不在数据库中（每个sstable固化时，生成对应的bloom filter文件）</p>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>storage</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>TPCC</title>
+    <url>/2025/06/04/database/TPCC/</url>
+    <content><![CDATA[<ol>
+<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
+</ol>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>MVCC</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>innodb and heap table</title>
+    <url>/2025/10/25/database/innodb-and-pg/</url>
+    <content><![CDATA[<p>昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。</p>
+<h2 id="概念介绍"><a href="#概念介绍" class="headerlink" title="概念介绍"></a>概念介绍</h2><p>InnoDB：MySQL 的主要存储引擎<br>heap table：postgres数据库P表在物理上的存储（Heap File）</p>
+<h2 id="数据存储方式"><a href="#数据存储方式" class="headerlink" title="数据存储方式"></a>数据存储方式</h2><h3 id="innodb-底层存储"><a href="#innodb-底层存储" class="headerlink" title="innodb 底层存储"></a>innodb 底层存储</h3><p>innodb是一个基于聚簇索引（Clustered Index）的存储引擎。</p>
+<h4 id="数据存储方式-1"><a href="#数据存储方式-1" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>聚簇索引存储表数据  <ul>
+<li>表的主键索引就是数据本身的物理存储顺序。</li>
+<li>每个页（page）一般 16KB，页内数据按主键顺序排列。</li>
+<li>非主键列数据和行信息都在叶子节点。</li>
+</ul>
+</li>
+<li>二级索引<ul>
+<li>非主键索引存储的是主键值而不是行指针。</li>
+<li>查询非主键列时，需要先通过二级索引拿到主键，再去主键聚簇索引里查数据（回表，row lookup）。</li>
+</ul>
+</li>
+</ul>
+<h4 id="页与数据组织"><a href="#页与数据组织" class="headerlink" title="页与数据组织"></a>页与数据组织</h4><ul>
+<li>数据按 B+ 树页组织。</li>
+<li>插入&#x2F;更新可能导致页分裂。</li>
+</ul>
+<h3 id="postgres-heap-table"><a href="#postgres-heap-table" class="headerlink" title="postgres heap table"></a>postgres heap table</h3><h4 id="数据存储方式-2"><a href="#数据存储方式-2" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>数据按插入顺序存放，没有聚簇索引。</li>
+<li>行标识符 TID（tuple id） 用于指向表的页和行。</li>
+<li>页（默认 8KB）内存储多行 tuple。</li>
+<li>没有聚簇索引，非索引扫描可能会更慢，但插入非常快。</li>
+</ul>
+<h4 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h4><ul>
+<li>B+ 树、哈希、GIN、GiST 等索引都是附加结构，存储独立于表。</li>
+<li>回表操作是通过 TID 定位行。</li>
+</ul>
+<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>InnoDB</th>
+<th>PostgreSQL 堆表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据组织</td>
+<td>聚簇索引（主键决定物理顺序）</td>
+<td>堆表，顺序插入</td>
+</tr>
+<tr>
+<td>主键访问</td>
+<td>快（顺序扫描&#x2F;范围查询）</td>
+<td>需要 B+ 树索引或全表扫描</td>
+</tr>
+<tr>
+<td>二级索引访问</td>
+<td>回表（先索引后主键查行）</td>
+<td>回表（索引 -&gt; TID -&gt; 行）</td>
+</tr>
+<tr>
+<td>插入性能</td>
+<td>如果主键顺序插入快，否则可能页分裂</td>
+<td>快，顺序写入，几乎不分裂</td>
+</tr>
+<tr>
+<td>更新&#x2F;删除</td>
+<td>支持 in-place 更新，但大行更新可能迁移</td>
+<td>创建新行，旧行留存，需要 vacuum</td>
+</tr>
+<tr>
+<td>MVCC</td>
+<td>Undo log + hidden columns</td>
+<td>xmin&#x2F;xmax + heap tuple</td>
+</tr>
+<tr>
+<td>表膨胀</td>
+<td>自动管理页空间</td>
+<td>容易膨胀，需要 vacuum</td>
+</tr>
+<tr>
+<td>查询优化</td>
+<td>聚簇索引优化范围查询</td>
+<td>多依赖索引，或者全表扫描</td>
+</tr>
+</tbody></table>
+<p>因为pg的存储结构导致访问数据，多了许多随机io：从索引到数据文件。导致pg的查询性能不如innnodb</p>
+<h3 id="pg的一些优化"><a href="#pg的一些优化" class="headerlink" title="pg的一些优化"></a>pg的一些优化</h3><h4 id="CLUSTER-命令（物理重排）"><a href="#CLUSTER-命令（物理重排）" class="headerlink" title="CLUSTER 命令（物理重排）"></a>CLUSTER 命令（物理重排）</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLUSTER t USING idx_id;</span><br></pre></td></tr></table></figure>
+<p>把表物理顺序按照索引顺序重排 —— 效果类似 InnoDB 聚簇索引。<br>缺点：</p>
+<ul>
+<li>是离线操作；</li>
+<li>之后新插入的行会破坏顺序（除非周期性 recluster）</li>
+</ul>
+<h4 id="索引仅扫描（Index-Only-Scan）"><a href="#索引仅扫描（Index-Only-Scan）" class="headerlink" title="索引仅扫描（Index Only Scan）"></a>索引仅扫描（Index Only Scan）</h4><p>如果查询的字段都在索引里且可见性检查通过（可见性 map 中标记为 all-visible），可以不访问堆表，直接从索引返回结果。</p>
+<h4 id="BRIN-索引"><a href="#BRIN-索引" class="headerlink" title="BRIN 索引"></a>BRIN 索引</h4><p>BRIN 全称是 Block Range INdex，是一种 非常轻量级的索引，设计理念与 B-Tree 不同：<br>不是存储每一行的索引它只存储堆表的一段范围（block range）内的最小值和最大值等摘要信息。每个 BRIN 索引条目覆盖 多个物理数据页（例如 128 个 8KB 页面 &#x3D; 1MB 的行数据）。<br>通过这些范围信息，可以快速排除不可能匹配的块，再去 heap 查找具体 tuple。<br>简单理解：BRIN 是“粗粒度索引”，通过块范围（block range）而非单行建立索引<br>非常适合 大表 + 顺序或局部相关数据：大表 + 顺序或局部相关数据：</p>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>storage</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>install_oceanbase</title>
+    <url>/2025/11/11/database/install-oceanbase/</url>
+    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
+
+<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
+<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
+<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
+
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
+<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
+<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
+<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
+
+<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
   </entry>
 </search>
