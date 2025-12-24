@@ -3,11 +3,11 @@
   <title>QuantumRealm</title>
   
   
-  <link href="http://example.com/atom.xml" rel="self"/>
+  <link href="https://jeffrey-fly-github-io.pages.dev/atom.xml" rel="self"/>
   
-  <link href="http://example.com/"/>
+  <link href="https://jeffrey-fly-github-io.pages.dev/"/>
   <updated>2025-12-22T06:28:11.413Z</updated>
-  <id>http://example.com/</id>
+  <id>https://jeffrey-fly-github-io.pages.dev/</id>
   
   <author>
     <name>Jeffrey</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>Distinct_Values</title>
-    <link href="http://example.com/2025/12/22/postgres/Distinct-Values/"/>
-    <id>http://example.com/2025/12/22/postgres/Distinct-Values/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/22/postgres/Distinct-Values/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/22/postgres/Distinct-Values/</id>
     <published>2025-12-22T02:52:49.000Z</published>
     <updated>2025-12-22T06:28:11.413Z</updated>
     
@@ -34,19 +34,19 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
-    <category term="plan" scheme="http://example.com/tags/plan/"/>
+    <category term="plan" scheme="https://jeffrey-fly-github-io.pages.dev/tags/plan/"/>
     
   </entry>
   
   <entry>
     <title>NULL VALUES</title>
-    <link href="http://example.com/2025/12/19/postgres/NULL-VALUES/"/>
-    <id>http://example.com/2025/12/19/postgres/NULL-VALUES/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/19/postgres/NULL-VALUES/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/19/postgres/NULL-VALUES/</id>
     <published>2025-12-19T02:52:49.000Z</published>
     <updated>2025-12-19T03:25:18.977Z</updated>
     
@@ -61,15 +61,15 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
   </entry>
   
   <entry>
     <title>Basic Statistics</title>
-    <link href="http://example.com/2025/12/18/postgres/Basic-Statistics/"/>
-    <id>http://example.com/2025/12/18/postgres/Basic-Statistics/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/18/postgres/Basic-Statistics/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/18/postgres/Basic-Statistics/</id>
     <published>2025-12-18T01:42:18.000Z</published>
     <updated>2025-12-18T03:29:56.892Z</updated>
     
@@ -86,19 +86,19 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
-    <category term="statistics" scheme="http://example.com/tags/statistics/"/>
+    <category term="statistics" scheme="https://jeffrey-fly-github-io.pages.dev/tags/statistics/"/>
     
   </entry>
   
   <entry>
     <title>Extended_Query_Protocol</title>
-    <link href="http://example.com/2025/12/16/postgres/Extended-Query-Protocol/"/>
-    <id>http://example.com/2025/12/16/postgres/Extended-Query-Protocol/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/16/postgres/Extended-Query-Protocol/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/16/postgres/Extended-Query-Protocol/</id>
     <published>2025-12-16T10:47:17.000Z</published>
     <updated>2025-12-16T10:49:14.325Z</updated>
     
@@ -119,17 +119,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>Query Execution Stages</title>
-    <link href="http://example.com/2025/12/07/postgres/Query-Execution-Stages/"/>
-    <id>http://example.com/2025/12/07/postgres/Query-Execution-Stages/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgres/Query-Execution-Stages/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgres/Query-Execution-Stages/</id>
     <published>2025-12-07T02:00:35.000Z</published>
     <updated>2025-12-10T11:41:52.597Z</updated>
     
@@ -143,15 +143,15 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
   </entry>
   
   <entry>
     <title>RD-Trees for Full-Text Search</title>
-    <link href="http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/"/>
-    <id>http://example.com/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgres/RD-Trees-for-Full-Text-Search/</id>
     <published>2025-12-06T02:05:39.000Z</published>
     <updated>2025-12-08T11:01:23.027Z</updated>
     
@@ -166,17 +166,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>R-tree for points</title>
-    <link href="http://example.com/2025/12/02/postgres/r-tree-for-points/"/>
-    <id>http://example.com/2025/12/02/postgres/r-tree-for-points/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/02/postgres/r-tree-for-points/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/02/postgres/r-tree-for-points/</id>
     <published>2025-12-02T11:00:26.000Z</published>
     <updated>2025-12-03T01:44:22.856Z</updated>
     
@@ -191,17 +191,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>GiST framework</title>
-    <link href="http://example.com/2025/12/01/postgres/GiST/"/>
-    <id>http://example.com/2025/12/01/postgres/GiST/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/01/postgres/GiST/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/01/postgres/GiST/</id>
     <published>2025-12-01T00:40:54.000Z</published>
     <updated>2025-12-03T01:41:15.108Z</updated>
     
@@ -215,17 +215,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>Lehman–Yao B-tree</title>
-    <link href="http://example.com/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/"/>
-    <id>http://example.com/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/</id>
     <published>2025-11-22T01:24:06.000Z</published>
     <updated>2025-11-24T01:56:45.050Z</updated>
     
@@ -239,17 +239,17 @@
     
     
     
-    <category term="database" scheme="http://example.com/categories/database/"/>
+    <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
     
     
-    <category term="paper" scheme="http://example.com/tags/paper/"/>
+    <category term="paper" scheme="https://jeffrey-fly-github-io.pages.dev/tags/paper/"/>
     
   </entry>
   
   <entry>
     <title>an_example_of_using_pageinspect</title>
-    <link href="http://example.com/2025/11/13/postgres/an-example-of-using-pageinspect/"/>
-    <id>http://example.com/2025/11/13/postgres/an-example-of-using-pageinspect/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/13/postgres/an-example-of-using-pageinspect/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/13/postgres/an-example-of-using-pageinspect/</id>
     <published>2025-11-13T06:52:14.000Z</published>
     <updated>2025-12-03T01:41:38.983Z</updated>
     
@@ -263,17 +263,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="learn" scheme="http://example.com/tags/learn/"/>
+    <category term="learn" scheme="https://jeffrey-fly-github-io.pages.dev/tags/learn/"/>
     
   </entry>
   
   <entry>
     <title>install_oceanbase</title>
-    <link href="http://example.com/2025/11/11/database/install-oceanbase/"/>
-    <id>http://example.com/2025/11/11/database/install-oceanbase/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/11/database/install-oceanbase/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/11/database/install-oceanbase/</id>
     <published>2025-11-11T12:23:40.000Z</published>
     <updated>2025-11-24T01:56:45.051Z</updated>
     
@@ -287,15 +287,15 @@
     
     
     
-    <category term="database" scheme="http://example.com/categories/database/"/>
+    <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
     
     
   </entry>
   
   <entry>
     <title>SSTables and LSM Trees</title>
-    <link href="http://example.com/2025/11/08/database/SSTables-and-LSM-Trees/"/>
-    <id>http://example.com/2025/11/08/database/SSTables-and-LSM-Trees/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/</id>
     <published>2025-11-08T05:15:45.000Z</published>
     <updated>2025-11-24T01:56:45.050Z</updated>
     
@@ -312,17 +312,17 @@
     
     
     
-    <category term="database" scheme="http://example.com/categories/database/"/>
+    <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
     
     
-    <category term="storage" scheme="http://example.com/tags/storage/"/>
+    <category term="storage" scheme="https://jeffrey-fly-github-io.pages.dev/tags/storage/"/>
     
   </entry>
   
   <entry>
     <title>How to use omnigraffle</title>
-    <link href="http://example.com/2025/11/04/tools/how-to-use-omnigraffle/"/>
-    <id>http://example.com/2025/11/04/tools/how-to-use-omnigraffle/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/04/tools/how-to-use-omnigraffle/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/04/tools/how-to-use-omnigraffle/</id>
     <published>2025-11-04T02:09:00.000Z</published>
     <updated>2025-11-24T01:56:45.057Z</updated>
     
@@ -337,17 +337,17 @@
     
     
     
-    <category term="tools" scheme="http://example.com/categories/tools/"/>
+    <category term="tools" scheme="https://jeffrey-fly-github-io.pages.dev/categories/tools/"/>
     
     
-    <category term="omnigraffle" scheme="http://example.com/tags/omnigraffle/"/>
+    <category term="omnigraffle" scheme="https://jeffrey-fly-github-io.pages.dev/tags/omnigraffle/"/>
     
   </entry>
   
   <entry>
     <title>WAL设置</title>
-    <link href="http://example.com/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/"/>
-    <id>http://example.com/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/03/postgres/WAL%E8%AE%BE%E7%BD%AE/</id>
     <published>2025-11-03T12:11:23.000Z</published>
     <updated>2025-12-03T01:45:40.983Z</updated>
     
@@ -361,17 +361,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>WAL MODES</title>
-    <link href="http://example.com/2025/11/01/postgres/WAL-MODES/"/>
-    <id>http://example.com/2025/11/01/postgres/WAL-MODES/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgres/WAL-MODES/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgres/WAL-MODES/</id>
     <published>2025-11-01T11:03:57.000Z</published>
     <updated>2025-12-03T01:44:49.227Z</updated>
     
@@ -385,17 +385,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>innodb and heap table</title>
-    <link href="http://example.com/2025/10/25/database/innodb-and-pg/"/>
-    <id>http://example.com/2025/10/25/database/innodb-and-pg/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/</id>
     <published>2025-10-25T07:37:12.000Z</published>
     <updated>2025-11-24T01:56:45.050Z</updated>
     
@@ -410,17 +410,17 @@
     
     
     
-    <category term="database" scheme="http://example.com/categories/database/"/>
+    <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
     
     
-    <category term="storage" scheme="http://example.com/tags/storage/"/>
+    <category term="storage" scheme="https://jeffrey-fly-github-io.pages.dev/tags/storage/"/>
     
   </entry>
   
   <entry>
     <title>Recovery in postgres</title>
-    <link href="http://example.com/2025/10/24/postgres/Recovery/"/>
-    <id>http://example.com/2025/10/24/postgres/Recovery/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgres/Recovery/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgres/Recovery/</id>
     <published>2025-10-24T08:50:14.000Z</published>
     <updated>2025-12-03T01:44:40.108Z</updated>
     
@@ -436,17 +436,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>LWLock in postgres</title>
-    <link href="http://example.com/2025/09/05/postgres/LWLock-in-postgres/"/>
-    <id>http://example.com/2025/09/05/postgres/LWLock-in-postgres/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/09/05/postgres/LWLock-in-postgres/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/09/05/postgres/LWLock-in-postgres/</id>
     <published>2025-09-05T08:14:55.000Z</published>
     <updated>2025-11-24T01:56:45.054Z</updated>
     
@@ -460,17 +460,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>Lock</title>
-    <link href="http://example.com/2025/09/03/postgres/Lock/"/>
-    <id>http://example.com/2025/09/03/postgres/Lock/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/09/03/postgres/Lock/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/09/03/postgres/Lock/</id>
     <published>2025-09-03T03:13:57.000Z</published>
     <updated>2025-11-24T01:56:45.054Z</updated>
     
@@ -484,17 +484,17 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   
   <entry>
     <title>Background Writing</title>
-    <link href="http://example.com/2025/08/20/postgres/Background-Writing/"/>
-    <id>http://example.com/2025/08/20/postgres/Background-Writing/</id>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgres/Background-Writing/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgres/Background-Writing/</id>
     <published>2025-08-20T08:19:20.000Z</published>
     <updated>2025-12-03T01:43:13.437Z</updated>
     
@@ -509,10 +509,10 @@
     
     
     
-    <category term="postgres" scheme="http://example.com/categories/postgres/"/>
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
     
     
-    <category term="pginternal" scheme="http://example.com/tags/pginternal/"/>
+    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
     
   </entry>
   

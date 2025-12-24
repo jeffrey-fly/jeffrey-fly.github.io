@@ -18,12 +18,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="在磁盘上，WAL 被存储在 PGDATA&#x2F;pg_wal 目录中，以单独的文件（或称为段）的形式存在。它们的大小由只读参数 wal_segment_size 指示。 对于高负载系统，增加段大小可能是有意义的，因为这可以减少开销。但这个设置只能在集群初始化时修改（通过 initdb –wal-segsize）。 WAL 记录会写入当前文件，直到该文件空间耗尽；此时 PostgreSQL 会开">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WAL Structure(Physical-Structure)">
-<meta property="og:url" content="http://example.com/2025/07/29/postgres/WAL-Structure-Physical-Structure/index.html">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/07/29/postgres/WAL-Structure-Physical-Structure/index.html">
 <meta property="og:site_name" content="QuantumRealm">
 <meta property="og:description" content="在磁盘上，WAL 被存储在 PGDATA&#x2F;pg_wal 目录中，以单独的文件（或称为段）的形式存在。它们的大小由只读参数 wal_segment_size 指示。 对于高负载系统，增加段大小可能是有意义的，因为这可以减少开销。但这个设置只能在集群初始化时修改（通过 initdb –wal-segsize）。 WAL 记录会写入当前文件，直到该文件空间耗尽；此时 PostgreSQL 会开">
 <meta property="og:locale" content="en_US">
@@ -34,10 +34,10 @@
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://example.com/2025/07/29/postgres/WAL-Structure-Physical-Structure/">
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/07/29/postgres/WAL-Structure-Physical-Structure/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2025/07/29/postgres/WAL-Structure-Physical-Structure/","path":"2025/07/29/postgres/WAL-Structure-Physical-Structure/","title":"WAL Structure(Physical-Structure)"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/07/29/postgres/WAL-Structure-Physical-Structure/","path":"2025/07/29/postgres/WAL-Structure-Physical-Structure/","title":"WAL Structure(Physical-Structure)"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>WAL Structure(Physical-Structure) | QuantumRealm</title>
@@ -217,7 +217,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/07/29/postgres/WAL-Structure-Physical-Structure/">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/29/postgres/WAL-Structure-Physical-Structure/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
