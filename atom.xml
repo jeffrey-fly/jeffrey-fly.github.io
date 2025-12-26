@@ -6,7 +6,7 @@
   <link href="https://jeffrey-fly-github-io.pages.dev/atom.xml" rel="self"/>
   
   <link href="https://jeffrey-fly-github-io.pages.dev/"/>
-  <updated>2025-12-22T06:28:11.413Z</updated>
+  <updated>2025-12-25T06:42:17.634Z</updated>
   <id>https://jeffrey-fly-github-io.pages.dev/</id>
   
   <author>
@@ -15,6 +15,39 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>【译】不要给 PostgreSQL 分配过多内存</title>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgres/dont-give-postgres-too-much-memory/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgres/dont-give-postgres-too-much-memory/</id>
+    <published>2025-12-24T16:00:00.000Z</published>
+    <updated>2025-12-25T06:42:17.634Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。<br>原文作者：Tomas Vondra<br>原文链接：<a href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a><br>本文接近原文直译，仅做结构整理与术语统一，所有观点归原作者所有。</p></blockquote><hr><h2 id="背景：一次“批处理”性能排查的经历"><a href="#背景：一次“批处理”性能排查的经历" class="headerlink" title="背景：一次“批处理”性能排查的经历"></a>背景：一次“批处理”性能排查的经历</h2><p>我时不时会被拉去排查一些与<strong>批处理（batch processing）</strong>相关的问题。<br>最近越来越常见的一种情况是：这些批处理进程会使用<strong>非常大的内存限制</strong>，尤其是：</p><ul><li><code>maintenance_work_mem</code></li><li><code>work_mem</code></li></ul><p>我猜不少 DBA 的思路是：</p><blockquote><p><strong>“内存越大越好。”</strong></p></blockquote><p>但他们往往没有意识到，这样做<strong>实际上可能会明显拖慢性能</strong>。</p><hr><h2 id="一个触发问题的实际案例"><a href="#一个触发问题的实际案例" class="headerlink" title="一个触发问题的实际案例"></a>一个触发问题的实际案例</h2><p>我用一个在测试 <strong>GIN 索引并行构建修复</strong> 时遇到的例子来说明这个问题。</p><p>这个 bug 本身并不复杂，也不算特别有意思，但它需要一个<strong>相当高的 <code>maintenance_work_mem</code></strong> 才能复现 —— 最初的报告里使用了 <strong>20GB</strong>。</p><p>为了验证修复是否有效，我在：</p><ul><li>不同的 <code>maintenance_work_mem</code> 设置</li><li>不同数量的并行 worker</li></ul><p>组合下，反复执行 <code>CREATE INDEX</code>。</p><p>本来的目标只是检查是否还会失败，但我同时也记录了执行时间，并将结果画成了一张图。</p><p><img src="/images/workmem/image.png" alt="mem"></p><hr><h2 id="测试环境说明"><a href="#测试环境说明" class="headerlink" title="测试环境说明"></a>测试环境说明</h2><p>测试运行在 Azure 上的一台 <strong>D96v4 实例</strong>：</p><ul><li><strong>CPU</strong>：Xeon Platinum 8573C  </li><li><strong>内存</strong>：384GB  </li><li><strong>存储</strong>：6 块 NVMe 组成 RAID0</li></ul><p>这意味着：</p><ul><li>数据基本全部命中缓存</li><li>瓶颈主要在 <strong>CPU，而不是磁盘 I&#x2F;O</strong></li></ul><hr><h2 id="并行化的效果（符合预期）"><a href="#并行化的效果（符合预期）" class="headerlink" title="并行化的效果（符合预期）"></a>并行化的效果（符合预期）</h2><p>并行化确实带来了明显收益：</p><ul><li><p>使用 <strong>2 个 worker（包括 leader）</strong><br>→ 性能提升约 <strong>1.8 倍</strong><br>→ 接近理想加速比（因为索引构建的最后阶段仍然是串行的）</p></li><li><p>随着 worker 数量继续增加：</p><ul><li>加速比逐渐下降  </li><li>例如 <strong>8 个 worker 只有约 4.5 倍</strong></li></ul></li></ul><p>这完全符合预期。</p><hr><h2 id="反直觉的现象：内存越大，反而越慢"><a href="#反直觉的现象：内存越大，反而越慢" class="headerlink" title="反直觉的现象：内存越大，反而越慢"></a>反直觉的现象：内存越大，反而越慢</h2><p>真正令人意外的是图中展示的另一个趋势：</p><blockquote><p><strong><code>maintenance_work_mem</code> 越大，索引构建反而越慢。</strong></p></blockquote><p>具体表现为：</p><ul><li>从 <strong>64MB</strong> 增加到 <strong>16GB</strong></li><li>索引构建时间增加了 <strong>约 30%</strong></li><li>并且 <strong>无论使用多少并行 worker，这一趋势都一致</strong></li></ul><p>为什么会这样？</p><hr><h2 id="原因概览"><a href="#原因概览" class="headerlink" title="原因概览"></a>原因概览</h2><p>这很可能是多种因素共同作用的结果。<br>下面我解释两个我认为<strong>最重要的原因</strong>：</p><ol><li><strong>L3 Cache 的大小限制</strong></li><li><strong>Linux 脏页（dirty page）回写机制</strong></li></ol><hr><h2 id="原因一：L3-Cache-的大小限制"><a href="#原因一：L3-Cache-的大小限制" class="headerlink" title="原因一：L3 Cache 的大小限制"></a>原因一：L3 Cache 的大小限制</h2><p>系统中的内存并不是“同一种速度”。</p><p>在 CPU 内部，存在一小块<strong>极快的缓存（L3 Cache）</strong>，访问延迟非常低。<br>但这部分内存通常只有 <strong>32MB～128MB</strong>。</p><p>相比之下：</p><ul><li>主内存（RAM）容量巨大</li><li>但访问延迟要高一个数量级</li></ul><hr><h3 id="索引构建中的内存访问模式"><a href="#索引构建中的内存访问模式" class="headerlink" title="索引构建中的内存访问模式"></a>索引构建中的内存访问模式</h3><p>在索引构建过程中，通常会经历以下流程：</p><ol><li>将数据累积到一个内存缓冲区</li><li>缓冲区“满了”之后进行处理</li><li>再合并到最终的索引结构中</li></ol><p>对于 <strong>GIN 索引</strong> 来说，这一步会把条目插入到一个<strong>哈希表</strong>中，这意味着：</p><blockquote><p><strong>大量随机内存访问</strong></p></blockquote><hr><h3 id="Cache-Miss-的代价"><a href="#Cache-Miss-的代价" class="headerlink" title="Cache Miss 的代价"></a>Cache Miss 的代价</h3><p>一旦这个哈希表的大小超过 <strong>L3 Cache</strong>，CPU 就不得不频繁访问主内存。</p><p>大致的访问代价是：</p><ul><li><strong>L3 Cache</strong>：约 <strong>20 个 CPU cycle</strong></li><li><strong>主内存</strong>：约 <strong>200 个 CPU cycle</strong></li></ul><p>也就是说，<strong>慢了一个数量级</strong>。</p><hr><h3 id="更优的策略"><a href="#更优的策略" class="headerlink" title="更优的策略"></a>更优的策略</h3><p>因此：</p><ul><li>将数据拆分成更小的批次处理</li><li>让工作集尽量能够放进 L3 Cache</li></ul><p>往往是更优的策略。</p><p>即使需要处理更多批次，<strong>总体上仍然可能更快</strong>。</p><p><strong>推荐阅读</strong>：<br>Ulrich Drepper，《<em>What Every Programmer Should Know About Memory</em>》（2007）<br>虽然年代久远，但内存层级的基本原理至今没有变化。</p><hr><h2 id="原因二：Linux-脏页（dirty-page）回写机制"><a href="#原因二：Linux-脏页（dirty-page）回写机制" class="headerlink" title="原因二：Linux 脏页（dirty page）回写机制"></a>原因二：Linux 脏页（dirty page）回写机制</h2><p>除了 CPU Cache，还有操作系统层面的因素。</p><p>当 GIN 的哈希表超过 <code>maintenance_work_mem</code> 限制时，数据会被写入<strong>临时文件</strong>。<br>这些文件不需要持久化保证，因此写入时只进入 <strong>page cache</strong>。</p><hr><h3 id="Linux-的脏页控制机制"><a href="#Linux-的脏页控制机制" class="headerlink" title="Linux 的脏页控制机制"></a>Linux 的脏页控制机制</h3><p>Linux 内核通过两个阈值控制脏页数量：</p><ul><li><code>vm.dirty_background_ratio</code>  <ul><li>达到后，后台开始异步回写</li></ul></li><li><code>vm.dirty_ratio</code>  <ul><li>达到后，<strong>所有写入变成同步写</strong>（非常致命）</li></ul></li></ul><p>理想状态下：</p><blockquote><p>后台回写足够快，永远不会触及 <code>vm.dirty_ratio</code></p></blockquote><hr><h3 id="大批量写入的问题"><a href="#大批量写入的问题" class="headerlink" title="大批量写入的问题"></a>大批量写入的问题</h3><p>问题在于：<br><strong>内核是否有“时间”去完成这些回写。</strong></p><p>假设构建哈希表需要累积 <strong>8GB 数据，用时 1 分钟</strong>：</p><h4 id="情况-A：一次性写出"><a href="#情况-A：一次性写出" class="headerlink" title="情况 A：一次性写出"></a>情况 A：一次性写出</h4><ul><li>1 分钟内几乎不写</li><li>最后一次性写出 8GB</li><li>短时间内产生大量脏页</li><li>极易触发同步写</li></ul><h4 id="情况-B：分批写出"><a href="#情况-B：分批写出" class="headerlink" title="情况 B：分批写出"></a>情况 B：分批写出</h4><ul><li>每 <strong>64MB</strong> 写一次</li><li>写操作均匀分布</li><li>内核有足够时间后台回写</li></ul><p>显然后者对系统更加友好。</p><hr><h2 id="总结（原文结论）"><a href="#总结（原文结论）" class="headerlink" title="总结（原文结论）"></a>总结（原文结论）</h2><p>以上所有分析，**同样适用于 <code>work_mem</code>**。</p><p>唯一的区别在于：</p><ul><li><code>maintenance_work_mem</code>  <ul><li>用于维护操作（<code>CREATE INDEX</code>、<code>VACUUM</code> 等）</li></ul></li><li><code>work_mem</code>  <ul><li>用于普通查询（<code>hash join</code>、<code>hash aggregate</code>、<code>sort</code> 等）</li></ul></li></ul><p>但底层原理完全一致：</p><ul><li>哈希表超过 L3 Cache → 性能下降</li><li>大块内存写入 → 脏页压力 → 可能触发同步写</li></ul><hr><h2 id="作者建议"><a href="#作者建议" class="headerlink" title="作者建议"></a>作者建议</h2><p>我并不知道 <code>maintenance_work_mem</code> 或 <code>work_mem</code> 的“最佳值”是多少，这也不是这篇文章的重点。</p><p>重点在于：</p><blockquote><p><strong>盲目把内存参数调得很大，可能会显著伤害性能。</strong></p></blockquote><p>我的建议是：</p><ul><li>从<strong>比较保守的值</strong>开始（例如 <strong>64MB</strong>）</li><li>只有在你能<strong>明确证明存在收益</strong>的情况下，才逐步调高</li></ul><hr><h2 id="原文信息"><a href="#原文信息" class="headerlink" title="原文信息"></a>原文信息</h2><ul><li>原文作者：Tomas Vondra  </li><li>原文地址：<a href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a></li></ul>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;blockquote&gt;
+&lt;p&gt;本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。&lt;br&gt;原文作者：Tomas Vondra&lt;br&gt;原文链接：&lt;a href=&quot;https://vondra.me/posts/dont-give</summary>
+      
+    
+    
+    
+    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
+    
+    
+    <category term="PostgreSQL" scheme="https://jeffrey-fly-github-io.pages.dev/tags/PostgreSQL/"/>
+    
+    <category term="Performance" scheme="https://jeffrey-fly-github-io.pages.dev/tags/Performance/"/>
+    
+    <category term="work_mem" scheme="https://jeffrey-fly-github-io.pages.dev/tags/work-mem/"/>
+    
+    <category term="maintenance_work_mem" scheme="https://jeffrey-fly-github-io.pages.dev/tags/maintenance-work-mem/"/>
+    
+    <category term="GIN" scheme="https://jeffrey-fly-github-io.pages.dev/tags/GIN/"/>
+    
+  </entry>
   
   <entry>
     <title>Distinct_Values</title>
@@ -480,31 +513,6 @@
       
       
     <summary type="html">&lt;h2 id=&quot;全局hash&quot;&gt;&lt;a href=&quot;#全局hash&quot; class=&quot;headerlink&quot; title=&quot;全局hash&quot;&gt;&lt;/a&gt;全局hash&lt;/h2&gt;&lt;p&gt;LockMethodLockHash：存储LOCK&lt;br&gt;LockMethodProcLockHash：存储</summary>
-      
-    
-    
-    
-    <category term="postgres" scheme="https://jeffrey-fly-github-io.pages.dev/categories/postgres/"/>
-    
-    
-    <category term="pginternal" scheme="https://jeffrey-fly-github-io.pages.dev/tags/pginternal/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Background Writing</title>
-    <link href="https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgres/Background-Writing/"/>
-    <id>https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgres/Background-Writing/</id>
-    <published>2025-08-20T08:19:20.000Z</published>
-    <updated>2025-12-03T01:43:13.437Z</updated>
-    
-    <content type="html"><![CDATA[<p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p><p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p><p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p><p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p><p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p><p>总结</p><blockquote><p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p></blockquote><p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p><h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol><li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li></ol>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&amp;#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。&lt;/p&gt;
-&lt;p&gt;这一工作部分由 checkpoint</summary>
       
     
     

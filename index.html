@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">22</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,255 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgres/dont-give-postgres-too-much-memory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/25/postgres/dont-give-postgres-too-much-memory/" class="post-title-link" itemprop="url">【译】不要给 PostgreSQL 分配过多内存</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-25 00:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T00:00:00+08:00">2025-12-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。<br>原文作者：Tomas Vondra<br>原文链接：<a target="_blank" rel="noopener" href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a><br>本文接近原文直译，仅做结构整理与术语统一，所有观点归原作者所有。</p>
+</blockquote>
+<hr>
+<h2 id="背景：一次“批处理”性能排查的经历"><a href="#背景：一次“批处理”性能排查的经历" class="headerlink" title="背景：一次“批处理”性能排查的经历"></a>背景：一次“批处理”性能排查的经历</h2><p>我时不时会被拉去排查一些与<strong>批处理（batch processing）</strong>相关的问题。<br>最近越来越常见的一种情况是：这些批处理进程会使用<strong>非常大的内存限制</strong>，尤其是：</p>
+<ul>
+<li><code>maintenance_work_mem</code></li>
+<li><code>work_mem</code></li>
+</ul>
+<p>我猜不少 DBA 的思路是：</p>
+<blockquote>
+<p><strong>“内存越大越好。”</strong></p>
+</blockquote>
+<p>但他们往往没有意识到，这样做<strong>实际上可能会明显拖慢性能</strong>。</p>
+<hr>
+<h2 id="一个触发问题的实际案例"><a href="#一个触发问题的实际案例" class="headerlink" title="一个触发问题的实际案例"></a>一个触发问题的实际案例</h2><p>我用一个在测试 <strong>GIN 索引并行构建修复</strong> 时遇到的例子来说明这个问题。</p>
+<p>这个 bug 本身并不复杂，也不算特别有意思，但它需要一个<strong>相当高的 <code>maintenance_work_mem</code></strong> 才能复现 —— 最初的报告里使用了 <strong>20GB</strong>。</p>
+<p>为了验证修复是否有效，我在：</p>
+<ul>
+<li>不同的 <code>maintenance_work_mem</code> 设置</li>
+<li>不同数量的并行 worker</li>
+</ul>
+<p>组合下，反复执行 <code>CREATE INDEX</code>。</p>
+<p>本来的目标只是检查是否还会失败，但我同时也记录了执行时间，并将结果画成了一张图。</p>
+<p><img src="/images/workmem/image.png" alt="mem"></p>
+<hr>
+<h2 id="测试环境说明"><a href="#测试环境说明" class="headerlink" title="测试环境说明"></a>测试环境说明</h2><p>测试运行在 Azure 上的一台 <strong>D96v4 实例</strong>：</p>
+<ul>
+<li><strong>CPU</strong>：Xeon Platinum 8573C  </li>
+<li><strong>内存</strong>：384GB  </li>
+<li><strong>存储</strong>：6 块 NVMe 组成 RAID0</li>
+</ul>
+<p>这意味着：</p>
+<ul>
+<li>数据基本全部命中缓存</li>
+<li>瓶颈主要在 <strong>CPU，而不是磁盘 I&#x2F;O</strong></li>
+</ul>
+<hr>
+<h2 id="并行化的效果（符合预期）"><a href="#并行化的效果（符合预期）" class="headerlink" title="并行化的效果（符合预期）"></a>并行化的效果（符合预期）</h2><p>并行化确实带来了明显收益：</p>
+<ul>
+<li><p>使用 <strong>2 个 worker（包括 leader）</strong><br>→ 性能提升约 <strong>1.8 倍</strong><br>→ 接近理想加速比（因为索引构建的最后阶段仍然是串行的）</p>
+</li>
+<li><p>随着 worker 数量继续增加：</p>
+<ul>
+<li>加速比逐渐下降  </li>
+<li>例如 <strong>8 个 worker 只有约 4.5 倍</strong></li>
+</ul>
+</li>
+</ul>
+<p>这完全符合预期。</p>
+<hr>
+<h2 id="反直觉的现象：内存越大，反而越慢"><a href="#反直觉的现象：内存越大，反而越慢" class="headerlink" title="反直觉的现象：内存越大，反而越慢"></a>反直觉的现象：内存越大，反而越慢</h2><p>真正令人意外的是图中展示的另一个趋势：</p>
+<blockquote>
+<p><strong><code>maintenance_work_mem</code> 越大，索引构建反而越慢。</strong></p>
+</blockquote>
+<p>具体表现为：</p>
+<ul>
+<li>从 <strong>64MB</strong> 增加到 <strong>16GB</strong></li>
+<li>索引构建时间增加了 <strong>约 30%</strong></li>
+<li>并且 <strong>无论使用多少并行 worker，这一趋势都一致</strong></li>
+</ul>
+<p>为什么会这样？</p>
+<hr>
+<h2 id="原因概览"><a href="#原因概览" class="headerlink" title="原因概览"></a>原因概览</h2><p>这很可能是多种因素共同作用的结果。<br>下面我解释两个我认为<strong>最重要的原因</strong>：</p>
+<ol>
+<li><strong>L3 Cache 的大小限制</strong></li>
+<li><strong>Linux 脏页（dirty page）回写机制</strong></li>
+</ol>
+<hr>
+<h2 id="原因一：L3-Cache-的大小限制"><a href="#原因一：L3-Cache-的大小限制" class="headerlink" title="原因一：L3 Cache 的大小限制"></a>原因一：L3 Cache 的大小限制</h2><p>系统中的内存并不是“同一种速度”。</p>
+<p>在 CPU 内部，存在一小块<strong>极快的缓存（L3 Cache）</strong>，访问延迟非常低。<br>但这部分内存通常只有 <strong>32MB～128MB</strong>。</p>
+<p>相比之下：</p>
+<ul>
+<li>主内存（RAM）容量巨大</li>
+<li>但访问延迟要高一个数量级</li>
+</ul>
+<hr>
+<h3 id="索引构建中的内存访问模式"><a href="#索引构建中的内存访问模式" class="headerlink" title="索引构建中的内存访问模式"></a>索引构建中的内存访问模式</h3><p>在索引构建过程中，通常会经历以下流程：</p>
+<ol>
+<li>将数据累积到一个内存缓冲区</li>
+<li>缓冲区“满了”之后进行处理</li>
+<li>再合并到最终的索引结构中</li>
+</ol>
+<p>对于 <strong>GIN 索引</strong> 来说，这一步会把条目插入到一个<strong>哈希表</strong>中，这意味着：</p>
+<blockquote>
+<p><strong>大量随机内存访问</strong></p>
+</blockquote>
+<hr>
+<h3 id="Cache-Miss-的代价"><a href="#Cache-Miss-的代价" class="headerlink" title="Cache Miss 的代价"></a>Cache Miss 的代价</h3><p>一旦这个哈希表的大小超过 <strong>L3 Cache</strong>，CPU 就不得不频繁访问主内存。</p>
+<p>大致的访问代价是：</p>
+<ul>
+<li><strong>L3 Cache</strong>：约 <strong>20 个 CPU cycle</strong></li>
+<li><strong>主内存</strong>：约 <strong>200 个 CPU cycle</strong></li>
+</ul>
+<p>也就是说，<strong>慢了一个数量级</strong>。</p>
+<hr>
+<h3 id="更优的策略"><a href="#更优的策略" class="headerlink" title="更优的策略"></a>更优的策略</h3><p>因此：</p>
+<ul>
+<li>将数据拆分成更小的批次处理</li>
+<li>让工作集尽量能够放进 L3 Cache</li>
+</ul>
+<p>往往是更优的策略。</p>
+<p>即使需要处理更多批次，<strong>总体上仍然可能更快</strong>。</p>
+<p><strong>推荐阅读</strong>：<br>Ulrich Drepper，《<em>What Every Programmer Should Know About Memory</em>》（2007）<br>虽然年代久远，但内存层级的基本原理至今没有变化。</p>
+<hr>
+<h2 id="原因二：Linux-脏页（dirty-page）回写机制"><a href="#原因二：Linux-脏页（dirty-page）回写机制" class="headerlink" title="原因二：Linux 脏页（dirty page）回写机制"></a>原因二：Linux 脏页（dirty page）回写机制</h2><p>除了 CPU Cache，还有操作系统层面的因素。</p>
+<p>当 GIN 的哈希表超过 <code>maintenance_work_mem</code> 限制时，数据会被写入<strong>临时文件</strong>。<br>这些文件不需要持久化保证，因此写入时只进入 <strong>page cache</strong>。</p>
+<hr>
+<h3 id="Linux-的脏页控制机制"><a href="#Linux-的脏页控制机制" class="headerlink" title="Linux 的脏页控制机制"></a>Linux 的脏页控制机制</h3><p>Linux 内核通过两个阈值控制脏页数量：</p>
+<ul>
+<li><code>vm.dirty_background_ratio</code>  <ul>
+<li>达到后，后台开始异步回写</li>
+</ul>
+</li>
+<li><code>vm.dirty_ratio</code>  <ul>
+<li>达到后，<strong>所有写入变成同步写</strong>（非常致命）</li>
+</ul>
+</li>
+</ul>
+<p>理想状态下：</p>
+<blockquote>
+<p>后台回写足够快，永远不会触及 <code>vm.dirty_ratio</code></p>
+</blockquote>
+<hr>
+<h3 id="大批量写入的问题"><a href="#大批量写入的问题" class="headerlink" title="大批量写入的问题"></a>大批量写入的问题</h3><p>问题在于：<br><strong>内核是否有“时间”去完成这些回写。</strong></p>
+<p>假设构建哈希表需要累积 <strong>8GB 数据，用时 1 分钟</strong>：</p>
+<h4 id="情况-A：一次性写出"><a href="#情况-A：一次性写出" class="headerlink" title="情况 A：一次性写出"></a>情况 A：一次性写出</h4><ul>
+<li>1 分钟内几乎不写</li>
+<li>最后一次性写出 8GB</li>
+<li>短时间内产生大量脏页</li>
+<li>极易触发同步写</li>
+</ul>
+<h4 id="情况-B：分批写出"><a href="#情况-B：分批写出" class="headerlink" title="情况 B：分批写出"></a>情况 B：分批写出</h4><ul>
+<li>每 <strong>64MB</strong> 写一次</li>
+<li>写操作均匀分布</li>
+<li>内核有足够时间后台回写</li>
+</ul>
+<p>显然后者对系统更加友好。</p>
+<hr>
+<h2 id="总结（原文结论）"><a href="#总结（原文结论）" class="headerlink" title="总结（原文结论）"></a>总结（原文结论）</h2><p>以上所有分析，**同样适用于 <code>work_mem</code>**。</p>
+<p>唯一的区别在于：</p>
+<ul>
+<li><code>maintenance_work_mem</code>  <ul>
+<li>用于维护操作（<code>CREATE INDEX</code>、<code>VACUUM</code> 等）</li>
+</ul>
+</li>
+<li><code>work_mem</code>  <ul>
+<li>用于普通查询（<code>hash join</code>、<code>hash aggregate</code>、<code>sort</code> 等）</li>
+</ul>
+</li>
+</ul>
+<p>但底层原理完全一致：</p>
+<ul>
+<li>哈希表超过 L3 Cache → 性能下降</li>
+<li>大块内存写入 → 脏页压力 → 可能触发同步写</li>
+</ul>
+<hr>
+<h2 id="作者建议"><a href="#作者建议" class="headerlink" title="作者建议"></a>作者建议</h2><p>我并不知道 <code>maintenance_work_mem</code> 或 <code>work_mem</code> 的“最佳值”是多少，这也不是这篇文章的重点。</p>
+<p>重点在于：</p>
+<blockquote>
+<p><strong>盲目把内存参数调得很大，可能会显著伤害性能。</strong></p>
+</blockquote>
+<p>我的建议是：</p>
+<ul>
+<li>从<strong>比较保守的值</strong>开始（例如 <strong>64MB</strong>）</li>
+<li>只有在你能<strong>明确证明存在收益</strong>的情况下，才逐步调高</li>
+</ul>
+<hr>
+<h2 id="原文信息"><a href="#原文信息" class="headerlink" title="原文信息"></a>原文信息</h2><ul>
+<li>原文作者：Tomas Vondra  </li>
+<li>原文地址：<a target="_blank" rel="noopener" href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1549,89 +1798,6 @@
 <p>这一性能的实现依赖于对数据结构的一个小改动，使得当一个进程的位置因其他进程的操作而失效时，能够进行恢复（参见 [8]）。</p>
 <p>我们希望将这项工作扩展到更通用的并发数据库操作方案。理想的方案应当仅需对数据结构和顺序算法做极少量修改，同时能够保证当其他进程对数据结构做出改变使某进程的操作失效时，该进程能够正确恢复。</p>
 <p>另一条未来研究方向是对算法的“并行化”：研究将一个（已充分理解的）顺序算法转换为并发算法的通用方法。目标是尽可能充分利用问题的并发特性，同时保证算法的正确性不受影响。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/13/postgres/an-example-of-using-pageinspect/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/11/13/postgres/an-example-of-using-pageinspect/" class="post-title-link" itemprop="url">an_example_of_using_pageinspect</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-11-13 14:52:14" itemprop="dateCreated datePublished" datetime="2025-11-13T14:52:14+08:00">2025-11-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="准备表数据"><a href="#准备表数据" class="headerlink" title="准备表数据"></a>准备表数据</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">create table</span> users(id <span class="type">int</span> generated always <span class="keyword">as</span> <span class="keyword">identity</span> <span class="keyword">primary key</span>, name text);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> oid, relname, relfilenode <span class="keyword">from</span> pg_class <span class="keyword">where</span> relname <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>;</span><br><span class="line">  oid  <span class="operator">|</span> relname <span class="operator">|</span> relfilenode </span><br><span class="line"><span class="comment">-------+---------+-------------</span></span><br><span class="line"> <span class="number">40980</span> <span class="operator">|</span> users   <span class="operator">|</span>       <span class="number">40980</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> c.oid, c.relname, i.indisprimary <span class="keyword">from</span> pg_class c <span class="keyword">join</span> pg_index i <span class="keyword">on</span> c.oid <span class="operator">=</span> i.indexrelid <span class="keyword">where</span> i.indrelid <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>::regclass <span class="keyword">and</span> i.indisprimary;</span><br><span class="line">  oid  <span class="operator">|</span>  relname   <span class="operator">|</span> indisprimary </span><br><span class="line"><span class="comment">-------+------------+--------------</span></span><br><span class="line"> <span class="number">40986</span> <span class="operator">|</span> users_pkey <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">ERROR:  block number <span class="number">0</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span> <span class="keyword">for</span> relation &quot;users&quot;</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line">ERROR:  block number <span class="number">1</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span></span><br><span class="line">test<span class="operator">=</span># <span class="operator">^</span>C</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="insert-values"><a href="#insert-values" class="headerlink" title="insert values"></a>insert values</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;jeffrey&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F5E7A0 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">28</span> <span class="operator">|</span>  <span class="number">8152</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;Ethan&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F62810 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">32</span> <span class="operator">|</span>  <span class="number">8112</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>     <span class="number">34</span> <span class="operator">|</span> \x020000000d457468616e</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">          <span class="number">2</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">02</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
 
       
     </div>

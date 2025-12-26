@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">22</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,89 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/13/postgres/an-example-of-using-pageinspect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/13/postgres/an-example-of-using-pageinspect/" class="post-title-link" itemprop="url">an_example_of_using_pageinspect</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-13 14:52:14" itemprop="dateCreated datePublished" datetime="2025-11-13T14:52:14+08:00">2025-11-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="准备表数据"><a href="#准备表数据" class="headerlink" title="准备表数据"></a>准备表数据</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">create table</span> users(id <span class="type">int</span> generated always <span class="keyword">as</span> <span class="keyword">identity</span> <span class="keyword">primary key</span>, name text);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> oid, relname, relfilenode <span class="keyword">from</span> pg_class <span class="keyword">where</span> relname <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>;</span><br><span class="line">  oid  <span class="operator">|</span> relname <span class="operator">|</span> relfilenode </span><br><span class="line"><span class="comment">-------+---------+-------------</span></span><br><span class="line"> <span class="number">40980</span> <span class="operator">|</span> users   <span class="operator">|</span>       <span class="number">40980</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> c.oid, c.relname, i.indisprimary <span class="keyword">from</span> pg_class c <span class="keyword">join</span> pg_index i <span class="keyword">on</span> c.oid <span class="operator">=</span> i.indexrelid <span class="keyword">where</span> i.indrelid <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>::regclass <span class="keyword">and</span> i.indisprimary;</span><br><span class="line">  oid  <span class="operator">|</span>  relname   <span class="operator">|</span> indisprimary </span><br><span class="line"><span class="comment">-------+------------+--------------</span></span><br><span class="line"> <span class="number">40986</span> <span class="operator">|</span> users_pkey <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">ERROR:  block number <span class="number">0</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span> <span class="keyword">for</span> relation &quot;users&quot;</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line">ERROR:  block number <span class="number">1</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span></span><br><span class="line">test<span class="operator">=</span># <span class="operator">^</span>C</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="insert-values"><a href="#insert-values" class="headerlink" title="insert values"></a>insert values</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;jeffrey&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F5E7A0 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">28</span> <span class="operator">|</span>  <span class="number">8152</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;Ethan&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F62810 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">32</span> <span class="operator">|</span>  <span class="number">8112</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>     <span class="number">34</span> <span class="operator">|</span> \x020000000d457468616e</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">          <span class="number">2</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">02</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1318,96 +1401,6 @@
 </tr>
 </tbody></table>
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgres/Background-Writing/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/08/20/postgres/Background-Writing/" class="post-title-link" itemprop="url">Background Writing</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-20 16:19:20" itemprop="dateCreated datePublished" datetime="2025-08-20T16:19:20+08:00">2025-08-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p>
-<p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p>
-<p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p>
-<p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p>
-<p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p>
-<p>总结</p>
-<blockquote>
-<p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
-</blockquote>
-<p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
 
       
     </div>
