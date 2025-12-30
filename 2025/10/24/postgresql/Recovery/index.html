@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。  startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。  123postgres@la">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Recovery in postgres">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgresql/Recovery/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。  startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。  123postgres@la">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-10-24T08:50:14.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.290Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="pginternal">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgresql/Recovery/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgresql/Recovery/","path":"2025/10/24/postgresql/Recovery/","title":"Recovery in postgres"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Recovery in postgres | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">1.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgresql/Recovery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Recovery in postgres | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Recovery in postgres
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-10-24 16:50:14" itemprop="dateCreated datePublished" datetime="2025-10-24T16:50:14+08:00">2025-10-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。</p>
+<blockquote>
+<p>startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br><span class="line">postgres@lavm-bar1guved6:/root$ </span><br></pre></td></tr></table></figure>
+<p>一个正常停止的服务器会处于“已关闭”（shut down）状态；而一个未运行的服务器却显示为“生产中”（in production）状态，则表明发生了故障。在这种情况下，启动进程（startup process）将自动从在同一个 pg_control 文件中找到的最新完成的检查点（checkpoint）**的起始 LSN 处开始进行恢复。</p>
+<blockquote>
+<p>如果 PGDATA 目录中包含与备份相关的 backup_label 文件，则起始 LSN 位置会从该文件中获取。</p>
+</blockquote>
+<p>在启动过程中，系统会从指定位置开始，逐一读取WAL（Write-Ahead Log，预写式日志）条目。如果数据页的 LSN（Log Sequence Number，日志序列号）小于当前读取到的 WAL 条目的 LSN，系统会将该 WAL 条目应用到数据页上。如果数据页的 LSN 已经大于 WAL 条目的 LSN，则不应应用该 WAL 条目；事实上，也绝不能应用，因为 WAL 条目被设计为必须严格按顺序重放。</p>
+<p>然而，有些 WAL 条目是Full Page Image（FPI）。这类条目可以应用于页面的任何状态，因为它们会完全覆盖页面内容，无论页面原先是什么状态都不重要。因此，这种修改是幂等的（idempotent）——多次应用不会改变结果另一个幂等操作的例子是注册事务状态的变更：每个事务的状态在 CLOG（事务提交日志）中是通过设置特定位来表示的，这种设置不依赖于原来的位值。因此，不需要在 CLOG 页面中记录最近变更的 LSN（日志序列号），因为日志重放时只要设置一次这些位就够了，重复设置也不会有副作用最后，系统会执行一次 checkpoint（检查点），将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了。</p>
+<p>WAL 日志条目会被应用到缓冲池（buffer cache）中的页面上，就像正常运行时对数据页的普通修改一样。</p>
+<p>文件的恢复也遵循类似方式：例如，若某条 WAL 记录表明某个文件应该存在，但实际却缺失，系统就会重新创建这个文件。<br>一旦恢复完成，所有 unlogged relations会被它们对应的 初始化副本（init fork） 覆盖。</p>
+<p>最后，系统会执行一次 checkpoint，将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了<br>在其经典形式中，恢复过程包含两个阶段：</p>
+<ul>
+<li>roll-forward阶段：重放 WAL 日志，重复执行在崩溃时丢失的操作；</li>
+<li>roll-back阶段：服务器中止那些在故障发生时尚未提交的事务。<br>在 PostgreSQL 中，向后回滚是不需要的。恢复完成后，CLOG（事务状态日志）中对未完成事务既没有提交（commit）标记，也没有中止（abort）标记（这在技术上表示该事务处于活动状态），但因为可以确定该事务已经不再运行，所以系统会将其视为已中止（aborted）。</li>
+</ul>
+<p>我们可以通过强制服务器以“立即模式”（immediate mode）停止来模拟故障：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_ctl stop -m immediate</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br></pre></td></tr></table></figure>
+<p>当我们启动服务器时，启动进程会检测到之前发生了故障，因而进入恢复模式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">2025-08-04 10:23:31.860 CST [487414] LOG:  starting PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit</span><br><span class="line">2025-08-04 10:23:31.861 CST [487414] LOG:  listening on IPv4 address &quot;127.0.0.1&quot;, port 5432</span><br><span class="line">2025-08-04 10:23:31.878 CST [487414] LOG:  listening on Unix socket &quot;/tmp/.s.PGSQL.5432&quot;</span><br><span class="line">2025-08-04 10:23:31.920 CST [487420] LOG:  database system was interrupted; last known up at 2025-08-01 09:36:11 CST</span><br><span class="line">2025-08-04 10:23:32.098 CST [487420] LOG:  database system was not properly shut down; automatic recovery in progress</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo starts at 0/01B75168</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  invalid record length at 0/01B752A8: expected at least 24, got 0</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo done at 0/01B75270 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s</span><br><span class="line">2025-08-04 10:23:32.132 CST [487418] LOG:  checkpoint starting: end-of-recovery fast wait</span><br><span class="line">2025-08-04 10:23:32.152 CST [487418] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.005 s, total=0.022 s; sync files=2, longest=0.005 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/01B752A8, redo lsn=0/01B752A8</span><br><span class="line">2025-08-04 10:23:32.155 CST [487414] LOG:  database system is ready to accept connections</span><br></pre></td></tr></table></figure>
+<p>如果服务器正在正常关闭，postmaster 会先断开所有客户端连接，然后执行最后一次检查点操作，将所有脏页（未写入磁盘的修改页面）刷写到磁盘上。</p>
+<p>看当前的WAL位置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">test=# SELECT pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line">---------------------------</span><br><span class="line"> 0/01B75358</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+<p>我们正常停止服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_ctl stop</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br></pre></td></tr></table></figure>
+<p>现在的数据库状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               shut down</span><br></pre></td></tr></table></figure>
+<p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
+<p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pginternal/" rel="tag"># pginternal</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/09/05/postgresql/LWLock-in-postgres/" rel="prev" title="LWLock in postgres">
+                  <i class="fa fa-angle-left"></i> LWLock in postgres
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/10/25/database/innodb-and-pg/" rel="next" title="innodb and heap table">
+                  innodb and heap table <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

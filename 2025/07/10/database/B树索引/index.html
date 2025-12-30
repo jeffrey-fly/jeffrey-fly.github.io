@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。 一 结构每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="B树索引（postgres）">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。 一 结构每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-07-10T06:33:12.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.285Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="algorithm">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/","path":"2025/07/10/database/B树索引/","title":"B树索引（postgres）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>B树索引（postgres） | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">一 结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-%E7%89%B9%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">二 特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89-%E5%A4%9A%E5%88%97%E7%B4%A2%E5%BC%95"><span class="nav-number">3.</span> <span class="nav-text">三 多列索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PostgreSQL-%E5%A4%9A%E5%88%97-B-tree-%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%B9%E9%85%8D%E5%8E%9F%E5%88%99"><span class="nav-number">3.1.</span> <span class="nav-text">PostgreSQL 多列 B-tree 索引的匹配原则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B-include"><span class="nav-number">4.</span> <span class="nav-text">四 include</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E5%B1%9E%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">索引属性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#clusterable"><span class="nav-number">5.1.</span> <span class="nav-text">clusterable</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.1.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BD%B1%E5%93%8D%E5%92%8C%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="nav-number">5.1.2.</span> <span class="nav-text">影响和注意点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#index-scan"><span class="nav-number">5.2.</span> <span class="nav-text">index_scan</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bitmap-scan"><span class="nav-number">5.3.</span> <span class="nav-text">bitmap_scan</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8-Bitmap-Scan%EF%BC%9F"><span class="nav-number">5.3.1.</span> <span class="nav-text">为什么要用 Bitmap Scan？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BC%98%E7%82%B9%EF%BC%9A"><span class="nav-number">5.3.2.</span> <span class="nav-text">优点：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9%EF%BC%9A"><span class="nav-number">5.3.3.</span> <span class="nav-text">缺点：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#backward-scan"><span class="nav-number">5.4.</span> <span class="nav-text">backward_scan</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E8%86%A8%E8%83%80"><span class="nav-number">6.</span> <span class="nav-text">关于索引膨胀</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">7.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="B树索引（postgres） | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          B树索引（postgres）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-10 14:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T14:33:12+08:00">2025-07-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
+<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
+<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
+<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
+<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
+<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
+<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
+</ol>
+<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
+<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
+<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
+<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
+</ul>
+<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
+<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
+<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
+<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
+<p>PostgreSQL 当前 不支持 Skip Scan</p>
+<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
+<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
+<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
+<li>聚簇后的表，在按该索引扫描时性能更好</li>
+</ul>
+<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
+<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
+<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
+<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
+</ul>
+<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
+<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
+<ol>
+<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
+<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
+</ol>
+<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
+<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
+<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
+<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
+</ol>
+<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
+<li>适合返回大量结果的索引查询；</li>
+<li>通过减少随机访问，降低 I&#x2F;O；</li>
+<li>支持多个索引结果合并，提高复杂查询效率。</li>
+</ol>
+<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
+<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
+<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
+</ol>
+<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
+<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
+<ol>
+<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
+<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
+<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
+</ol>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/algorithm/" rel="tag"># algorithm</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/04/database/TPCC/" rel="prev" title="TPCC">
+                  <i class="fa fa-angle-left"></i> TPCC
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/07/29/postgresql/WAL-Structure-Physical-Structure/" rel="next" title="WAL Structure(Physical-Structure)">
+                  WAL Structure(Physical-Structure) <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

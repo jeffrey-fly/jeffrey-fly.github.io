@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。 概念介绍InnoDB：MySQL 的主要存储引擎heap table：postgres数据库P表在物理上的存储（Heap File） 数据存储方式innodb 底层存储innodb是一个基于聚簇索引（Clustered Index）的存储引擎。 数据存储">
+<meta property="og:type" content="article">
+<meta property="og:title" content="innodb and heap table">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。 概念介绍InnoDB：MySQL 的主要存储引擎heap table：postgres数据库P表在物理上的存储（Heap File） 数据存储方式innodb 底层存储innodb是一个基于聚簇索引（Clustered Index）的存储引擎。 数据存储">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-10-25T07:37:12.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.286Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="storage">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/","path":"2025/10/25/database/innodb-and-pg/","title":"innodb and heap table"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>innodb and heap table | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">概念介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">数据存储方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#innodb-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8"><span class="nav-number">2.1.</span> <span class="nav-text">innodb 底层存储</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F-1"><span class="nav-number">2.1.1.</span> <span class="nav-text">数据存储方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A1%B5%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%84%E7%BB%87"><span class="nav-number">2.1.2.</span> <span class="nav-text">页与数据组织</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#postgres-heap-table"><span class="nav-number">2.2.</span> <span class="nav-text">postgres heap table</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F-2"><span class="nav-number">2.2.1.</span> <span class="nav-text">数据存储方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.2.</span> <span class="nav-text">索引</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E6%AF%94"><span class="nav-number">2.3.</span> <span class="nav-text">对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pg%E7%9A%84%E4%B8%80%E4%BA%9B%E4%BC%98%E5%8C%96"><span class="nav-number">2.4.</span> <span class="nav-text">pg的一些优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CLUSTER-%E5%91%BD%E4%BB%A4%EF%BC%88%E7%89%A9%E7%90%86%E9%87%8D%E6%8E%92%EF%BC%89"><span class="nav-number">2.4.1.</span> <span class="nav-text">CLUSTER 命令（物理重排）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E4%BB%85%E6%89%AB%E6%8F%8F%EF%BC%88Index-Only-Scan%EF%BC%89"><span class="nav-number">2.4.2.</span> <span class="nav-text">索引仅扫描（Index Only Scan）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#BRIN-%E7%B4%A2%E5%BC%95"><span class="nav-number">2.4.3.</span> <span class="nav-text">BRIN 索引</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/10/25/database/innodb-and-pg/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="innodb and heap table | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          innodb and heap table
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-10-25 15:37:12" itemprop="dateCreated datePublished" datetime="2025-10-25T15:37:12+08:00">2025-10-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>昨日和同事探讨了一下pg与mysql，发现对于mysql的innodb存储引擎了解甚少，正好周末，深入学习了解了一下，整理一下这两天学到的东西。</p>
+<h2 id="概念介绍"><a href="#概念介绍" class="headerlink" title="概念介绍"></a>概念介绍</h2><p>InnoDB：MySQL 的主要存储引擎<br>heap table：postgres数据库P表在物理上的存储（Heap File）</p>
+<h2 id="数据存储方式"><a href="#数据存储方式" class="headerlink" title="数据存储方式"></a>数据存储方式</h2><h3 id="innodb-底层存储"><a href="#innodb-底层存储" class="headerlink" title="innodb 底层存储"></a>innodb 底层存储</h3><p>innodb是一个基于聚簇索引（Clustered Index）的存储引擎。</p>
+<h4 id="数据存储方式-1"><a href="#数据存储方式-1" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>聚簇索引存储表数据  <ul>
+<li>表的主键索引就是数据本身的物理存储顺序。</li>
+<li>每个页（page）一般 16KB，页内数据按主键顺序排列。</li>
+<li>非主键列数据和行信息都在叶子节点。</li>
+</ul>
+</li>
+<li>二级索引<ul>
+<li>非主键索引存储的是主键值而不是行指针。</li>
+<li>查询非主键列时，需要先通过二级索引拿到主键，再去主键聚簇索引里查数据（回表，row lookup）。</li>
+</ul>
+</li>
+</ul>
+<h4 id="页与数据组织"><a href="#页与数据组织" class="headerlink" title="页与数据组织"></a>页与数据组织</h4><ul>
+<li>数据按 B+ 树页组织。</li>
+<li>插入&#x2F;更新可能导致页分裂。</li>
+</ul>
+<h3 id="postgres-heap-table"><a href="#postgres-heap-table" class="headerlink" title="postgres heap table"></a>postgres heap table</h3><h4 id="数据存储方式-2"><a href="#数据存储方式-2" class="headerlink" title="数据存储方式"></a>数据存储方式</h4><ul>
+<li>数据按插入顺序存放，没有聚簇索引。</li>
+<li>行标识符 TID（tuple id） 用于指向表的页和行。</li>
+<li>页（默认 8KB）内存储多行 tuple。</li>
+<li>没有聚簇索引，非索引扫描可能会更慢，但插入非常快。</li>
+</ul>
+<h4 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h4><ul>
+<li>B+ 树、哈希、GIN、GiST 等索引都是附加结构，存储独立于表。</li>
+<li>回表操作是通过 TID 定位行。</li>
+</ul>
+<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>InnoDB</th>
+<th>PostgreSQL 堆表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据组织</td>
+<td>聚簇索引（主键决定物理顺序）</td>
+<td>堆表，顺序插入</td>
+</tr>
+<tr>
+<td>主键访问</td>
+<td>快（顺序扫描&#x2F;范围查询）</td>
+<td>需要 B+ 树索引或全表扫描</td>
+</tr>
+<tr>
+<td>二级索引访问</td>
+<td>回表（先索引后主键查行）</td>
+<td>回表（索引 -&gt; TID -&gt; 行）</td>
+</tr>
+<tr>
+<td>插入性能</td>
+<td>如果主键顺序插入快，否则可能页分裂</td>
+<td>快，顺序写入，几乎不分裂</td>
+</tr>
+<tr>
+<td>更新&#x2F;删除</td>
+<td>支持 in-place 更新，但大行更新可能迁移</td>
+<td>创建新行，旧行留存，需要 vacuum</td>
+</tr>
+<tr>
+<td>MVCC</td>
+<td>Undo log + hidden columns</td>
+<td>xmin&#x2F;xmax + heap tuple</td>
+</tr>
+<tr>
+<td>表膨胀</td>
+<td>自动管理页空间</td>
+<td>容易膨胀，需要 vacuum</td>
+</tr>
+<tr>
+<td>查询优化</td>
+<td>聚簇索引优化范围查询</td>
+<td>多依赖索引，或者全表扫描</td>
+</tr>
+</tbody></table>
+<p>因为pg的存储结构导致访问数据，多了许多随机io：从索引到数据文件。导致pg的查询性能不如innnodb</p>
+<h3 id="pg的一些优化"><a href="#pg的一些优化" class="headerlink" title="pg的一些优化"></a>pg的一些优化</h3><h4 id="CLUSTER-命令（物理重排）"><a href="#CLUSTER-命令（物理重排）" class="headerlink" title="CLUSTER 命令（物理重排）"></a>CLUSTER 命令（物理重排）</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER t USING idx_id;</span><br></pre></td></tr></table></figure>
+<p>把表物理顺序按照索引顺序重排 —— 效果类似 InnoDB 聚簇索引。<br>缺点：</p>
+<ul>
+<li>是离线操作；</li>
+<li>之后新插入的行会破坏顺序（除非周期性 recluster）</li>
+</ul>
+<h4 id="索引仅扫描（Index-Only-Scan）"><a href="#索引仅扫描（Index-Only-Scan）" class="headerlink" title="索引仅扫描（Index Only Scan）"></a>索引仅扫描（Index Only Scan）</h4><p>如果查询的字段都在索引里且可见性检查通过（可见性 map 中标记为 all-visible），可以不访问堆表，直接从索引返回结果。</p>
+<h4 id="BRIN-索引"><a href="#BRIN-索引" class="headerlink" title="BRIN 索引"></a>BRIN 索引</h4><p>BRIN 全称是 Block Range INdex，是一种 非常轻量级的索引，设计理念与 B-Tree 不同：<br>不是存储每一行的索引它只存储堆表的一段范围（block range）内的最小值和最大值等摘要信息。每个 BRIN 索引条目覆盖 多个物理数据页（例如 128 个 8KB 页面 &#x3D; 1MB 的行数据）。<br>通过这些范围信息，可以快速排除不可能匹配的块，再去 heap 查找具体 tuple。<br>简单理解：BRIN 是“粗粒度索引”，通过块范围（block range）而非单行建立索引<br>非常适合 大表 + 顺序或局部相关数据：大表 + 顺序或局部相关数据：</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/storage/" rel="tag"># storage</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/10/24/postgresql/Recovery/" rel="prev" title="Recovery in postgres">
+                  <i class="fa fa-angle-left"></i> Recovery in postgres
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/11/01/postgresql/WAL-MODES/" rel="next" title="WAL MODES">
+                  WAL MODES <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Checkpoint">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/04/03/postgresql/Checkpoint/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-04-03T11:28:21.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.288Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="pginternal">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/04/03/postgresql/Checkpoint/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/04/03/postgresql/Checkpoint/","path":"2025/04/03/postgresql/Checkpoint/","title":"Checkpoint"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Checkpoint | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%BC%80%E5%A7%8B%EF%BC%88Checkpoint-start%EF%BC%89%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">检查点开始（Checkpoint start）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88Checkpoint-execution%EF%BC%89%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">检查点执行过程（Checkpoint execution）：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E7%82%B9%E5%AE%8C%E6%88%90%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">检查点完成：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">4.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/04/03/postgresql/Checkpoint/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Checkpoint | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Checkpoint
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-04-03 19:28:21" itemprop="dateCreated datePublished" datetime="2025-04-03T19:28:21+08:00">2025-04-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
+<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
+<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
+<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
+<ul>
+<li>CLOG（提交日志）中的事务状态信息，</li>
+<li>子事务的元数据，</li>
+<li>以及其他一些结构。</li>
+</ul>
+<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
+<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
+<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
+<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
+<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
+<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
+<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
+<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
+<p>Example：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
+<p>同样的信息也可以在 pg_control 文件中找到。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pginternal/" rel="tag"># pginternal</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/03/16/debug/How-to-use-asan-in-linux/" rel="prev" title="How to use asan in linux">
+                  <i class="fa fa-angle-left"></i> How to use asan in linux
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/05/14/postgresql/pgbench-md/" rel="next" title="How to use pgbench">
+                  How to use pgbench <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

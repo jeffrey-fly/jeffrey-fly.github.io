@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。原文作者：Tomas Vondra原文链接：https:&#x2F;&#x2F;vondra.me&#x2F;posts&#x2F;dont-give-postgres-too-much-memory&#x2F;本文接近原文直译，仅做结构整理与术语统一，所有观点归原作者所有。   背景：一次“批处理”性能排查的经历我时不时会被拉去排查一些与批">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【译】不要给 PostgreSQL 分配过多内存">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgresql/dont-give-postgres-too-much-memory/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。原文作者：Tomas Vondra原文链接：https:&#x2F;&#x2F;vondra.me&#x2F;posts&#x2F;dont-give-postgres-too-much-memory&#x2F;本文接近原文直译，仅做结构整理与术语统一，所有观点归原作者所有。   背景：一次“批处理”性能排查的经历我时不时会被拉去排查一些与批">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/workmem/image.png">
+<meta property="article:published_time" content="2025-12-24T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.291Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Performance">
+<meta property="article:tag" content="work_mem">
+<meta property="article:tag" content="maintenance_work_mem">
+<meta property="article:tag" content="GIN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jeffrey-fly-github-io.pages.dev/images/workmem/image.png">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgresql/dont-give-postgres-too-much-memory/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgresql/dont-give-postgres-too-much-memory/","path":"2025/12/25/postgresql/dont-give-postgres-too-much-memory/","title":"【译】不要给 PostgreSQL 分配过多内存"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>【译】不要给 PostgreSQL 分配过多内存 | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%80%E6%AC%A1%E2%80%9C%E6%89%B9%E5%A4%84%E7%90%86%E2%80%9D%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5%E7%9A%84%E7%BB%8F%E5%8E%86"><span class="nav-number">1.</span> <span class="nav-text">背景：一次“批处理”性能排查的经历</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E8%A7%A6%E5%8F%91%E9%97%AE%E9%A2%98%E7%9A%84%E5%AE%9E%E9%99%85%E6%A1%88%E4%BE%8B"><span class="nav-number">2.</span> <span class="nav-text">一个触发问题的实际案例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E8%AF%B4%E6%98%8E"><span class="nav-number">3.</span> <span class="nav-text">测试环境说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E5%8C%96%E7%9A%84%E6%95%88%E6%9E%9C%EF%BC%88%E7%AC%A6%E5%90%88%E9%A2%84%E6%9C%9F%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">并行化的效果（符合预期）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E7%9B%B4%E8%A7%89%E7%9A%84%E7%8E%B0%E8%B1%A1%EF%BC%9A%E5%86%85%E5%AD%98%E8%B6%8A%E5%A4%A7%EF%BC%8C%E5%8F%8D%E8%80%8C%E8%B6%8A%E6%85%A2"><span class="nav-number">5.</span> <span class="nav-text">反直觉的现象：内存越大，反而越慢</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E6%A6%82%E8%A7%88"><span class="nav-number">6.</span> <span class="nav-text">原因概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E4%B8%80%EF%BC%9AL3-Cache-%E7%9A%84%E5%A4%A7%E5%B0%8F%E9%99%90%E5%88%B6"><span class="nav-number">7.</span> <span class="nav-text">原因一：L3 Cache 的大小限制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E6%9E%84%E5%BB%BA%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E8%AE%BF%E9%97%AE%E6%A8%A1%E5%BC%8F"><span class="nav-number">7.1.</span> <span class="nav-text">索引构建中的内存访问模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cache-Miss-%E7%9A%84%E4%BB%A3%E4%BB%B7"><span class="nav-number">7.2.</span> <span class="nav-text">Cache Miss 的代价</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E4%BC%98%E7%9A%84%E7%AD%96%E7%95%A5"><span class="nav-number">7.3.</span> <span class="nav-text">更优的策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E4%BA%8C%EF%BC%9ALinux-%E8%84%8F%E9%A1%B5%EF%BC%88dirty-page%EF%BC%89%E5%9B%9E%E5%86%99%E6%9C%BA%E5%88%B6"><span class="nav-number">8.</span> <span class="nav-text">原因二：Linux 脏页（dirty page）回写机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Linux-%E7%9A%84%E8%84%8F%E9%A1%B5%E6%8E%A7%E5%88%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">8.1.</span> <span class="nav-text">Linux 的脏页控制机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%A7%E6%89%B9%E9%87%8F%E5%86%99%E5%85%A5%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">8.2.</span> <span class="nav-text">大批量写入的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%83%85%E5%86%B5-A%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%80%A7%E5%86%99%E5%87%BA"><span class="nav-number">8.2.1.</span> <span class="nav-text">情况 A：一次性写出</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%83%85%E5%86%B5-B%EF%BC%9A%E5%88%86%E6%89%B9%E5%86%99%E5%87%BA"><span class="nav-number">8.2.2.</span> <span class="nav-text">情况 B：分批写出</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%88%E5%8E%9F%E6%96%87%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">9.</span> <span class="nav-text">总结（原文结论）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E8%80%85%E5%BB%BA%E8%AE%AE"><span class="nav-number">10.</span> <span class="nav-text">作者建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E6%96%87%E4%BF%A1%E6%81%AF"><span class="nav-number">11.</span> <span class="nav-text">原文信息</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/25/postgresql/dont-give-postgres-too-much-memory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="【译】不要给 PostgreSQL 分配过多内存 | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【译】不要给 PostgreSQL 分配过多内存
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-25 00:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T00:00:00+08:00">2025-12-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文为英文技术博客《Don’t give Postgres too much memory》的中文翻译。<br>原文作者：Tomas Vondra<br>原文链接：<a target="_blank" rel="noopener" href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a><br>本文接近原文直译，仅做结构整理与术语统一，所有观点归原作者所有。</p>
+</blockquote>
+<hr>
+<h2 id="背景：一次“批处理”性能排查的经历"><a href="#背景：一次“批处理”性能排查的经历" class="headerlink" title="背景：一次“批处理”性能排查的经历"></a>背景：一次“批处理”性能排查的经历</h2><p>我时不时会被拉去排查一些与<strong>批处理（batch processing）</strong>相关的问题。<br>最近越来越常见的一种情况是：这些批处理进程会使用<strong>非常大的内存限制</strong>，尤其是：</p>
+<ul>
+<li><code>maintenance_work_mem</code></li>
+<li><code>work_mem</code></li>
+</ul>
+<p>我猜不少 DBA 的思路是：</p>
+<blockquote>
+<p><strong>“内存越大越好。”</strong></p>
+</blockquote>
+<p>但他们往往没有意识到，这样做<strong>实际上可能会明显拖慢性能</strong>。</p>
+<hr>
+<h2 id="一个触发问题的实际案例"><a href="#一个触发问题的实际案例" class="headerlink" title="一个触发问题的实际案例"></a>一个触发问题的实际案例</h2><p>我用一个在测试 <strong>GIN 索引并行构建修复</strong> 时遇到的例子来说明这个问题。</p>
+<p>这个 bug 本身并不复杂，也不算特别有意思，但它需要一个<strong>相当高的 <code>maintenance_work_mem</code></strong> 才能复现 —— 最初的报告里使用了 <strong>20GB</strong>。</p>
+<p>为了验证修复是否有效，我在：</p>
+<ul>
+<li>不同的 <code>maintenance_work_mem</code> 设置</li>
+<li>不同数量的并行 worker</li>
+</ul>
+<p>组合下，反复执行 <code>CREATE INDEX</code>。</p>
+<p>本来的目标只是检查是否还会失败，但我同时也记录了执行时间，并将结果画成了一张图。</p>
+<p><img src="/images/workmem/image.png" alt="mem"></p>
+<hr>
+<h2 id="测试环境说明"><a href="#测试环境说明" class="headerlink" title="测试环境说明"></a>测试环境说明</h2><p>测试运行在 Azure 上的一台 <strong>D96v4 实例</strong>：</p>
+<ul>
+<li><strong>CPU</strong>：Xeon Platinum 8573C  </li>
+<li><strong>内存</strong>：384GB  </li>
+<li><strong>存储</strong>：6 块 NVMe 组成 RAID0</li>
+</ul>
+<p>这意味着：</p>
+<ul>
+<li>数据基本全部命中缓存</li>
+<li>瓶颈主要在 <strong>CPU，而不是磁盘 I&#x2F;O</strong></li>
+</ul>
+<hr>
+<h2 id="并行化的效果（符合预期）"><a href="#并行化的效果（符合预期）" class="headerlink" title="并行化的效果（符合预期）"></a>并行化的效果（符合预期）</h2><p>并行化确实带来了明显收益：</p>
+<ul>
+<li><p>使用 <strong>2 个 worker（包括 leader）</strong><br>→ 性能提升约 <strong>1.8 倍</strong><br>→ 接近理想加速比（因为索引构建的最后阶段仍然是串行的）</p>
+</li>
+<li><p>随着 worker 数量继续增加：</p>
+<ul>
+<li>加速比逐渐下降  </li>
+<li>例如 <strong>8 个 worker 只有约 4.5 倍</strong></li>
+</ul>
+</li>
+</ul>
+<p>这完全符合预期。</p>
+<hr>
+<h2 id="反直觉的现象：内存越大，反而越慢"><a href="#反直觉的现象：内存越大，反而越慢" class="headerlink" title="反直觉的现象：内存越大，反而越慢"></a>反直觉的现象：内存越大，反而越慢</h2><p>真正令人意外的是图中展示的另一个趋势：</p>
+<blockquote>
+<p><strong><code>maintenance_work_mem</code> 越大，索引构建反而越慢。</strong></p>
+</blockquote>
+<p>具体表现为：</p>
+<ul>
+<li>从 <strong>64MB</strong> 增加到 <strong>16GB</strong></li>
+<li>索引构建时间增加了 <strong>约 30%</strong></li>
+<li>并且 <strong>无论使用多少并行 worker，这一趋势都一致</strong></li>
+</ul>
+<p>为什么会这样？</p>
+<hr>
+<h2 id="原因概览"><a href="#原因概览" class="headerlink" title="原因概览"></a>原因概览</h2><p>这很可能是多种因素共同作用的结果。<br>下面我解释两个我认为<strong>最重要的原因</strong>：</p>
+<ol>
+<li><strong>L3 Cache 的大小限制</strong></li>
+<li><strong>Linux 脏页（dirty page）回写机制</strong></li>
+</ol>
+<hr>
+<h2 id="原因一：L3-Cache-的大小限制"><a href="#原因一：L3-Cache-的大小限制" class="headerlink" title="原因一：L3 Cache 的大小限制"></a>原因一：L3 Cache 的大小限制</h2><p>系统中的内存并不是“同一种速度”。</p>
+<p>在 CPU 内部，存在一小块<strong>极快的缓存（L3 Cache）</strong>，访问延迟非常低。<br>但这部分内存通常只有 <strong>32MB～128MB</strong>。</p>
+<p>相比之下：</p>
+<ul>
+<li>主内存（RAM）容量巨大</li>
+<li>但访问延迟要高一个数量级</li>
+</ul>
+<hr>
+<h3 id="索引构建中的内存访问模式"><a href="#索引构建中的内存访问模式" class="headerlink" title="索引构建中的内存访问模式"></a>索引构建中的内存访问模式</h3><p>在索引构建过程中，通常会经历以下流程：</p>
+<ol>
+<li>将数据累积到一个内存缓冲区</li>
+<li>缓冲区“满了”之后进行处理</li>
+<li>再合并到最终的索引结构中</li>
+</ol>
+<p>对于 <strong>GIN 索引</strong> 来说，这一步会把条目插入到一个<strong>哈希表</strong>中，这意味着：</p>
+<blockquote>
+<p><strong>大量随机内存访问</strong></p>
+</blockquote>
+<hr>
+<h3 id="Cache-Miss-的代价"><a href="#Cache-Miss-的代价" class="headerlink" title="Cache Miss 的代价"></a>Cache Miss 的代价</h3><p>一旦这个哈希表的大小超过 <strong>L3 Cache</strong>，CPU 就不得不频繁访问主内存。</p>
+<p>大致的访问代价是：</p>
+<ul>
+<li><strong>L3 Cache</strong>：约 <strong>20 个 CPU cycle</strong></li>
+<li><strong>主内存</strong>：约 <strong>200 个 CPU cycle</strong></li>
+</ul>
+<p>也就是说，<strong>慢了一个数量级</strong>。</p>
+<hr>
+<h3 id="更优的策略"><a href="#更优的策略" class="headerlink" title="更优的策略"></a>更优的策略</h3><p>因此：</p>
+<ul>
+<li>将数据拆分成更小的批次处理</li>
+<li>让工作集尽量能够放进 L3 Cache</li>
+</ul>
+<p>往往是更优的策略。</p>
+<p>即使需要处理更多批次，<strong>总体上仍然可能更快</strong>。</p>
+<p><strong>推荐阅读</strong>：<br>Ulrich Drepper，《<em>What Every Programmer Should Know About Memory</em>》（2007）<br>虽然年代久远，但内存层级的基本原理至今没有变化。</p>
+<hr>
+<h2 id="原因二：Linux-脏页（dirty-page）回写机制"><a href="#原因二：Linux-脏页（dirty-page）回写机制" class="headerlink" title="原因二：Linux 脏页（dirty page）回写机制"></a>原因二：Linux 脏页（dirty page）回写机制</h2><p>除了 CPU Cache，还有操作系统层面的因素。</p>
+<p>当 GIN 的哈希表超过 <code>maintenance_work_mem</code> 限制时，数据会被写入<strong>临时文件</strong>。<br>这些文件不需要持久化保证，因此写入时只进入 <strong>page cache</strong>。</p>
+<hr>
+<h3 id="Linux-的脏页控制机制"><a href="#Linux-的脏页控制机制" class="headerlink" title="Linux 的脏页控制机制"></a>Linux 的脏页控制机制</h3><p>Linux 内核通过两个阈值控制脏页数量：</p>
+<ul>
+<li><code>vm.dirty_background_ratio</code>  <ul>
+<li>达到后，后台开始异步回写</li>
+</ul>
+</li>
+<li><code>vm.dirty_ratio</code>  <ul>
+<li>达到后，<strong>所有写入变成同步写</strong>（非常致命）</li>
+</ul>
+</li>
+</ul>
+<p>理想状态下：</p>
+<blockquote>
+<p>后台回写足够快，永远不会触及 <code>vm.dirty_ratio</code></p>
+</blockquote>
+<hr>
+<h3 id="大批量写入的问题"><a href="#大批量写入的问题" class="headerlink" title="大批量写入的问题"></a>大批量写入的问题</h3><p>问题在于：<br><strong>内核是否有“时间”去完成这些回写。</strong></p>
+<p>假设构建哈希表需要累积 <strong>8GB 数据，用时 1 分钟</strong>：</p>
+<h4 id="情况-A：一次性写出"><a href="#情况-A：一次性写出" class="headerlink" title="情况 A：一次性写出"></a>情况 A：一次性写出</h4><ul>
+<li>1 分钟内几乎不写</li>
+<li>最后一次性写出 8GB</li>
+<li>短时间内产生大量脏页</li>
+<li>极易触发同步写</li>
+</ul>
+<h4 id="情况-B：分批写出"><a href="#情况-B：分批写出" class="headerlink" title="情况 B：分批写出"></a>情况 B：分批写出</h4><ul>
+<li>每 <strong>64MB</strong> 写一次</li>
+<li>写操作均匀分布</li>
+<li>内核有足够时间后台回写</li>
+</ul>
+<p>显然后者对系统更加友好。</p>
+<hr>
+<h2 id="总结（原文结论）"><a href="#总结（原文结论）" class="headerlink" title="总结（原文结论）"></a>总结（原文结论）</h2><p>以上所有分析，**同样适用于 <code>work_mem</code>**。</p>
+<p>唯一的区别在于：</p>
+<ul>
+<li><code>maintenance_work_mem</code>  <ul>
+<li>用于维护操作（<code>CREATE INDEX</code>、<code>VACUUM</code> 等）</li>
+</ul>
+</li>
+<li><code>work_mem</code>  <ul>
+<li>用于普通查询（<code>hash join</code>、<code>hash aggregate</code>、<code>sort</code> 等）</li>
+</ul>
+</li>
+</ul>
+<p>但底层原理完全一致：</p>
+<ul>
+<li>哈希表超过 L3 Cache → 性能下降</li>
+<li>大块内存写入 → 脏页压力 → 可能触发同步写</li>
+</ul>
+<hr>
+<h2 id="作者建议"><a href="#作者建议" class="headerlink" title="作者建议"></a>作者建议</h2><p>我并不知道 <code>maintenance_work_mem</code> 或 <code>work_mem</code> 的“最佳值”是多少，这也不是这篇文章的重点。</p>
+<p>重点在于：</p>
+<blockquote>
+<p><strong>盲目把内存参数调得很大，可能会显著伤害性能。</strong></p>
+</blockquote>
+<p>我的建议是：</p>
+<ul>
+<li>从<strong>比较保守的值</strong>开始（例如 <strong>64MB</strong>）</li>
+<li>只有在你能<strong>明确证明存在收益</strong>的情况下，才逐步调高</li>
+</ul>
+<hr>
+<h2 id="原文信息"><a href="#原文信息" class="headerlink" title="原文信息"></a>原文信息</h2><ul>
+<li>原文作者：Tomas Vondra  </li>
+<li>原文地址：<a target="_blank" rel="noopener" href="https://vondra.me/posts/dont-give-postgres-too-much-memory/">https://vondra.me/posts/dont-give-postgres-too-much-memory/</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Performance/" rel="tag"># Performance</a>
+              <a href="/tags/work-mem/" rel="tag"># work_mem</a>
+              <a href="/tags/maintenance-work-mem/" rel="tag"># maintenance_work_mem</a>
+              <a href="/tags/GIN/" rel="tag"># GIN</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/12/22/postgresql/Distinct-Values/" rel="prev" title="Distinct_Values">
+                  <i class="fa fa-angle-left"></i> Distinct_Values
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

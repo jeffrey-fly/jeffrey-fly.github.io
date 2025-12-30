@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="1. Demo Database前面章节中的示例都是基于只有几行数据的简单表。本章以及后面的章节要处理查询执行，在这方面对数据要求更高：我们需要行数多得多、彼此有关联的表。为了不在每个示例中都重新发明一个新的数据集，我选用了一个现成的演示数据库，它展示了俄罗斯的客运航空交通情况。这个数据库有多个版本；我们将使用 2017 年 8 月 15 日创建的较大版本。要安装这个版本，你需要从压缩包中解压出包">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Query Execution Stages">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgresql/Query-Execution-Stages/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="1. Demo Database前面章节中的示例都是基于只有几行数据的简单表。本章以及后面的章节要处理查询执行，在这方面对数据要求更高：我们需要行数多得多、彼此有关联的表。为了不在每个示例中都重新发明一个新的数据集，我选用了一个现成的演示数据库，它展示了俄罗斯的客运航空交通情况。这个数据库有多个版本；我们将使用 2017 年 8 月 15 日创建的较大版本。要安装这个版本，你需要从压缩包中解压出包">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes1.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes2.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes3.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes4.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes5.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes6.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes7.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes8.png">
+<meta property="article:published_time" content="2025-12-07T02:00:35.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.290Z">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jeffrey-fly-github-io.pages.dev/images/QES/qes1.png">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgresql/Query-Execution-Stages/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgresql/Query-Execution-Stages/","path":"2025/12/07/postgresql/Query-Execution-Stages/","title":"Query Execution Stages"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Query Execution Stages | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Demo-Database"><span class="nav-number">1.</span> <span class="nav-text">1. Demo Database</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Simple-Query-Protoco"><span class="nav-number">2.</span> <span class="nav-text">2. Simple Query Protoco</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Parsing"><span class="nav-number">2.1.</span> <span class="nav-text">Parsing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Transformation"><span class="nav-number">2.2.</span> <span class="nav-text">Transformation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Planning"><span class="nav-number">2.3.</span> <span class="nav-text">Planning</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Execution"><span class="nav-number">2.4.</span> <span class="nav-text">Execution</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BF%BB%E8%AF%91%E6%9D%A5%E4%B9%8B"><span class="nav-number">3.</span> <span class="nav-text">翻译来之</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/07/postgresql/Query-Execution-Stages/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Query Execution Stages | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Query Execution Stages
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-07 10:00:35" itemprop="dateCreated datePublished" datetime="2025-12-07T10:00:35+08:00">2025-12-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-Demo-Database"><a href="#1-Demo-Database" class="headerlink" title="1. Demo Database"></a>1. Demo Database</h2><p>前面章节中的示例都是基于只有几行数据的简单表。本章以及后面的章节要处理查询执行，在这方面对数据要求更高：我们需要行数多得多、彼此有关联的表。为了不在每个示例中都重新发明一个新的数据集，我选用了一个现成的演示数据库，它展示了俄罗斯的客运航空交通情况。这个数据库有多个版本；我们将使用 2017 年 8 月 15 日创建的较大版本。要安装这个版本，你需要从压缩包中解压出包含数据库副本的文件，然后在 psql 中运行这个文件。</p>
+<p>在开发这个演示数据库时，我们尝试让它的模式（schema）足够简单，以便无需额外说明就能理解；同时，我们也希望它足够复杂，能够用来编写有意义的查询。数据库填充了贴近真实场景的数据，这使得示例更加全面，也更有趣味性。</p>
+<p>这里我只会简要介绍主要的数据库对象；如果你想查看整个模式(schema)，可以参阅脚注中引用的完整描述。</p>
+<p>主要的实体(entity)是 预订（<strong>booking</strong>），它对应于 bookings 表。一个预订可以包含多个乘客，每个乘客都有单独的电子机票（对应 tickets 表）。乘客本身不构成独立的实体；在我们的实验中，我们假设所有乘客都是唯一的</p>
+<p>每张机票包含一个或多个航段（对应 ticket_flights 表）。一张机票之所以可能有多个航段，主要有两种情况：要么它是往返票，要么它包含联程航班。虽然数据库模式中没有相应的约束，但我们假设同一个预订（booking）中的所有机票都拥有相同的航段。</p>
+<p>每个航班（flights 表）都从一个机场（airports 表）飞往另一个机场。具有相同航班号的航班拥有相同的出发地和目的地，但起飞日期不同。</p>
+<p>routes 视图基于 flights 表构建；它展示的是与具体航班日期无关的航线信息。</p>
+<p>在值机时，每位乘客都会被发放一张带有座位号的登机牌（boarding_passes 表）。乘客只能为机票中包含的航班办理值机。航班 + 座位 的组合必须唯一，因此不可能为同一个座位发放两张登机牌。</p>
+<p>飞机上的座位数量（seats 表）以及这些座位在不同舱位之间的分布，取决于执行该航班的具体机型（aircrafts 表）。我们假设每一种机型只能有一种客舱布局。</p>
+<p>有些表使用了代理主键（surrogate primary key），而另一些表使用了自然主键（natural key）（其中有些还是复合主键）。这样设计纯粹是为了演示，绝不是推荐的实践方式。</p>
+<p>这个演示数据库可以看作是真实系统的一份转储：其中包含了某个过去时间点的数据快照。要查看这个时间，可以调用 bookings.now() 函数。在需要使用 now() 的真实查询场景中，你可以在演示查询里使用这个函数。</p>
+<p>机场、城市和机型的名称存储在 airports_data 和 aircrafts_data 表中，并提供了两种语言：英文和俄文。为了构建本章的示例，我通常会查询实体关系图中显示的 airports 和 aircrafts 这两个视图；这些视图会根据 bookings.lang 参数的值来选择输出语言。不过在查询计划中，有些底层表的名称仍然可能会出现。</p>
+<h2 id="2-Simple-Query-Protoco"><a href="#2-Simple-Query-Protoco" class="headerlink" title="2. Simple Query Protoco"></a>2. Simple Query Protoco</h2><p>一种简单版本的客户端–服务器协议即可实现 SQL 查询的执行：客户端将查询文本发送给服务器，而服务器则返回完整的执行结果——无论结果包含多少行。发送到服务器的查询会经过几个阶段：解析（parse）→ 转换（transform）→ 计划（plan）→ 执行（execute）。</p>
+<p><img src="/images/QES/qes1.png" alt="qes1"></p>
+<h3 id="Parsing"><a href="#Parsing" class="headerlink" title="Parsing"></a>Parsing</h3><p>首先，PostgreSQL 必须对查询文本进行<strong>解析（parse）</strong>，以便理解需要执行的内容。</p>
+<p><strong>Lexical and syntactic analysis</strong> 词法分析器（lexer）会把查询文本拆分成一组词法单元（lexemes），例如关键字、字符串字面量、数字字面量等；而<strong>语法分析器（parser）</strong>会根据 SQL 的语言语法规则对这组词法单元进行验证。PostgreSQL 使用的是标准的解析工具，即 Flex 和 Bison。</p>
+<p>解析后的查询会以<strong>抽象语法树（AST）</strong>的形式存储在后端进程的内存中。</p>
+<p>例如，让我们来看下面这个查询：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> schemaname, tablename</span><br><span class="line"><span class="keyword">FROM</span> pg_tables</span><br><span class="line"><span class="keyword">WHERE</span> tableowner <span class="operator">=</span> <span class="string">&#x27;postgres&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> tablename;</span><br></pre></td></tr></table></figure>
+<p>词法分析器从中识别出了 5 个关键字、5 个标识符、1 个字符串字面量，以及 3 个单字符词素（一个逗号、一个等号和一个分号）。语法分析器则使用这些词素来构建解析树，下面的插图展示了一个高度简化的解析树。树中每个节点旁的文字说明表示该节点对应查询中的哪一部分：</p>
+<p><img src="/images/QES/qes2.png" alt="qes2"></p>
+<p>一个比较晦涩的缩写 RTE 代表 Range Table Entry（范围表项）。PostgreSQL 的源代码中使用 range table（范围表） 这个术语来指代表、子查询、连接结果——换句话说，指代 任何可以被 SQL 运算符处理的行集（set of rows）</p>
+<p><strong>语义分析（Semantic analysis）</strong> 的目的在于确认数据库中是否存在该查询按名称引用的表或其他对象，并检查用户是否拥有访问这些对象的权限。语义分析所需的全部信息都存储在 系统目录（system catalog） 中。</p>
+<p>在获得解析树之后，语义分析器会对其进行进一步的重组，这包括：为解析树添加对具体数据库对象、数据类型以及其他信息的引用。</p>
+<p>如果你启用了参数 debug_print_parse，就可以在服务器日志中看到完整的解析树，但这通常没有太大的实际意义。</p>
+<h3 id="Transformation"><a href="#Transformation" class="headerlink" title="Transformation"></a>Transformation</h3><p>在下一阶段，查询会被<strong>转换（重写，rewrite）</strong>。</p>
+<p>PostgreSQL 核心在多个场景下会使用查询转换。其中之一就是：<br>将解析树中 视图（view） 的名称替换为该视图底层查询（base query）对应的子树。</p>
+<p>另一个使用转换的场景是行级安全（Row-Level Security, RLS） 的实现。<br>另外，递归查询中的 <strong>SEARCH</strong> 和 <strong>CYCLE</strong> 子句也会在此阶段被转换。</p>
+<p>在上面的示例中，pg_tables 是一个视图；如果我们把它的定义直接展开写进查询文本，它将会是下面这样：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> schemaname, tablename</span><br><span class="line"><span class="keyword">FROM</span> (<span class="comment">-- pg_tables</span></span><br><span class="line">    <span class="keyword">SELECT</span> n.nspname <span class="keyword">AS</span> schemaname,</span><br><span class="line">        c.relname <span class="keyword">AS</span> tablename,</span><br><span class="line">        pg_get_userbyid(c.relowner) <span class="keyword">AS</span> tableowner,</span><br><span class="line">        ...</span><br><span class="line">    <span class="keyword">FROM</span> pg_class c</span><br><span class="line">        <span class="keyword">LEFT</span> <span class="keyword">JOIN</span> pg_namespace n <span class="keyword">ON</span> n.oid <span class="operator">=</span> c.relnamespace</span><br><span class="line">        <span class="keyword">LEFT</span> <span class="keyword">JOIN</span> pg_tablespace t <span class="keyword">ON</span> t.oid <span class="operator">=</span> c.reltablespace</span><br><span class="line">    <span class="keyword">WHERE</span> c.relkind <span class="operator">=</span> <span class="keyword">ANY</span> (<span class="keyword">ARRAY</span>[<span class="string">&#x27;r&#x27;</span>::<span class="type">char</span>, <span class="string">&#x27;p&#x27;</span>::<span class="type">char</span>])</span><br><span class="line">)</span><br><span class="line"><span class="keyword">WHERE</span> tableowner <span class="operator">=</span> <span class="string">&#x27;postgres&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> tablename；</span><br></pre></td></tr></table></figure>
+
+<p>不过，服务器并不会处理查询的文本表示；所有操作都在解析树（parse tree）上完成。下图展示的是一个简化后的重写树（如果启用 debug_print_rewritten 参数，你可以在服务器日志中看到其完整版本）。</p>
+<p>解析树只反映了查询的语法结构，但并不包含任何关于操作执行顺序的信息。</p>
+<p>此外，PostgreSQL 还支持自定义转换，用户可以通过 rewrite rule（重写规则）系统来实现自己的查询重写逻辑。</p>
+<p><img src="/images/QES/qes3.png" alt="qes3"></p>
+<blockquote>
+<p>规则系统（rule system）的支持曾被宣称为 Postgres 开发的主要目标之一；在最初实现规则系统时，Postgres 还只是一个学术项目，但之后规则系统已经多次被重新设计。规则系统非常强大，但也相当难以理解和调试。甚至有人提议直接把规则系统从 PostgreSQL 中移除，但这一想法并未得到一致认可。在大多数情况下，使用 触发器（trigger） 会比使用规则更加安全且容易。</p>
+</blockquote>
+<h3 id="Planning"><a href="#Planning" class="headerlink" title="Planning"></a>Planning</h3><p>SQL 是一种声明式语言：查询只说明要取什么数据，而不说明如何取。</p>
+<p>任何查询都可以有多种执行路径。解析树中的每个操作都可能有多种完成方式：<br>例如，结果既可以通过全表扫描（读取整张表并过滤掉不需要的数据）得到，也可以通过索引扫描来找到所需行。数据集在连接时总是两两结合（pairwise joins），这意味着连接顺序存在大量组合，从而产生数量巨大的候选执行方案。此外，还有多种连接算法（join algorithms）：例如，执行器可以扫描第一个数据集的每一行，并在第二个数据集中查找匹配行；或者，先对两个数据集进行排序，再执行合并连接（merge join）。对每一种算法，都能找到其优于其他算法的使用场景。</p>
+<p>最优计划与非最优计划的执行时间可能相差几个数量级，因此用于对解析后的查询进行优化的 计划器（planner） 是系统中最复杂的组件之一</p>
+<p><strong>Plan tree</strong>  执行计划同样以树结构表示，但其节点处理的是物理数据操作，而不是逻辑操作。</p>
+<p>如果你想查看完整的计划树，可以启用 debug_print_plan 参数，将计划树输出到服务器日志中。但在实际工作中，通常只需要查看 EXPLAIN 命令显示的文本形式的执行计划就足够了。</p>
+<p>下图突出展示了执行计划树中的主要节点。正是这些节点会出现在下面 EXPLAIN 命令的输出中。</p>
+<p>暂时我们先关注以下两点：</p>
+<ul>
+<li>这棵计划树中只包含了三个被查询表中的两个：规划器发现其中一个表对获取结果并非必需，于是将其从计划树中移除了。</li>
+<li>对于计划树中的每个节点，规划器都会给出估算的成本（cost）以及预计要处理的行数（rows）。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> schemaname, tablename</span><br><span class="line"><span class="keyword">FROM</span> pg_tables</span><br><span class="line"><span class="keyword">WHERE</span> tableowner <span class="operator">=</span> <span class="string">&#x27;postgres&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> tablename;</span><br><span class="line">QUERY PLAN</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Sort (cost<span class="operator">=</span><span class="number">21.03</span>.<span class="number">.21</span><span class="number">.04</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">128</span>)</span><br><span class="line">  Sort Key: c.relname</span><br><span class="line">  −<span class="operator">&gt;</span> Nested Loop <span class="keyword">Left</span> <span class="keyword">Join</span> (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.21</span><span class="number">.02</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">128</span>)</span><br><span class="line">    <span class="keyword">Join</span> <span class="keyword">Filter</span>: (n.oid <span class="operator">=</span> c.relnamespace)</span><br><span class="line">    −<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> pg_class c (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.19</span><span class="number">.93</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">72</span>)</span><br><span class="line">        <span class="keyword">Filter</span>: ((relkind <span class="operator">=</span> <span class="keyword">ANY</span> (<span class="string">&#x27;&#123;r,p&#125;&#x27;</span>::&quot;char&quot;[])) <span class="keyword">AND</span> (pg_g...</span><br><span class="line">    −<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> pg_namespace n (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.1</span><span class="number">.04</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4</span> wid...</span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>查询计划中的 Seq Scan 节点表示顺序扫描表数据，<br>而 Nested Loop 节点则表示连接（join）操作。</p>
+<p><img src="/images/QES/qes4.png" alt="qes4"></p>
+<p><strong>Plan search</strong> PostgreSQL 使用的是基于成本（cost-based）的优化器；它会遍历可能的执行计划，并估算执行这些计划所需的资源，例如 I&#x2F;O 操作或 CPU 周期。这种估算会被归一化为一个数值，称为该计划的 cost（成本）。在所有被考虑的计划中，优化器最终会选择 成本最低的那个计划。</p>
+<p>问题在于：潜在可用的执行计划数量会随着参与连接的表数呈指数级增长，因此即使针对相对简单的查询，也不可能把所有计划都枚举一遍。通常，规划器会使用动态规划（dynamic programming）算法并结合一些启发式规则（heuristics）来缩小搜索范围。这种方法使规划器能够在可接受的时间内，为包含大量表的查询找到数学上最优的执行计划。</p>
+<blockquote>
+<p>准确的解决方案并不能保证所选计划确实是最佳计划，因为规划器使用简化的数学模型，可能缺乏可靠的输入数据</p>
+</blockquote>
+<p><strong>Managing the order of joins</strong> 查询可以通过某种结构方式来限制优化器的搜索范围（当然，这样做有可能错过最优执行计划）。</p>
+<ul>
+<li><p>公共表表达式（CTE） 和主查询可以被分别优化；如果你想强制这种行为，可以使用 MATERIALIZED 子句。</p>
+</li>
+<li><p>在非 SQL 函数内部运行的子查询 总是会被单独优化。（SQL 函数有时可能会被 inline 到主查询中。）</p>
+</li>
+<li><p>如果你设置了 join_collapse_limit 并在查询中使用显式的 JOIN 语法，那么部分连接顺序会被查询的语法结构所固定；类似地，from_collapse_limit 对子查询有相同的效果。</p>
+</li>
+</ul>
+<p>最后一点可能需要解释一下。让我们来看一个示例：在 FROM 子句中列出表，但没有写任何显式 JOIN 的查询。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ...</span><br><span class="line"><span class="keyword">FROM</span> a, b, c, d, e</span><br><span class="line"><span class="keyword">WHERE</span> ..</span><br></pre></td></tr></table></figure>
+
+<p>在这种情况下，规划器必须考虑所有可能的连接（join）组合。该查询会由解析树中的如下部分来表示（示意性展示）。</p>
+<p><img src="/images/QES/qes5.png" alt="qes5"></p>
+<p>在下一个示例中，连接（join）的结构由 JOIN 子句 明确定义。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ...</span><br><span class="line"><span class="keyword">FROM</span> a, b <span class="keyword">JOIN</span> c <span class="keyword">ON</span> ..., d, e</span><br><span class="line"><span class="keyword">WHERE</span> ...</span><br></pre></td></tr></table></figure>
+
+<p>解析树会反映出这种结构。</p>
+<p><img src="/images/QES/qes6.png" alt="qes6"></p>
+<p>规划器通常会将连接树（join tree）扁平化，使其看起来与第一个示例中的结构类似。该算法会递归遍历整棵树，并将每个 JOINEXPR 节点替换为其包含元素的扁平列表。</p>
+<p>然而，只有当生成的扁平列表元素数量不超过 <em>join_collapse_limit</em> 时，这种合并操作才会执行。在这个特定的例子中，如果 <em>join_collapse_limit</em> 的值小于五，JOINEXPR 节点将不会被合并。</p>
+<p>对于查询优化器而言，这意味着：</p>
+<ul>
+<li>表 B 必须与表 C 进行连接（或者反过来，C 必须与 B 连接；在这对表中的连接顺序没有限制）。 </li>
+<li>表 A、D、E 以及 B 和 C 连接的结果可以按任意顺序进行连接。</li>
+</ul>
+<p>如果 <em>join_collapse_limit</em>  参数设置为 1，则显式 JOIN 子句中定义的顺序将被保留。</p>
+<p>关于 <strong>FULL OUTER JOIN</strong> 的操作数，它们永远不会被合并（collapsed），无论 <em>join_collapse_limit</em>  参数的值是多少。  </p>
+<p><em>from_collapse_limit</em> 参数以类似的方式控制子查询的扁平化。虽然子查询看起来不像 JOIN 子句，但在解析树（parse tree）层面上，这种相似性就很明显了</p>
+<p>一个例子：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ... </span><br><span class="line"><span class="keyword">FROM</span> a,</span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> ... <span class="keyword">FROM</span> b, c <span class="keyword">WHERE</span> ...</span><br><span class="line">) bc,</span><br><span class="line">d, e </span><br><span class="line"><span class="keyword">WHERE</span> ...</span><br></pre></td></tr></table></figure>
+<p>对应的JOIN树如下所示。这里唯一的区别是，这棵树包含的是 <strong>FROMEXPR</strong> 节点，而不是 <strong>JOINEXPR</strong>（因此参数名如此命名）。</p>
+<p><img src="/images/QES/qes7.png" alt="qes7"></p>
+<p><strong>遗传查询优化（Genetic query optimization）</strong> 在将查询树扁平化之后，某一层可能包含过多的元素——无论是表还是中间连接结果，这些元素都需要单独进行优化。由于查询计划的生成时间会随着需要连接的数据集数量呈指数增长，因此plan时间可能会超出所有合理的范围。</p>
+<p>如果启用了 <em>geqo</em> 参数，并且某一层的元素数量超过 <em>geqo_threshold</em> 的阈值，查询规划器将使用遗传算法来优化查询。相比动态规划，遗传算法的速度要快得多，但它无法保证找到的查询计划一定是最优的。因此，一条经验法则是通过减少需要优化的元素数量来避免使用遗传算法。</p>
+<p>遗传算法有若干可配置参数，但在此不作详细介绍。</p>
+<p><strong>选择最佳执行计划</strong> 查询计划是否可以被认为是最优的，取决于特定客户端如何使用查询结果。如果客户端需要一次性获取完整结果（例如，用于生成报表），那么计划应当优化所有行的检索效率。但如果优先考虑尽快返回前几行（例如，用于屏幕显示），那么最优计划可能完全不同。</p>
+<p>为了做出这个选择，PostgreSQL 会计算成本的两个组成部分：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN</span><br><span class="line"><span class="keyword">SELECT</span> schemaname, tablename <span class="keyword">FROM</span> pg_tables</span><br><span class="line"><span class="keyword">WHERE</span> tableowner <span class="operator">=</span> <span class="string">&#x27;postgres&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> tablename;</span><br><span class="line">                      QUERY PLAN</span><br><span class="line"><span class="comment">------------------------------------------------------</span></span><br><span class="line">Sort (cost<span class="operator">=</span><span class="number">21.03</span>.<span class="number">.21</span><span class="number">.04</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">128</span>)</span><br><span class="line">    Sort Key: c.relname</span><br><span class="line">    −<span class="operator">&gt;</span> Nested Loop <span class="keyword">Left</span> <span class="keyword">Join</span> (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.21</span><span class="number">.02</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">128</span>)</span><br><span class="line">        <span class="keyword">Join</span> <span class="keyword">Filter</span>: (n.oid <span class="operator">=</span> c.relnamespace)</span><br><span class="line">        −<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> pg_class c (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.19</span><span class="number">.93</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> width<span class="operator">=</span><span class="number">72</span>)</span><br><span class="line">            <span class="keyword">Filter</span>: ((relkind <span class="operator">=</span> <span class="keyword">ANY</span> (<span class="string">&#x27;&#123;r,p&#125;&#x27;</span>::&quot;char&quot;[])) <span class="keyword">AND</span> (pg_g... </span><br><span class="line">        −<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> pg_namespace n (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.1</span><span class="number">.04</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">4</span> wid..</span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>第一个组成部分（启动成本）表示节点执行前的准备开销；第二个组成部分（总成本）则包括获取查询结果过程中产生的所有开销。</p>
+<blockquote>
+<p>有时人们会说启动成本是获取结果集第一行的开销，但这种说法并不完全准确。</p>
+</blockquote>
+<p>为了挑选出首选执行计划，优化器会检查查询是否使用了游标（无论是通过 SQL 中的 DECLARE 命令，还是在 PL&#x2F;pgSQL 中显式声明（<em>explicitly</em>））。如果没有使用游标，则默认客户端需要一次性获取完整结果，优化器会选择总成本最小的计划。</p>
+<p>如果查询是通过游标执行的，则所选计划必须优化仅获取所有行中 <em>cursor_tuple_fraction</em> 部分的效率。更准确地说，PostgreSQL 会选择使以下表达式值最小的计划：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">startup cost + cursor_tuple_fraction (total cost − startup cost)</span><br></pre></td></tr></table></figure>
+
+<p>** 成本估算概述 ** 要估算一个计划的总成本，必须对计划中的所有节点进行成本估算。节点的成本取决于其类型（显而易见，读取堆表数据的成本与排序操作的成本不同）以及节点处理的数据量（数据量越大，通常成本越高）。虽然节点类型是已知的，但数据量只能根据输入集的预计基数（节点接收的行数）以及节点的选择性（输出中剩余行的比例）来预测。这些计算依赖于收集到的统计信息，例如表的大小以及表列中数据的分布情况。</p>
+<p>如果对每个节点的基数估计准确，计算出的成本很可能能够较好地反映实际成本。规划中主要的缺陷通常源于基数和选择性的估计不准确，这可能由以下原因造成：</p>
+<ol>
+<li>统计信息不准确或过时；</li>
+<li>无法使用统计信息；</li>
+<li>（程度较轻）规划模型本身的不完善。</li>
+</ol>
+<p><strong>基数估计（Cardinality estimation）</strong>  要计算节点的基数，优化器必须递归地完成以下步骤：</p>
+<ol>
+<li>估算每个子节点的基数，并评估该节点将从子节点接收到的输入行数；</li>
+<li>估算节点的选择性(Selectivity)，即输出中剩余的输入行所占的比例。</li>
+</ol>
+<p>节点的基数即这两个值的乘积。</p>
+<blockquote>
+<p>选择性(Selectivity)用一个介于 0 到 1 之间的数表示。数值越小，选择性越高；反之，数值接近 1 表示选择性较低。乍一看可能不太直观，其含义是：高选择性条件会筛掉几乎所有行，而只排除少量行的条件则选择性低。</p>
+</blockquote>
+<p>首先，优化器会估算定义数据访问方式的叶子节点的基数。这些计算依赖于收集到的统计信息，例如表的总大小。</p>
+<p>过滤条件的选择性取决于条件的类型。在最简单的情况下，可以将其假设为一个常数值，尽管优化器会尽量利用所有可用信息来精确估算。通常，只需要掌握如何估算简单过滤条件即可；如果条件包含逻辑运算，其选择性则按照以下公式计算：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sel𝑥 𝑎𝑛𝒅 𝑦 = sel𝑥sel𝑦</span><br><span class="line">sel𝑥 𝑜𝒓 𝑦  = 1−(1−sel𝑥)(1−sel𝑦) = sel𝑥+sel𝑦−sel𝑥sel𝑦</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>sel_X：满足条件 X 的行比例  sel_Y：满足条件 Y 的行比例 条件 X AND Y：满足两个条件的行，概率就是两者独立事件概率的乘积;  (1 - sel_X)：不满足 X 的行比例, (1 - sel_Y)：不满足 Y 的行比例, (1 - sel_X)(1 - sel_Y)：同时不满足 X 和 Y 的行比例.所以 1 − (1 − sel_X)(1 − sel_Y) &#x3D; 满足 X 或 Y 的行比例</p>
+</blockquote>
+<p>不幸的是，上述公式假设谓词 X 和 Y 彼此独立。对于相关（correlated）的谓词，这类估算将不准确。</p>
+<p>要估算 连接（join）的基数，优化器必须首先计算笛卡尔积的基数（即两个数据集基数的乘积），然后估算连接条件的选择性，这仍然取决于条件类型。</p>
+<p>其他节点（如排序或聚合）的基数估算方式也类似。</p>
+<p>需要注意的是：下层节点基数估算不准确，会影响后续所有计算，导致总成本估算不准确，从而选择了不理想的执行计划。更糟糕的是，优化器没有关于连接结果的统计信息，只能依赖表的统计信息。</p>
+<p><strong>成本估算</strong> 成本估算的过程同样是递归的。要计算一个子树的成本，需要先计算并累加其所有子节点的成本，然后再加上父节点自身的成本。</p>
+<p>在估算节点成本时，PostgreSQL 会根据该节点执行的操作建立数学模型，并以已经估算好的节点基数作为输入。对于每个节点，都会计算 启动成本 和 总成本。</p>
+<p>某些操作没有前置条件，因此可以立即执行，这类节点的启动成本为零。</p>
+<p>而另一类操作则必须等待一些前置操作完成后才能执行。例如，排序节点通常需要等待其子节点返回所有数据后，才能进行自己的任务。这类节点的启动成本通常大于零：即使上层节点（或客户端）只需要输出中的一行，也必须支付这一成本。</p>
+<p>优化器进行的所有计算都是估算值，可能与实际执行时间无关。它们的唯一目的，是在相同条件下对同一查询的不同执行计划进行比较。在其他情况下（尤其是不同查询之间），用成本来比较意义不大。例如，由于统计信息过时，成本可能被低估；在统计信息刷新后，计算出的成本可能上升，但由于估算更准确，服务器会选择更优的执行计划。</p>
+<h3 id="Execution"><a href="#Execution" class="headerlink" title="Execution"></a>Execution</h3><p>在查询优化阶段生成的执行计划现在必须被执行。</p>
+<p>执行器（executor）会在后端内存中打开一个 portal，这是一个保存当前正在执行查询状态的对象。这个状态以一棵树的形式表示，结构与执行计划树相同。树中的各节点像流水线一样运作，彼此请求并传递行数据。</p>
+<p><img src="/images/QES/qes8.png" alt="qes8"></p>
+<p>查询执行从根节点开始。以本例为例，根节点表示 排序（SORT）操作，它从子节点获取数据。在接收到所有行之后，根节点对数据进行排序，并将结果传递给客户端。</p>
+<p>某些节点（如图示中的 NESTLOOP 节点）负责将来自不同来源的数据集进行连接。此类节点会从两个子节点拉取数据，并在收到满足连接条件的行对后立即向上层传递结果行（与排序不同，排序必须先获取所有行）。此时，节点的执行会暂停，直到其父节点请求下一行。如果查询只需要部分结果（例如包含 LIMIT 子句），该操作不会执行完整。</p>
+<p>树中的两个 SEQSCAN 叶子节点负责表扫描。当父节点请求数据时，这些节点会从对应的表中获取下一行数据。</p>
+<p>因此，一些节点不存储任何行，而是立即向上层传递数据；而其他节点（如 SORT）可能需要保留大量数据。为此，后端内存中会为其分配一个 work_mem 内存块；如果内存不足，多余的数据会溢写到磁盘上的临时文件。</p>
+<p>一个执行计划可能包含多个需要数据存储的节点，因此 PostgreSQL 可能会分配多个 work_mem 大小的内存块。查询可使用的总 RAM 大小没有任何限制。</p>
+<h2 id="翻译来之"><a href="#翻译来之" class="headerlink" title="翻译来之"></a>翻译来之</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/" rel="prev" title="RD-Trees for Full-Text Search">
+                  <i class="fa fa-angle-left"></i> RD-Trees for Full-Text Search
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/12/16/postgresql/Extended-Query-Protocol/" rel="next" title="Extended_Query_Protocol">
+                  Extended_Query_Protocol <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

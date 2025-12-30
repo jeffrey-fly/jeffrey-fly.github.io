@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Each page has a certain inner layout that usually consists of the following parts:page header  page header an array of item pointers free space items (row versions) special space  Page结构示意图：  pageinsp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="page">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="Each page has a certain inner layout that usually consists of the following parts:page header  page header an array of item pointers free space items (row versions) special space  Page结构示意图：  pageinsp">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/page.png">
+<meta property="article:published_time" content="2025-08-11T02:59:00.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.291Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="pginternal">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jeffrey-fly-github-io.pages.dev/images/page.png">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/","path":"2025/08/11/postgresql/page/","title":"page"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>page | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Page%E7%BB%93%E6%9E%84%E7%A4%BA%E6%84%8F%E5%9B%BE%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">Page结构示意图：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pageinspect-extension"><span class="nav-number">2.</span> <span class="nav-text">pageinspect extension</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Record"><span class="nav-number">3.</span> <span class="nav-text">Record</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="page | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          page
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-11 10:59:00" itemprop="dateCreated datePublished" datetime="2025-08-11T10:59:00+08:00">2025-08-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>Each page has a certain inner layout that usually consists of the following parts:<br>page header</p>
+<ul>
+<li>page header</li>
+<li>an array of item pointers</li>
+<li>free space</li>
+<li>items (row versions)</li>
+<li>special space</li>
+</ul>
+<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><img src="/images/page.png" alt="page.png" style="zoom:100%;" />
+
+<h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * disk page organization</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * space management information generic to any page</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *		pd_lsn		- identifies xlog record for last change to this page.</span></span><br><span class="line"><span class="comment"> *		pd_checksum - page checksum, if set.</span></span><br><span class="line"><span class="comment"> *		pd_flags	- flag bits.</span></span><br><span class="line"><span class="comment"> *		pd_lower	- offset to start of free space.</span></span><br><span class="line"><span class="comment"> *		pd_upper	- offset to end of free space.</span></span><br><span class="line"><span class="comment"> *		pd_special	- offset to start of special space.</span></span><br><span class="line"><span class="comment"> *		pd_pagesize_version - size in bytes and page layout version number.</span></span><br><span class="line"><span class="comment"> *		pd_prune_xid - oldest XID among potentially prunable tuples on page.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The LSN is used by the buffer manager to enforce the basic rule of WAL:</span></span><br><span class="line"><span class="comment"> * &quot;thou shalt write xlog before data&quot;.  A dirty buffer cannot be dumped</span></span><br><span class="line"><span class="comment"> * to disk until xlog has been flushed at least as far as the page&#x27;s LSN.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_checksum stores the page checksum, if it has been set for this page;</span></span><br><span class="line"><span class="comment"> * zero is a valid value for a checksum. If a checksum is not in use then</span></span><br><span class="line"><span class="comment"> * we leave the field unset. This will typically mean the field is zero</span></span><br><span class="line"><span class="comment"> * though non-zero values may also be present if databases have been</span></span><br><span class="line"><span class="comment"> * pg_upgraded from releases prior to 9.3, when the same byte offset was</span></span><br><span class="line"><span class="comment"> * used to store the current timelineid when the page was last updated.</span></span><br><span class="line"><span class="comment"> * Note that there is no indication on a page as to whether the checksum</span></span><br><span class="line"><span class="comment"> * is valid or not, a deliberate design choice which avoids the problem</span></span><br><span class="line"><span class="comment"> * of relying on the page contents to decide whether to verify it. Hence</span></span><br><span class="line"><span class="comment"> * there are no flag bits relating to checksums.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_prune_xid is a hint field that helps determine whether pruning will be</span></span><br><span class="line"><span class="comment"> * useful.  It is currently unused in index pages.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The page version number and page size are packed together into a single</span></span><br><span class="line"><span class="comment"> * uint16 field.  This is for historical reasons: before PostgreSQL 7.3,</span></span><br><span class="line"><span class="comment"> * there was no concept of a page version number, and doing it this way</span></span><br><span class="line"><span class="comment"> * lets us pretend that pre-7.3 databases have page version number zero.</span></span><br><span class="line"><span class="comment"> * We constrain page sizes to be multiples of 256, leaving the low eight</span></span><br><span class="line"><span class="comment"> * bits available for a version number.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Minimum possible page size is perhaps 64B to fit page header, opaque space</span></span><br><span class="line"><span class="comment"> * and a minimal tuple; of course, in reality you want it much bigger, so</span></span><br><span class="line"><span class="comment"> * the constraint on pagesize mod 256 is not an important restriction.</span></span><br><span class="line"><span class="comment"> * On the high end, we can only support pages up to 32KB because lp_off/lp_len</span></span><br><span class="line"><span class="comment"> * are 15 bits.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">PageHeaderData</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="comment">/* XXX LSN is member of *any* block, not only page-organized ones */</span></span><br><span class="line">	PageXLogRecPtr pd_lsn;		<span class="comment">/* LSN: next byte after last byte of xlog</span></span><br><span class="line"><span class="comment">														 * record for last change to this page */</span></span><br><span class="line">	uint16		pd_checksum;	  <span class="comment">/* checksum */</span></span><br><span class="line">	uint16		pd_flags;		    <span class="comment">/* flag bits, see below */</span></span><br><span class="line">	LocationIndex pd_lower;		<span class="comment">/* offset to start of free space */</span></span><br><span class="line">	LocationIndex pd_upper;		<span class="comment">/* offset to end of free space */</span></span><br><span class="line">	LocationIndex pd_special;	<span class="comment">/* offset to start of special space */</span></span><br><span class="line">	uint16		pd_pagesize_version;</span><br><span class="line">	TransactionId pd_prune_xid; <span class="comment">/* oldest prunable XID, or zero if none */</span></span><br><span class="line">	ItemIdData	pd_linp[FLEXIBLE_ARRAY_MEMBER]; <span class="comment">/* line pointer array */</span></span><br><span class="line">&#125; PageHeaderData;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> PageHeaderData *PageHeader;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Record"><a href="#Record" class="headerlink" title="Record"></a>Record</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> t(</span><br><span class="line">test(# id <span class="type">integer</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s text</span><br><span class="line">test(# );</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> t(s);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">INSERT INTO</span> t(s) <span class="keyword">VALUES</span> (<span class="string">&#x27;FOO&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_xact_id();</span><br><span class="line"> pg_current_xact_id </span><br><span class="line"><span class="comment">--------------------</span></span><br><span class="line">                <span class="number">766</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>))\gx</span><br><span class="line"><span class="operator">-</span>[ RECORD <span class="number">1</span> ]<span class="comment">-------------------</span></span><br><span class="line">lp          <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_off      <span class="operator">|</span> <span class="number">8160</span></span><br><span class="line">lp_flags    <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_len      <span class="operator">|</span> <span class="number">32</span></span><br><span class="line">t_xmin      <span class="operator">|</span> <span class="number">766</span></span><br><span class="line">t_xmax      <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_field3    <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_ctid      <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">t_infomask2 <span class="operator">|</span> <span class="number">2</span></span><br><span class="line">t_infomask  <span class="operator">|</span> <span class="number">2050</span></span><br><span class="line">t_hoff      <span class="operator">|</span> <span class="number">24</span></span><br><span class="line">t_bits      <span class="operator">|</span> </span><br><span class="line">t_oid       <span class="operator">|</span> </span><br><span class="line">t_data      <span class="operator">|</span> \x0100000009464f4f</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;(0,&#x27;</span><span class="operator">||</span>lp<span class="operator">||</span><span class="string">&#x27;)&#x27;</span> <span class="keyword">AS</span> ctid,</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">CASE</span> lp_flags</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;unused&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">1</span> <span class="keyword">THEN</span> <span class="string">&#x27;normal&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">2</span> <span class="keyword">THEN</span> <span class="string">&#x27;redirect to &#x27;</span><span class="operator">||</span>lp_off</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">3</span> <span class="keyword">THEN</span> <span class="string">&#x27;dead&#x27;</span> </span><br><span class="line">test<span class="operator">-</span># <span class="keyword">END</span> <span class="keyword">AS</span> state,</span><br><span class="line">test<span class="operator">-</span># t_xmin <span class="keyword">as</span> xmin,</span><br><span class="line">test<span class="operator">-</span># t_xmax <span class="keyword">as</span> xmax,</span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">256</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">512</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_aborted, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">1024</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">2048</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_aborted</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> ctid  <span class="operator">|</span> state  <span class="operator">|</span> xmin <span class="operator">|</span> xmax <span class="operator">|</span> xmin_committed <span class="operator">|</span> xmin_aborted <span class="operator">|</span> xmax_committed <span class="operator">|</span> xmax_aborted </span><br><span class="line"><span class="comment">-------+--------+------+------+----------------+--------------+----------------+--------------</span></span><br><span class="line"> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> normal <span class="operator">|</span>  <span class="number">766</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> f              <span class="operator">|</span> f            <span class="operator">|</span> f              <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<p>Reference:</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010217262/article/details/123879205">【转】AntDB&#x2F;PostgreSQL内部原理：表Page结构解析_postgresql对应antdb的版本-CSDN博客</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pginternal/" rel="tag"># pginternal</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/08/05/debug/io/" rel="prev" title="IO">
+                  <i class="fa fa-angle-left"></i> IO
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/08/13/debug/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" rel="next" title="性能调试">
+                  性能调试 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="关于全文搜索全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档 为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。  “并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RD-Trees for Full-Text Search">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="关于全文搜索全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档 为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。  “并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree1.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree2.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree3.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree4.png">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree5.png">
+<meta property="article:published_time" content="2025-12-06T02:05:39.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.290Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="pginternal">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jeffrey-fly-github-io.pages.dev/images/RDTree/rdtree1.png">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/","path":"2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/","title":"RD-Trees for Full-Text Search"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>RD-Trees for Full-Text Search | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E5%85%A8%E6%96%87%E6%90%9C%E7%B4%A2"><span class="nav-number">1.</span> <span class="nav-text">关于全文搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Indexing-tsvector-Data"><span class="nav-number">2.</span> <span class="nav-text">Indexing tsvector Data</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Properties"><span class="nav-number">3.</span> <span class="nav-text">Properties</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">4.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="RD-Trees for Full-Text Search | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RD-Trees for Full-Text Search
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-06 10:05:39" itemprop="dateCreated datePublished" datetime="2025-12-06T10:05:39+08:00">2025-12-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="关于全文搜索"><a href="#关于全文搜索" class="headerlink" title="关于全文搜索"></a>关于全文搜索</h2><p>全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档</p>
+<p>为了进行搜索，文档会被转换为 tsvector 类型，该类型包含文档中的词素（lexemes）及其在文档中的位置。词素是将单词转换为适合搜索的格式。默认情况下，所有单词都会被标准化为小写，并去除其词尾。</p>
+<blockquote>
+<p>“并去除其词尾”指的是在全文搜索中，对单词进行词干提取（stemming）或词形归一化（normalization）的过程。具体来说，这是将单词的词尾（如英语中的复数、时态、词性变化等）去除，提取出单词的词干（stem）或基本形式，以便在搜索时能够匹配同一词根的不同变体。例如：单词“running”、“ran”和“runs”都源自同一词根“run”。在全文搜索的处理中，这些单词可能会被归一化为“run”，即去除词尾变化，保留词干。搜索“run”时，系统不仅会匹配“run”，还会匹配“running”、“ran”和“runs”等形式，因为它们都被归一化为相同的词干“run”。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SET</span> default_text_search_config <span class="operator">=</span> english;</span><br><span class="line"><span class="keyword">SET</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> to_tsvector(</span><br><span class="line">    <span class="string">&#x27;No one can tell me, nobody knows, &#x27;</span> <span class="operator">||</span></span><br><span class="line">    <span class="string">&#x27;Where the wind comes from, where the wind goes.&#x27;</span></span><br><span class="line">);</span><br><span class="line">                             to_tsvector                              </span><br><span class="line"><span class="comment">----------------------------------------------------------------------</span></span><br><span class="line"> <span class="string">&#x27;come&#x27;</span>:<span class="number">11</span> <span class="string">&#x27;goe&#x27;</span>:<span class="number">16</span> <span class="string">&#x27;know&#x27;</span>:<span class="number">7</span> <span class="string">&#x27;nobodi&#x27;</span>:<span class="number">6</span> <span class="string">&#x27;one&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;tell&#x27;</span>:<span class="number">4</span> <span class="string">&#x27;wind&#x27;</span>:<span class="number">10</span>,<span class="number">15</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>所谓的停用词（如“the”或“from”）会被过滤掉：这些词被认为出现频率过高，搜索它们无法返回有意义的搜索结果。当然，所有这些转换都是可以配置的。</p>
+<p>查询由另一种类型表示：tsquery。任何查询都包含一个或多个通过逻辑连接符连接的词素：&amp;（与）、|（或）、!（非）。你还可以使用括号来定义操作符的优先级。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> to_tsquery(<span class="string">&#x27;wind &amp; (comes | goes)&#x27;</span>);</span><br><span class="line">         to_tsquery          </span><br><span class="line"><span class="comment">-----------------------------</span></span><br><span class="line"> <span class="string">&#x27;wind&#x27;</span> <span class="operator">&amp;</span> ( <span class="string">&#x27;come&#x27;</span> <span class="operator">|</span> <span class="string">&#x27;goe&#x27;</span> )</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>全文搜索中唯一使用的操作符是匹配操作符 @@：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> amopopr::regoperator, oprcode::regproc, amopstrategy <span class="keyword">FROM</span> pg_am am</span><br><span class="line"><span class="keyword">JOIN</span> pg_opclass opc <span class="keyword">ON</span> opcmethod <span class="operator">=</span> am.oid <span class="keyword">JOIN</span> pg_amop amop <span class="keyword">ON</span> amopfamily <span class="operator">=</span> opcfamily <span class="keyword">JOIN</span> pg_operator opr <span class="keyword">ON</span> opr.oid <span class="operator">=</span> amopopr</span><br><span class="line"><span class="keyword">WHERE</span> amname <span class="operator">=</span> <span class="string">&#x27;gist&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> opcname <span class="operator">=</span> <span class="string">&#x27;tsvector_ops&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> amopstrategy;</span><br><span class="line">       amopopr        <span class="operator">|</span>   oprcode   <span class="operator">|</span> amopstrategy </span><br><span class="line"><span class="comment">----------------------+-------------+--------------</span></span><br><span class="line"> @@(tsvector,tsquery) <span class="operator">|</span> ts_match_vq <span class="operator">|</span>            <span class="number">1</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>该操作符判断文档是否满足查询条件。以下是一个示例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> to_tsvector(<span class="string">&#x27;Where the wind comes from, where the wind goes&#x27;</span>) @@ to_tsquery(<span class="string">&#x27;wind &amp; coming&#x27;</span>);</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>这绝不是对全文搜索的详尽描述，但这些信息应足以理解索引的基础知识。</p>
+<h2 id="Indexing-tsvector-Data"><a href="#Indexing-tsvector-Data" class="headerlink" title="Indexing tsvector Data"></a>Indexing tsvector Data</h2><p>为了实现快速的全文搜索，必须使用索引来支持。索引的对象不是文档本身，而是 tsvector 值。这里有两种选择：一种是在表达式上构建索引并进行类型转换，另一种是添加一个单独的 tsvector 类型列并对该列进行索引。第一种方法的优点是不会浪费空间来存储 tsvector 值，因为这些值实际上并不需要直接存储。但这种方法比第二种方法慢，因为索引引擎需要重新检查访问方法返回的所有堆元组。这意味着对于每个重新检查的行，都需要再次计算 tsvector 值，而且正如我们很快会看到的，GiST 索引会重新检查所有行。</p>
+<p>让我们构建一个简单的示例。我们将创建一个包含两列的表：第一列存储文档，第二列存储 tsvector 值。我们可以使用触发器来更新第二列，但更方便的做法是直接将该列声明为生成列。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> ts(</span><br><span class="line">    doc text,</span><br><span class="line">    doc_tsv tsvector GENERATED ALWAYS <span class="keyword">AS</span> (</span><br><span class="line">         to_tsvector(<span class="string">&#x27;pg_catalog.english&#x27;</span>, doc) </span><br><span class="line">    ) STORED</span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX ts_gist_idx <span class="keyword">ON</span> ts</span><br><span class="line"><span class="keyword">USING</span> gist(doc_tsv);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在上面的例子中，我使用了带有单一参数的 to_tsvector 函数，通过设置 default_text_search_config 参数来定义全文搜索配置。这种函数变体的波动性（volatility）类别是 STABLE，因为它隐式依赖于参数值。但在这里，我使用了另一种变体，显式指定配置；这种变体是 IMMUTABLE，可以用于生成表达式。</p>
+</blockquote>
+<p>我们插入几行数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> ts(doc) <span class="keyword">VALUES</span></span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>), (<span class="string">&#x27;And on his farm he had some cows&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here a moo, there a moo&#x27;</span>), (<span class="string">&#x27;Everywhere a moo moo&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>), (<span class="string">&#x27;And on his farm he had some chicks&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here a cluck, there a cluck&#x27;</span>), (<span class="string">&#x27;Everywhere a cluck cluck&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Old MacDonald had a farm&#x27;</span>),(<span class="string">&#x27;And on his farm he had some pigs&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Here an oink, there an oink&#x27;</span>),(<span class="string">&#x27;Everywhere an oink oink&#x27;</span>)</span><br><span class="line">RETURNING doc_tsv;</span><br><span class="line">            doc_tsv             </span><br><span class="line"><span class="comment">--------------------------------</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;cow&#x27;</span>:<span class="number">8</span> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;moo&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span> <span class="string">&#x27;moo&#x27;</span>:<span class="number">3</span>,<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;chick&#x27;</span>:<span class="number">8</span> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span></span><br><span class="line"> <span class="string">&#x27;cluck&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;cluck&#x27;</span>:<span class="number">3</span>,<span class="number">4</span> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">5</span> <span class="string">&#x27;macdonald&#x27;</span>:<span class="number">2</span> <span class="string">&#x27;old&#x27;</span>:<span class="number">1</span></span><br><span class="line"> <span class="string">&#x27;farm&#x27;</span>:<span class="number">4</span> <span class="string">&#x27;pig&#x27;</span>:<span class="number">8</span></span><br><span class="line"> <span class="string">&#x27;oink&#x27;</span>:<span class="number">3</span>,<span class="number">6</span></span><br><span class="line"> <span class="string">&#x27;everywher&#x27;</span>:<span class="number">1</span> <span class="string">&#x27;oink&#x27;</span>:<span class="number">3</span>,<span class="number">4</span></span><br><span class="line">(<span class="number">12</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>因此，R 树不适合用于索引文档，因为边界框（bounding box）的概念对文档没有意义。因此，使用了其 RD 树（俄罗斯套娃，Russian Doll）变体。RD 树不使用边界框，而是使用边界集（bounding set），即一个包含其所有子集元素的集合。对于全文搜索，这样的集合包含文档的词素（lexemes），但在一般情况下，边界集可以是任意的。</p>
+<p>在索引条目中表示边界集有几种方法。最简单的一种是列举集合中的所有元素。如下图所示</p>
+<p><img src="/images/RDTree/rdtree1.png" alt="rdtree1"></p>
+<p>为了找到满足 DOC_TSV @@ TO_TSQUERY(‘COW’) 条件的文档，我们需要深入到那些已知包含“cow”词素的子节点的节点。</p>
+<p><img src="/images/RDTree/rdtree2.png" alt="rdtree2"></p>
+<p>这种表示方式的问题显而易见。文档中的词素数量可能非常庞大，而页面大小是有限的。即使单个文档的独特词素数量不算太多，在树的较高层级中，它们的联合集仍然可能变得过大。</p>
+<p>全文搜索使用了另一种解决方案，即更紧凑的签名树（signature tree）。对于那些熟悉布隆过滤器（Bloom filter）的人来说，这种解决方案应该很熟悉。 </p>
+<p>每个词素可以由其签名（signature）表示：一个特定长度的位字符串，其中只有一位被置为 1。置为 1 的位由词素的哈希函数决定。 </p>
+<p>文档的签名是对该文档中所有词素签名的按位或（bitwise OR）操作结果。</p>
+<p><img src="/images/RDTree/rdtree3.png" alt="rdtree3"></p>
+<p>这种方法的优点显而易见：索引条目大小相同且相当小，因此索引非常紧凑。但也存在一些缺点。首先，无法执行仅索引扫描（index-only scan），因为索引不再存储索引键，每个返回的 TID（行标识）都必须通过表进行重新检查。此外，准确性也会受到影响：索引可能返回许多误报（false positives），这些误报需要在重新检查阶段过滤掉。</p>
+<p><img src="/images/RDTree/rdtree4.png" alt="rdtree4"></p>
+<p>让我们再次看看 DOC_TSV @@ TO_TSQUERY(‘COW’) 条件。查询的签名（signature）以与文档相同的方式计算；在这个特定情况下，其签名等于 0000010。一致性函数（consistency function）必须找到所有签名中具有相同位被置位的子节点。</p>
+<p><img src="/images/RDTree/rdtree5.png" alt="rdtree5"></p>
+<p>与前面的例子相比，这里需要扫描更多的节点，因为存在误报（false-positive）命中。由于签名的容量有限，在大型集合中，某些词素必然会具有相同的签名。在这个例子中，这样的词素是“cow”和“oink”。这意味着一个签名可能匹配多个不同的文档；在这里，查询的签名对应于三个文档。</p>
+<p>误报会降低索引的效率，但不会以任何方式影响其正确性：因为假阴性（false negatives）被保证排除，所以不会遗漏所需的值。</p>
+<p>显然，签名的实际大小要大得多。默认情况下，签名占用 123 字节（992 位），因此冲突的概率远低于本例中所示。如果需要，可以使用操作符类参数进一步将签名大小增加到大约 2000 字节。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> INDEX ... <span class="keyword">USING</span> gist(<span class="keyword">column</span> tsvector_ops(siglen <span class="operator">=</span> <span class="number">1024</span>));</span><br></pre></td></tr></table></figure>
+<p>此外，如果值足够小（略小于页面大小的 1&#x2F;16，对于标准页面大约是 500 字节），tsvector_ops 操作符类会在索引的叶子页面中存储 tsvector 值本身，而不是它们的签名。</p>
+<p>为了了解索引在真实数据上的工作方式，我们可以使用 pgsql-hackers 邮件列表存档。该存档包含 356,125 封电子邮件，包括发送日期、主题、作者姓名和正文文本。让我们添加一个 tsvector 类型的列并构建索引。在这里，我将三个值（主题、作者和正文文本）组合成一个单一的向量，以展示文档可以动态生成，而不必存储在单一列中。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> mail_messages <span class="keyword">ADD</span> <span class="keyword">COLUMN</span> tsv tsvector GENERATED ALWAYS <span class="keyword">AS</span> ( to_tsvector(</span><br><span class="line"><span class="string">&#x27;pg_catalog.english&#x27;</span>, subject<span class="operator">||</span><span class="string">&#x27; &#x27;</span><span class="operator">||</span>author<span class="operator">||</span><span class="string">&#x27; &#x27;</span><span class="operator">||</span>body_plain ) ) STORED;</span><br><span class="line">NOTICE: word <span class="keyword">is</span> too long <span class="keyword">to</span> be indexed</span><br><span class="line">DETAIL: Words longer than <span class="number">2047</span> characters <span class="keyword">are</span> ignored.</span><br><span class="line">...</span><br><span class="line">NOTICE: word <span class="keyword">is</span> too long <span class="keyword">to</span> be indexed</span><br><span class="line">DETAIL: Words longer than <span class="number">2047</span> characters <span class="keyword">are</span> ignored. </span><br><span class="line"><span class="keyword">ALTER TABLE</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> INDEX mail_gist_idx <span class="keyword">ON</span> mail_messages <span class="keyword">USING</span> gist(tsv);</span><br><span class="line"><span class="keyword">SELECT</span> pg_size_pretty(pg_relation_size(<span class="string">&#x27;mail_gist_idx&#x27;</span>));</span><br><span class="line">pg_size_pretty </span><br><span class="line">−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">127</span> MB </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>在填充该列（tsv）的过程中，一些特别长的词因为长度太大被过滤掉了。但一旦索引构建完成，就可以用于搜索查询了。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> mail_messages</span><br><span class="line"><span class="keyword">WHERE</span> tsv @@ to_tsquery(<span class="string">&#x27;magic &amp; value&#x27;</span>);</span><br><span class="line">                                  QUERY PLAN                                  </span><br><span class="line"><span class="comment">------------------------------------------------------------------------------</span></span><br><span class="line"> Index Scan <span class="keyword">using</span> mail_gist_idx <span class="keyword">on</span> mail_messages (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">898.00</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">   Index Cond: (tsv @@ to_tsquery(<span class="string">&#x27;magic &amp; value&#x27;</span>::text))</span><br><span class="line">   <span class="keyword">Rows</span> Removed <span class="keyword">by</span> Index Recheck: <span class="number">7852</span></span><br><span class="line">   Index Searches: <span class="number">1</span></span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">27575</span> read<span class="operator">=</span><span class="number">31875</span></span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">75</span> read<span class="operator">=</span><span class="number">4</span></span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>除了满足条件的 898 行之外，访问方法还返回了另外 7852 行，这些行需要后续通过回检（recheck）来过滤。如果我们增加签名容量（signature capacity），准确性（也就是索引效率）会提高，但索引的大小也会随之增加。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">DROP</span> INDEX mail_messages_tsv_idx;</span><br><span class="line"><span class="keyword">DROP</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> mail_messages</span><br><span class="line"><span class="keyword">USING</span> gist(tsv tsvector_ops(siglen<span class="operator">=</span><span class="number">1024</span>));</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_size_pretty(pg_relation_size(<span class="string">&#x27;mail_messages_tsv_idx&#x27;</span>));</span><br><span class="line"> pg_size_pretty </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> <span class="number">241</span> MB</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> mail_messages</span><br><span class="line"><span class="keyword">WHERE</span> tsv @@ to_tsquery(<span class="string">&#x27;magic &amp; value&#x27;</span>);</span><br><span class="line">                                  QUERY PLAN                                  </span><br><span class="line"><span class="comment">------------------------------------------------------------------------------</span></span><br><span class="line"> Index Scan <span class="keyword">using</span> mail_gist_idx <span class="keyword">on</span> mail_messages (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">898.00</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">   Index Cond: (tsv @@ to_tsquery(<span class="string">&#x27;magic &amp; value&#x27;</span>::text))</span><br><span class="line">   <span class="keyword">Rows</span> Removed <span class="keyword">by</span> Index Recheck: <span class="number">7852</span></span><br><span class="line">   Index Searches: <span class="number">1</span></span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">25968</span> read<span class="operator">=</span><span class="number">33482</span></span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">3</span> read<span class="operator">=</span><span class="number">2</span> dirtied<span class="operator">=</span><span class="number">1</span></span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>我已经展示了访问方法的属性，其中大多数在所有操作符类中都是相同的。但是下面两个列级别的属性值得一提：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;mail_messages_tsv_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> f</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>现在不可能进行 Index-only 扫描了，因为无法从签名中恢复出原始值。<br>不过在这个特定的场景下这是完全可以接受的：<br>tsvector 值只是用于搜索，我们真正需要的是文档本身（也就是实际的数据行）。<br>对于 tsvector_ops 类来说，也没有定义排序操作符</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pginternal/" rel="tag"># pginternal</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/12/02/postgresql/r-tree-for-points/" rel="prev" title="R-tree for points">
+                  <i class="fa fa-angle-left"></i> R-tree for points
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/12/07/postgresql/Query-Execution-Stages/" rel="next" title="Query Execution Stages">
+                  Query Execution Stages <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="当数据库服务正常运行时，wal文件持续不断的写入磁盘。这种写入时顺序的（sequential）：几乎没有随机访问，所以即便时hdd硬盘也能处理这样的任务。由于这种负载和典型的数据文件访问非常不一样，值得为WAL文件设置单独的物理存储，并通过符号链接替换PGDATA&#x2F;PG_WAL目录，该目录链接到mount的文件系统中的目录。  在某些情况下，需要同时写和读取WAL文件。第一种情况是崩溃恢">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WAL MODES">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgresql/WAL-MODES/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="当数据库服务正常运行时，wal文件持续不断的写入磁盘。这种写入时顺序的（sequential）：几乎没有随机访问，所以即便时hdd硬盘也能处理这样的任务。由于这种负载和典型的数据文件访问非常不一样，值得为WAL文件设置单独的物理存储，并通过符号链接替换PGDATA&#x2F;PG_WAL目录，该目录链接到mount的文件系统中的目录。  在某些情况下，需要同时写和读取WAL文件。第一种情况是崩溃恢">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-11-01T11:03:57.000Z">
+<meta property="article:modified_time" content="2025-12-30T07:56:30.290Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="pginternal">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgresql/WAL-MODES/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgresql/WAL-MODES/","path":"2025/11/01/postgresql/WAL-MODES/","title":"WAL MODES"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>WAL MODES | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%B9%A6%E7%9B%AE"><span class="nav-number">1.</span> <span class="nav-text">参考书目</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/01/postgresql/WAL-MODES/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="WAL MODES | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WAL MODES
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-01 19:03:57" itemprop="dateCreated datePublished" datetime="2025-11-01T19:03:57+08:00">2025-11-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgres/" itemprop="url" rel="index"><span itemprop="name">postgres</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>当数据库服务正常运行时，wal文件持续不断的写入磁盘。这种写入时顺序的（sequential）：几乎没有随机访问，所以即便时hdd硬盘也能处理这样的任务。由于这种负载和典型的数据文件访问非常不一样，值得为WAL文件设置单独的物理存储，并通过符号链接替换PGDATA&#x2F;PG_WAL目录，该目录链接到mount的文件系统中的目录。</p>
+<blockquote>
+<p>在某些情况下，需要同时写和读取WAL文件。第一种情况是崩溃恢复。第二个是流复制。 Walsender流程直接从文件中读取WALENTRIES。因此，如果必需的页面仍位于主服务器的OS缓冲区中（不在shared_buffer中），replica未接收WAL条目，则必须从磁盘中读取数据。但是访问仍然是顺序而不是随机的。</p>
+</blockquote>
+<p>wal日志条目写入有以下两种模式：</p>
+<ul>
+<li><strong>同步模式</strong>：在事务提交之前，必须把所有相关的 WAL 记录写入磁盘，否则不允许继续执行后续操作。</li>
+<li><strong>异步模式</strong>：事务提交会立刻返回成功，相关的 WAL 记录则由后台进程稍后再写入磁盘。</li>
+</ul>
+<p>当前使用的模式由参数：synchronous_commit 确定</p>
+<p><strong>同步模式</strong>：为了可靠地记录一次提交，仅仅将WAL条目传递给操作系统是不够的；你必须确保磁盘同步已经成功完成。由于同步涉及实际的I&#x2F;O操作（这相当慢），因此最好尽可能少地执行它。</p>
+<p>为此，完成事务并将WAL条目写入磁盘的后端可以进行一次小的暂停，该暂停由commit_delay参数定义。但是，只有当系统中至少有commit_siblings个活跃事务时，这种情况才会发生：在这次暂停期间，其中一些事务可能会完成，而服务器将设法一次性同步所有WAL条目。这很像为某人赶进来而按住电梯门。</p>
+<p>默认情况下，没有暂停。仅针对执行大量短时OLTP事务的数据库系统修改commit_delay参数是有意义的。</p>
+<p>在可能出现的暂停之后，完成事务的进程会将所有累积的 WAL 条目刷新到磁盘并执行同步操作（关键是要保存提交记录以及与该事务相关的所有前置记录；至于其他记录，则只是顺便写入，因为它们不会增加额外开销）。</p>
+<p>从这一刻起，ACID 的持久性要求便得到保证——事务被认为已经可靠提交。这就是为什么默认使用同步模式的原因。</p>
+<p>同步提交的缺点在于延迟更长（在同步完成之前，COMMIT 命令不会返回控制权），并且系统吞吐量较低，尤其对于 OLTP loads。</p>
+<p><strong>异步模式</strong>：要启用异步模式，必须关闭 synchronous_commit 参数。<br>在异步模式下，WAL 条目由 walwriter 进程写入磁盘，该进程在“工作—休眠”之间交替运行。休眠时长由 wal_writer_delay 参数决定（默认 200ms）。</p>
+<p>当 walwriter 从休眠中唤醒时，它会检查缓存中是否存在新的、已经完全填满的 WAL 页面。如果存在，就将这些页面写入磁盘，同时跳过当前未写满的页面；否则，它会写入当前半空的页面，因为既然已经被唤醒了。</p>
+<p>这种算法的目的在于避免同一个页面被多次刷盘，这在数据变更频繁的负载下能带来显著的性能提升。</p>
+<p>虽然 WAL 缓存采用环形缓冲区（ring buffer）的形式，但 walwriter 在到达缓存的最后一页时会停止；在经过一次休眠后，下一轮写入循环会从缓存的第一页重新开始。因此，在最坏的情况下，walwriter 可能需要 三次循环才能处理某个特定的 WAL 记录：</p>
+<p>第一次，它会写出缓存尾部的所有已填满页面；（当前位置之后的所有满块）<br>第二次，它回到开头；（当前位置之前的所有满块）<br>第三次，才会处理包含目标记录的那个未填满页面。<br>不过，在大多数情况下，只需要 一到两次循环 就能完成。</p>
+<p>每当写入的数据量达到 wal_writer_flush_after 时，就会执行一次同步操作；在写入循环结束时，也会再次进行同步。</p>
+<p>与同步提交相比，异步提交更快，因为它不需要等待物理写入磁盘完成。但可靠性有所下降：在发生故障前的 3 × wal_writer_delay 时间内提交的数据可能会丢失（默认值为 0.6 秒）</p>
+<p>在实际应用中，这两种模式是互补的。</p>
+<ul>
+<li>在 <strong>同步模式</strong> 下，与长事务相关的 WAL 条目仍然可以 异步写入，以释放 WAL 缓冲区。</li>
+<li>反之，即使在 <strong>异步模式</strong> 下，如果某个 WAL 条目所在的页即将被 从缓冲区淘汰，该条目也会被 立即刷盘，否则系统无法继续正常操作。<br>在大多数情况下，系统设计者必须在 性能和持久性之间做出权衡。</li>
+</ul>
+<p>synchronous_commit 参数也可以针对特定事务进行设置。如果能够在应用层将所有事务分类为 绝对关键（如处理财务数据）或 非关键，就可以在只冒非关键事务丢失风险的前提下，提升整体性能</p>
+<p>为了了解 异步提交 可能带来的性能提升，我们可以通过 pgbench 测试，比较两种模式下的 延迟（latency）和吞吐量（throughput）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>i test</span><br><span class="line">dropping <span class="keyword">old</span> tables...</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_accounts&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_branches&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_history&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_tellers&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">creating tables...</span><br><span class="line">generating data (client<span class="operator">-</span>side)...</span><br><span class="line">vacuuming...                                                                              </span><br><span class="line">creating <span class="keyword">primary</span> keys...</span><br><span class="line">done <span class="keyword">in</span> <span class="number">1.54</span> s (<span class="keyword">drop</span> tables <span class="number">0.11</span> s, <span class="keyword">create</span> tables <span class="number">0.49</span> s, client<span class="operator">-</span>side generate <span class="number">0.54</span> s, vacuum <span class="number">0.18</span> s, <span class="keyword">primary</span> keys <span class="number">0.23</span> s).</span><br><span class="line"> </span><br><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>T <span class="number">30</span> test</span><br><span class="line">pgbench (<span class="number">19</span>devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: <span class="operator">&lt;</span>builtin: TPC<span class="operator">-</span>B (sort <span class="keyword">of</span>)<span class="operator">&gt;</span></span><br><span class="line">scaling factor: <span class="number">1</span></span><br><span class="line">query mode: simple</span><br><span class="line">number <span class="keyword">of</span> clients: <span class="number">1</span></span><br><span class="line">number <span class="keyword">of</span> threads: <span class="number">1</span></span><br><span class="line">maximum number <span class="keyword">of</span> tries: <span class="number">1</span></span><br><span class="line">duration: <span class="number">30</span> s</span><br><span class="line">number <span class="keyword">of</span> transactions actually processed: <span class="number">3522</span></span><br><span class="line">number <span class="keyword">of</span> failed transactions: <span class="number">0</span> (<span class="number">0.000</span><span class="operator">%</span>)</span><br><span class="line">latency average <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">8.518</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> ms</span><br><span class="line"><span class="keyword">initial</span> connection <span class="type">time</span> <span class="operator">=</span> <span class="number">4.025</span> ms</span><br><span class="line">tps <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">117.400485</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> (<span class="keyword">without</span> <span class="keyword">initial</span> connection <span class="type">time</span>)</span><br></pre></td></tr></table></figure>
+<p>修改参数后跑异步模式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> synchronous_commit <span class="operator">=</span> off;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"> </span><br><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>T <span class="number">30</span> test</span><br><span class="line">pgbench (<span class="number">19</span>devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: <span class="operator">&lt;</span>builtin: TPC<span class="operator">-</span>B (sort <span class="keyword">of</span>)<span class="operator">&gt;</span></span><br><span class="line">scaling factor: <span class="number">1</span></span><br><span class="line">query mode: simple</span><br><span class="line">number <span class="keyword">of</span> clients: <span class="number">1</span></span><br><span class="line">number <span class="keyword">of</span> threads: <span class="number">1</span></span><br><span class="line">maximum number <span class="keyword">of</span> tries: <span class="number">1</span></span><br><span class="line">duration: <span class="number">30</span> s</span><br><span class="line">number <span class="keyword">of</span> transactions actually processed: <span class="number">9510</span></span><br><span class="line">number <span class="keyword">of</span> failed transactions: <span class="number">0</span> (<span class="number">0.000</span><span class="operator">%</span>)</span><br><span class="line">latency average <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">3.154</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> ms</span><br><span class="line"><span class="keyword">initial</span> connection <span class="type">time</span> <span class="operator">=</span> <span class="number">4.383</span> ms</span><br><span class="line">tps <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">317.038330</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> (<span class="keyword">without</span> <span class="keyword">initial</span> connection <span class="type">time</span>)</span><br></pre></td></tr></table></figure>
+<p>在 <strong>异步模式</strong> 下，这个简单的基准测试显示出 显著更低的延迟（latency）和更高的吞吐量（tps）。当然，每个具体系统的数值会根据当前负载有所不同，但可以清楚地看出，对于 短事务，性能提升是相当明显的。</p>
+<p>恢复参数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> RESET synchronous_commit;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pginternal/" rel="tag"># pginternal</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/10/25/database/innodb-and-pg/" rel="prev" title="innodb and heap table">
+                  <i class="fa fa-angle-left"></i> innodb and heap table
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/11/03/postgresql/WAL%E8%AE%BE%E7%BD%AE/" rel="next" title="WAL设置">
+                  WAL设置 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
