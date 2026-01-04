@@ -961,7 +961,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1018,7 +1018,7 @@
 <p>当然，这种调整并不总是有效（例如，如果删除了一些行，估算值将保持不变），但在某些情况下，它可以让优化器在下一次分析触发之前仍然保持合理的估算。</p>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1066,7 +1066,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1104,7 +1104,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1119,7 +1119,7 @@
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> flights</span><br><span class="line"><span class="keyword">WHERE</span> departure_airport <span class="operator">=</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> airport_code</span><br><span class="line">	<span class="keyword">FROM</span> airports</span><br><span class="line">	<span class="keyword">WHERE</span> city <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span></span><br><span class="line">);</span><br><span class="line">                          QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">30.56</span>.<span class="number">.5340</span><span class="number">.40</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2066</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">	<span class="keyword">Filter</span>: (departure_airport <span class="operator">=</span> $<span class="number">0</span>)</span><br><span class="line">	InitPlan <span class="number">1</span> (<span class="keyword">returns</span> $<span class="number">0</span>)</span><br><span class="line">		−<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> airports_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.30</span><span class="number">.56</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> wi... </span><br><span class="line">			<span class="keyword">Filter</span>: ((city −<span class="operator">&gt;&gt;</span> lang()) <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span>::text)</span><br><span class="line">(<span class="number">5</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1186,7 +1186,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1216,7 +1216,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1242,7 +1242,7 @@
 <p>登录你要使用的数据库，然后执行：</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line">\dx</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>learn</tag>
@@ -1274,7 +1274,7 @@
 </ul>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1409,7 +1409,7 @@
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1449,7 +1449,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1469,7 +1469,7 @@
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights <span class="keyword">WHERE</span> actual_departure <span class="keyword">IS</span> <span class="keyword">NULL</span>;</span><br><span class="line"> count </span><br><span class="line">−−−−−−− </span><br><span class="line"> <span class="number">16348</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
   </entry>
   <entry>
@@ -1624,7 +1624,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
   </entry>
   <entry>
@@ -1685,7 +1685,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1731,7 +1731,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1782,7 +1782,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1831,7 +1831,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1917,7 +1917,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1956,7 +1956,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -1973,7 +1973,7 @@
 
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>learn</tag>
@@ -2156,7 +2156,7 @@
 </ul>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>PostgreSQL</tag>
@@ -2191,7 +2191,7 @@
 <p><a href="https://blog.csdn.net/u010217262/article/details/123879205">【转】AntDB&#x2F;PostgreSQL内部原理：表Page结构解析_postgresql对应antdb的版本-CSDN博客</a></p>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -2224,7 +2224,7 @@
 <p>Use :variable for substitution. We can define variables using -D:</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>learn</tag>
@@ -2351,7 +2351,7 @@
 </ol>
 ]]></content>
       <categories>
-        <category>postgres</category>
+        <category>postgresql</category>
       </categories>
       <tags>
         <tag>pginternal</tag>
@@ -2473,7 +2473,14 @@
  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git fetch origin</span><br><span class="line">git rebase origin/main</span><br><span class="line">git add xxx.cpp</span><br><span class="line">git rebase --<span class="built_in">continue</span> / abort</span><br><span class="line">git push --force-with-lease</span><br><span class="line">git push orign &lt;localbranch&gt;:&lt;remotebranch&gt;</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>把文件回退到它的上一次修改</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure></li>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br></pre></td></tr></table></figure>
+<p> 对比 工作区 ↔ 暂存区</p>
+</li>
+<li><p>更改作者</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
 </ol>
 ]]></content>
       <categories>
@@ -2580,5 +2587,16 @@
       <tags>
         <tag>wordpress</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>About pytest</title>
+    <url>/2024/01/04/python/about-pytest/</url>
+    <content><![CDATA[<h2 id="Install-dependencies"><a href="#Install-dependencies" class="headerlink" title="Install dependencies"></a>Install dependencies</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install pytest pytest-cov</span><br></pre></td></tr></table></figure>
+
+<h2 id="Check-coverage"><a href="#Check-coverage" class="headerlink" title="Check coverage"></a>Check coverage</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil</span><br><span class="line">python -m pytest --cov=myutil --cov-report=term-missing</span><br><span class="line"></span><br><span class="line">python -m pytest --cov=myutil.myjson</span><br><span class="line">python -m pytest tests/test_myjson.py --cov=myutil</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="Generate-html-file"><a href="#Generate-html-file" class="headerlink" title="Generate html file"></a>Generate html file</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil --cov-report=html</span><br></pre></td></tr></table></figure>
+
+]]></content>
   </entry>
 </search>
