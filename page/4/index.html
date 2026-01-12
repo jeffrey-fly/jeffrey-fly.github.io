@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,325 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/" class="post-title-link" itemprop="url">B树索引（postgres）</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-10 14:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T14:33:12+08:00">2025-07-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
+<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
+<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
+<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
+<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
+<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
+<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
+</ol>
+<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
+<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
+<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
+<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
+</ul>
+<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
+<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
+<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
+<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
+<p>PostgreSQL 当前 不支持 Skip Scan</p>
+<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
+<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
+<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
+<li>聚簇后的表，在按该索引扫描时性能更好</li>
+</ul>
+<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
+<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
+<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
+<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
+</ul>
+<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
+<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
+<ol>
+<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
+<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
+</ol>
+<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
+<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
+<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
+<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
+</ol>
+<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
+<li>适合返回大量结果的索引查询；</li>
+<li>通过减少随机访问，降低 I&#x2F;O；</li>
+<li>支持多个索引结果合并，提高复杂查询效率。</li>
+</ol>
+<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
+<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
+<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
+</ol>
+<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
+<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
+<ol>
+<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
+<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
+<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
+</ol>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/06/04/database/TPCC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/04/database/TPCC/" class="post-title-link" itemprop="url">TPCC</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-04 10:46:58" itemprop="dateCreated datePublished" datetime="2025-06-04T10:46:58+08:00">2025-06-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ol>
+<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/05/14/postgresql/pgbench-md/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/05/14/postgresql/pgbench-md/" class="post-title-link" itemprop="url">How to use pgbench</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-05-14 11:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T11:26:53+08:00">2025-05-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
+<h2 id="1-Initialize-the-Test-Database"><a href="#1-Initialize-the-Test-Database" class="headerlink" title="1. Initialize the Test Database"></a>1. Initialize the Test Database</h2><p>This sets up the schema and populates data.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -i -s 10 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-i: Initialize the database.</li>
+<li>-s 10: Scale factor. Each scale unit ~100,000 rows in the pgbench_accounts table.</li>
+<li>mydb: The database to test.</li>
+</ul>
+<h2 id="2-Run-a-Simple-Benchmark-Test"><a href="#2-Run-a-Simple-Benchmark-Test" class="headerlink" title="2. Run a Simple Benchmark Test"></a>2. Run a Simple Benchmark Test</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -c 10 -j 2 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-c 10: 10 concurrent clients.</li>
+<li>-j 2: 2 threads.</li>
+<li>-T 60: Run for 60 seconds.</li>
+<li>mydb: Target database.</li>
+</ul>
+<p>It will output something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$ pgbench -c 10 -j 2 -T 60 mydb</span><br><span class="line">pgbench (18devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: &lt;builtin: TPC-B (sort of)&gt;</span><br><span class="line">scaling factor: 10</span><br><span class="line">query mode: simple</span><br><span class="line">number of clients: 10</span><br><span class="line">number of threads: 2</span><br><span class="line">maximum number of tries: 1</span><br><span class="line">duration: 60 s</span><br><span class="line">number of transactions actually processed: 12841</span><br><span class="line">number of failed transactions: 0 (0.000%)</span><br><span class="line">latency average = 46.726 ms</span><br><span class="line">initial connection time = 39.072 ms</span><br><span class="line">tps = 214.013767 (without initial connection time)</span><br><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$</span><br></pre></td></tr></table></figure>
+<h2 id="3-Run-Custom-SQL-Scripts"><a href="#3-Run-Custom-SQL-Scripts" class="headerlink" title="3. Run Custom SQL Scripts"></a>3. Run Custom SQL Scripts</h2><p>You can benchmark with custom SQL transactions:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<p>Where myscript.sql contains something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
+<p>Use :variable for substitution. We can define variables using -D:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -961,269 +1280,6 @@
 <p>在 GDB 中：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p/t (val &amp; 0xFFFF) // 获取低 16 位</span><br><span class="line"><span class="variable">$1</span> = 0101011001111000</span><br><span class="line">(gdb) p/t ((val &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0</span>xFFFF) // 获取高 <span class="number">16</span> 位</span><br><span class="line"><span class="variable">$2</span> = <span class="number">0001001000110100</span></span><br></pre></td></tr></table></figure>
 <h2 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h2><p>对于查看内存中的数据（包括变量在内存中的表示），使用 x 命令结合 h (半字) 和 t (二进制) 格式指定符是最直接的方法。<br>对于只查看变量的值，使用位运算提取 16 位部分，然后使用 p&#x2F;t 也是一个有效的选择。<br>选择哪种方法取决于你的具体需求。如果你需要查看变量在内存中的布局（例如，在结构体或数组中），x 命令是更好的选择。如果你只需要查看变量值的不同部分，位运算可能更方便。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/11/11/debug/nonstop/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/11/11/debug/nonstop/" class="post-title-link" itemprop="url">gdb 异步调试</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-11-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-11-11T10:59:00+08:00">2024-11-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/10/27/debug/pprof/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/10/27/debug/pprof/" class="post-title-link" itemprop="url">分析tcmalloc 内存增长 —- pprof</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-10-27 09:44:27" itemprop="dateCreated datePublished" datetime="2024-10-27T09:44:27+08:00">2024-10-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>有时候程序莫名内存上涨厉害，但不是泄漏，如何定位哪申请使用的大量内存呢？</p>
-<p>如果没使用tcmalloc，使用heaptrack工具（git clone <a target="_blank" rel="noopener" href="https://github.com/KDE/heaptrack.git%EF%BC%89%EF%BC%9B">https://github.com/KDE/heaptrack.git）；</a></p>
-<p>如果使用了tcmalloc，可以通过tcmalloc自带的工具来分析</p>
-<h2 id="一-工具"><a href="#一-工具" class="headerlink" title="一 工具"></a>一 工具</h2><ol>
-<li>tcmalloc</li>
-<li>pprof</li>
-</ol>
-<p>pprof相当于分析器，阅读器，分析阅读的内容为heap文件，内容包括  </p>
-<ul>
-<li>每个活跃分配的大小</li>
-<li>分配的调用栈</li>
-<li>分配次数</li>
-</ul>
-<h2 id="二-生成heap文件"><a href="#二-生成heap文件" class="headerlink" title="二 生成heap文件"></a>二 生成heap文件</h2><ul>
-<li><p>手动<br>在程序的入口或需要开始分析的地方，添加 HeapProfilerStart(“文件路径”)。<br>在程序结束或需要停止分析的地方，添加 HeapProfilerStop()。<br>在需要手动生成快照的地方，添加 HeapProfilerDump(“文件名”)。</p>
-</li>
-<li><p>自动<br>设置环境变量，动态加载设置环境变量即可，tcmalloc库加载时会读取并解析这个环境变量，从而开启堆分析功能</p>
-  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HEAP_PROFILE=/tmp/myapp_heap</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>如果是静态加载，需代码中启动：HeapProfilerStart</p>
-</blockquote>
-</li>
-<li><p>补充说明<br>自动生成文件的时机：申请内存超过阈值时会自动生成，阈值可以通过HEAP_PROFILE_ALLOCATION_INTERVAL环境变量来设置</p>
-</li>
-</ul>
-<h2 id="三-分析heap文件（快照）"><a href="#三-分析heap文件（快照）" class="headerlink" title="三 分析heap文件（快照）"></a>三 分析heap文件（快照）</h2><h3 id="单次快照"><a href="#单次快照" class="headerlink" title="单次快照"></a>单次快照</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 文本格式</span></span><br><span class="line">pprof test_heap --text /tmp/test_heap.0001.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 火焰图</span></span><br><span class="line">pprof --svg /path/to/my_program.hprof &gt; flamegraph.svg</span><br></pre></td></tr></table></figure>
-<h3 id="两次快照："><a href="#两次快照：" class="headerlink" title="两次快照："></a>两次快照：</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 对比两次快照</span></span><br><span class="line">pprof --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成火焰图</span></span><br><span class="line">pprof --svg --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap &gt; diff_flamegraph.svg</span><br></pre></td></tr></table></figure>
-<p>火焰图需要额外安装</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install graphviz</span><br></pre></td></tr></table></figure>
-<h3 id="sample"><a href="#sample" class="headerlink" title="sample"></a>sample</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    HeapProfilerStart(<span class="string">&quot;/tmp/test_heap&quot;</span>);</span><br><span class="line">    <span class="type">void</span>* p = <span class="built_in">malloc</span>(<span class="number">16</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 分配 16MB</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;Allocated 16MB\n&quot;</span>;</span><br><span class="line">    HeapProfilerDump(<span class="string">&quot;after_alloc&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(p);</span><br><span class="line">    HeapProfilerStop();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ test_heap.cc -ltcmalloc -lpthread -lunwind -o test_heap</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/10/24/linux/File%20Descriptor%20Limits/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/10/24/linux/File%20Descriptor%20Limits/" class="post-title-link" itemprop="url">File Descriptor Limits</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-10-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-10-24T15:52:16+08:00">2024-10-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><a target="_blank" rel="noopener" href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
 
       
     </div>

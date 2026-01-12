@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,458 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2026/01/12/postgresql/how-to-use-pg-stat-statements-extension/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/01/12/postgresql/how-to-use-pg-stat-statements-extension/" class="post-title-link" itemprop="url">How to use pg_stat_statements extension</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-12 10:33:28" itemprop="dateCreated datePublished" datetime="2026-01-12T10:33:28+08:00">2026-01-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>pg_stat_statements 不能像 pageinspect 那样只靠 CREATE EXTENSION 就用，原因在于它们在 PostgreSQL 内核中的“级别”完全不同。</p>
+<p>pg_stat_statements 和 pageinspect 的定位完全不同：它是一个 全局统计模块<br>它需要：</p>
+<ol>
+<li>拦截每一条 SQL 的执行<ul>
+<li>使用 executor hooks</li>
+<li>在 query 开始 &#x2F; 结束时采样</li>
+</ul>
+</li>
+<li>shared memory 中维护全局 hash 表<ul>
+<li>跨 backend 共享</li>
+<li>保存长期累计统计</li>
+</ul>
+</li>
+<li>在 backend 启动阶段完成初始化<ul>
+<li>分配 shared memory</li>
+<li>注册 hooks</li>
+</ul>
+</li>
+</ol>
+<p>这些事情 只能在 postmaster 启动时完成。</p>
+<h2 id="启动步骤"><a href="#启动步骤" class="headerlink" title="启动步骤"></a>启动步骤</h2><ol>
+<li>修改 postgresql.conf<br> 确认conf位置 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">gujinfei=# show config_file;</span><br><span class="line">            config_file</span><br><span class="line">---------------------------------------</span><br><span class="line">/home/gujinfei/pgdata/postgresql.conf</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shared_preload_libraries = &#x27;pg_stat_statements&#x27;</span><br></pre></td></tr></table></figure></li>
+<li>reboot database <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl restart</span><br></pre></td></tr></table></figure></li>
+<li>进入sql <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> shared_preload_libraries;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_stat_statements;</span><br></pre></td></tr></table></figure></li>
+<li>Test <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line"><span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br></pre></td></tr></table></figure>
+ result <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">t</span><br><span class="line"><span class="comment">---</span></span><br><span class="line">t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), a</span><br><span class="line"><span class="keyword">Group</span> Key: t.a</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), b</span><br><span class="line"><span class="keyword">Group</span> Key: t.b</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), c</span><br><span class="line"><span class="keyword">Group</span> Key: t.c</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">9219356609107396553</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br><span class="line">calls <span class="operator">|</span> <span class="keyword">rows</span> <span class="operator">|</span>                             query</span><br><span class="line"><span class="comment">-------+------+---------------------------------------------------------------</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span> <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t</span><br><span class="line">    <span class="number">2</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a</span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span>#</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/" class="post-title-link" itemprop="url">一致性hash</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-11 19:46:58" itemprop="dateCreated datePublished" datetime="2026-01-11T19:46:58+08:00">2026-01-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在分布式数据库中，一行数据最终会被写入哪一台机器，取决于系统所采用的数据分布策略。在使用分布键（distribution key）的场景下，这一过程通常由哈希计算精确映射完成。</p>
+<p>这个映射过程通常从一个 <strong>distribution key（分布键）</strong> 开始，经由哈希函数，最终落到某一个具体的数据节点上。</p>
+<p>看似简单的映射关系，在系统扩容或缩容时，却会成为分布式系统设计中的一个核心难题。一致性 Hash，正是为了解决这个问题而出现的。</p>
+<hr>
+<h2 id="从一个分布式表说起"><a href="#从一个分布式表说起" class="headerlink" title="从一个分布式表说起"></a>从一个分布式表说起</h2><p>以一个分布式数据库中的表为例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> orders (</span><br><span class="line">    id <span class="type">bigint</span>,</span><br><span class="line">    user_id <span class="type">bigint</span>,</span><br><span class="line">    payload jsonb</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> create_distributed_table(<span class="string">&#x27;orders&#x27;</span>, <span class="string">&#x27;user_id&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>user_id</code> 被指定为 <strong>distribution key</strong></li>
+<li>数据库会对 <code>user_id</code> 计算哈希值</li>
+<li>哈希值先映射到某个 <strong>shard</strong></li>
+<li>shard 再映射到具体的 <strong>database node</strong><br>（shard -&gt; databasenode, 在本文后续省略，直接表示为 数据节点id，即database n）</li>
+</ul>
+<p>从这一刻开始，<code>user_id</code> 就决定了这行数据在物理层面“住在哪里”。</p>
+<hr>
+<h2 id="最直观的方案：取模-Hash"><a href="#最直观的方案：取模-Hash" class="headerlink" title="最直观的方案：取模 Hash"></a>最直观的方案：取模 Hash</h2><p>在多数据节点之间，最容易想到的一种数据分布方式是<strong>取模 Hash</strong>。</p>
+<p>其基本思路非常直接：</p>
+<ol>
+<li>对 <code>user_id</code> 计算哈希值</li>
+<li>用哈希值对数据库节点数量取模</li>
+<li>取模结果即为目标数据库节点</li>
+</ol>
+<p>示意图如下：</p>
+<p><img src="/images/hash/hash1.png" alt="hash1"></p>
+<p>对应的算法可以表示为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % num_of_dbs</span><br></pre></td></tr></table></figure>
+
+<p>比如，当数据库集群拥有3个数据节点：</p>
+<p>假设：<br>hash(123) &#x3D; 7<br>hash(456) &#x3D; 12<br>hash(789) &#x3D; 5</p>
+<p>则</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">user id：123 → 7 % 3  = 1 → Database 1</span><br><span class="line">user id：456 → 12 % 3 = 0 → Database 0</span><br><span class="line">user id：789 → 5 % 3  = 2 → Database 2</span><br></pre></td></tr></table></figure>
+
+<p>在数据节点数量固定的前提下，这种方式能够较为均匀地分布数据，实现也非常简单。</p>
+<p>但问题很快就会出现。</p>
+<hr>
+<h2 id="问题一：扩容几乎等于“重来一遍”"><a href="#问题一：扩容几乎等于“重来一遍”" class="headerlink" title="问题一：扩容几乎等于“重来一遍”"></a>问题一：扩容几乎等于“重来一遍”</h2><p>随着业务增长，3 台数据节点已经无法承载当前数据量，需要扩容到 4 台。</p>
+<p>算法随之变为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % <span class="number">4</span></span><br></pre></td></tr></table></figure>
+
+<p>对于<strong>新写入的数据</strong>来说，这个变化影响不大。但对于<strong>已有数据</strong>而言，情况就完全不同了。</p>
+<p>由于取模基数发生变化，几乎所有 <code>user_id</code> 的映射结果都会改变，意味着：</p>
+<blockquote>
+<p><strong>存量数据需要在节点之间进行大规模重分布。</strong></p>
+</blockquote>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash2.png" alt="hash2"></p>
+<p>例如，用户 <code>123</code> 过去映射到 Database 1，但现在：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hash(123) % 4 = 3 （即：7%4）</span><br></pre></td></tr></table></figure>
+
+<p>这行数据必须从Database 1迁移到 Database 3。</p>
+<p>这种迁移不是个别现象，而是系统性问题，代价极其高昂。</p>
+<blockquote>
+<p>对于取模 Hash，当节点从 n 变为 n+1 时，数据迁移率约为 n&#x2F;(n+1)。这意味着如果从 9 台扩容到 10 台，会有 90% 的数据需要搬家</p>
+</blockquote>
+<hr>
+<h2 id="问题二：缩容同样不可接受"><a href="#问题二：缩容同样不可接受" class="headerlink" title="问题二：缩容同样不可接受"></a>问题二：缩容同样不可接受</h2><p>缩容的情况并不会更好。</p>
+<p>当某个节点被下线时，取模 Hash 同样会导致大规模数据重新分布，带来：</p>
+<ul>
+<li>大量数据迁移</li>
+<li>IO 抖动</li>
+<li>服务不稳定</li>
+</ul>
+<p>问题的本质在于：</p>
+<blockquote>
+<p><strong>节点数量一旦发生变化，整个哈希空间的映射关系就被彻底打乱。</strong></p>
+</blockquote>
+<p>为了解决这一问题，我们需要一种在节点变化时“尽量少动数据”的方案。</p>
+<hr>
+<h2 id="一致性-Hash-的核心思想"><a href="#一致性-Hash-的核心思想" class="headerlink" title="一致性 Hash 的核心思想"></a>一致性 Hash 的核心思想</h2><p>一致性 Hash 的目标很明确：</p>
+<blockquote>
+<p>在添加或删除节点时，尽可能减少需要重新分布的数据量。</p>
+</blockquote>
+<p>其基本做法是：</p>
+<ol>
+<li>将整个哈希值空间组织成一个<strong>虚拟的环</strong></li>
+<li>哈希空间通常是 <code>0 ～ 2³²−1</code></li>
+<li>数据节点和数据本身都映射到这个环上</li>
+<li>数据沿顺时针方向，落到遇到的第一个节点上</li>
+</ol>
+<p>为便于说明，我们将哈希空间简化为 0～100，并假设通过哈希计算，4 个数据库节点在环上大致分布在如下位置：</p>
+<p><img src="/images/hash/hash6.png" alt="hash6"></p>
+<ul>
+<li>DB1 → 0</li>
+<li>DB2 → 25</li>
+<li>DB3 → 50</li>
+<li>DB4 → 75</li>
+</ul>
+<p>当我们对 <code>user_id</code> 计算哈希后：</p>
+<ul>
+<li>不再取模</li>
+<li>而是在环上找到该哈希值</li>
+<li>顺时针查找第一个数据库节点</li>
+</ul>
+<hr>
+<h2 id="扩容时发生了什么？"><a href="#扩容时发生了什么？" class="headerlink" title="扩容时发生了什么？"></a>扩容时发生了什么？</h2><p>现在，我们在环上的位置 65 新增一个数据库节点 DB5。</p>
+<p><img src="/images/hash/hash3.png" alt="hash3"></p>
+<p>此时：</p>
+<ul>
+<li>只有哈希值位于 <code>(50, 65]</code> 区间的数据需要迁移</li>
+<li>其他数据完全不受影响</li>
+</ul>
+<p>相比取模 Hash，数据迁移范围被大幅缩小。</p>
+<hr>
+<h2 id="缩容时的行为"><a href="#缩容时的行为" class="headerlink" title="缩容时的行为"></a>缩容时的行为</h2><p>缩容同样遵循相同的规则。</p>
+<p>如果移除某个节点，其负责的哈希区间会顺延给下一个节点，而不会影响整个系统的映射关系。</p>
+<p><img src="/images/hash/hash4.png" alt="hash4"></p>
+<hr>
+<h2 id="仍然存在的问题：负载不均"><a href="#仍然存在的问题：负载不均" class="headerlink" title="仍然存在的问题：负载不均"></a>仍然存在的问题：负载不均</h2><p>到这里，一致性 Hash 看起来已经非常理想了，但在工程实践中还会遇到一个问题：</p>
+<blockquote>
+<p><strong>节点之间的负载可能严重不均衡。</strong></p>
+</blockquote>
+<p>例如，在移除 DB3 的场景中：</p>
+<p>原本属于 DB3 的全部数据会被顺延给同一个相邻节点</p>
+<p>这可能导致某一台数据库瞬间成为性能瓶颈。</p>
+<hr>
+<h2 id="虚拟节点：工程上的关键改进"><a href="#虚拟节点：工程上的关键改进" class="headerlink" title="虚拟节点：工程上的关键改进"></a>虚拟节点：工程上的关键改进</h2><p>为了解决负载不均的问题，需要引入 <strong>虚拟节点（Virtual Nodes）</strong> 的概念。</p>
+<p>核心思想是：</p>
+<blockquote>
+<p><strong>一个物理节点，在哈希环上不只占据一个位置。</strong></p>
+</blockquote>
+<p>具体做法是：</p>
+<ul>
+<li>对同一数据库节点构造多个不同的标识</li>
+<li>分别计算哈希值</li>
+<li>将这些位置都映射到同一台物理机器</li>
+</ul>
+<p>例如，对于节点 <code>database1</code>，可以构造：</p>
+<ul>
+<li><code>Hash(&quot;database1#1&quot;)</code> -&gt; pos(VDB1#1)</li>
+<li><code>Hash(&quot;database1#2&quot;)</code> -&gt; pos(VDB1#2)</li>
+<li><code>Hash(&quot;database1#3&quot;)</code> -&gt; pos(VDB1#3)</li>
+<li><code>Hash(&quot;database1#4&quot;)</code> -&gt; pos(VDB1#4)</li>
+</ul>
+<p>它们在逻辑上是 4 个独立节点，但在物理上都指向同一台服务器。</p>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash5.png" alt="hash5"></p>
+<p>引入虚拟节点后：</p>
+<ul>
+<li>数据在环上的分布更加均匀</li>
+<li>单个节点的负载波动被显著降低</li>
+<li>扩容、缩容时的数据迁移成本进一步下降</li>
+</ul>
+<p>这是一致性 Hash 能够在工程实践中落地的关键一步。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>一致性哈希的价值不在于分布是否更均匀，而在于节点变化时将重映射控制在最小范围</p>
+<p>即：当系统发生变化时，如何控制变化的影响范围</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>普通取模哈希</th>
+<th>一致性哈希</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点变化影响</td>
+<td>全局映射变化，大规模迁移</td>
+<td>仅影响 hash 环上的局部区间</td>
+</tr>
+<tr>
+<td>扩容&#x2F;缩容</td>
+<td>不支持平滑扩容</td>
+<td>支持在线、低迁移成本扩容</td>
+</tr>
+<tr>
+<td>数据迁移比例</td>
+<td>约为 1 − 1&#x2F;N</td>
+<td>约为 1&#x2F;N</td>
+</tr>
+<tr>
+<td>均衡性</td>
+<td>天然均匀（前提：hash 好）</td>
+<td>原生不均，通过虚拟节点改善</td>
+</tr>
+<tr>
+<td>典型应用</td>
+<td>本地分片、静态分区</td>
+<td>分布式缓存、KV、分布式存储</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/" class="post-title-link" itemprop="url">Win11下使用wsl</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-10 09:54:05" itemprop="dateCreated datePublished" datetime="2026-01-10T09:54:05+08:00">2026-01-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
+<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1209,595 +1661,6 @@
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/02/postgresql/r-tree-for-points/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/12/02/postgresql/r-tree-for-points/" class="post-title-link" itemprop="url">R-tree for points</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-12-02 19:00:26" itemprop="dateCreated datePublished" datetime="2025-12-02T19:00:26+08:00">2025-12-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>第一个示例涉及在平面上对点（或其他几何形状）进行索引。常规的B树无法用于这种数据类型，因为点没有定义比较运算符。显然，我们可以自己实现这样的运算符，但几何形状需要索引支持完全不同的操作。我将只讨论其中的两种：搜索特定区域内包含的对象和最近邻搜索。</p>
-<p>R树在平面上绘制矩形；这些矩形合起来必须覆盖所有被索引的点。一个索引条目存储边界框，谓词可以定义如下：点位于该边界框内。</p>
-<p>R树的根节点包含若干个大矩形（这些矩形可能会有重叠）。子节点包含较小的矩形，这些矩形适合其父节点；它们一起覆盖所有底层的点。</p>
-<p>叶节点应该包含被索引的点本身，但GiST要求所有条目具有相同的数据类型；因此，叶节点的条目也由矩形表示，这些矩形被简化为点。</p>
-<p>为了更好地可视化这种结构，我们来看一个基于机场坐标构建的R树的三个层次。在这个例子中，我已将演示数据库的机场表扩展到五千行。同时我还降低了fillfactor值使树的层次更深。默认值会给我们一个单层树。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> airports_big <span class="keyword">AS</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> airports_data;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">104</span>     </span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">COPY</span> airports_big <span class="keyword">FROM</span> <span class="string">&#x27;/home/postgres/data/extra_airports.copy&#x27;</span>;</span><br><span class="line"><span class="keyword">COPY</span> <span class="number">5413</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX airports_gist_idx <span class="keyword">ON</span> airports_big <span class="keyword">USING</span> gist(coordinates) <span class="keyword">WITH</span> (fillfactor<span class="operator">=</span><span class="number">10</span>);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br></pre></td></tr></table></figure>
-<p>在顶层，所有点都被包含在几个（可能部分重叠的）边界框中。</p>
-<p>在下一层，大矩形被分割成较小的矩形。</p>
-<p>最后，在树的底层，每个边界框包含的点数量与单个页面所能容纳的数量相同。</p>
-<p>该索引使用point_ops操作符类，这是点数据唯一可用的操作符类。</p>
-<p>矩形和其他几何形状可以以相同的方式进行索引，但索引存储的不是对象本身，而是其边界框。</p>
-<h2 id="Page-Layout"><a href="#Page-Layout" class="headerlink" title="Page Layout"></a>Page Layout</h2><p>可以通过 pageinspect 插件来学习Gist页</p>
-<p>和B-Tree索引不同，Gist没有metapage，0号page就是gist的root节点。如果root节点分裂了，老root节点会被move到一个（或多个）单独的页，新root节点取代其位置</p>
-<p>root页的内容如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> ctid, keys <span class="keyword">FROM</span> gist_page_items(get_raw_page(<span class="string">&#x27;airports_gist_idx&#x27;</span>, <span class="number">0</span>), <span class="string">&#x27;airports_gist_idx&#x27;</span> );</span><br><span class="line">    ctid    <span class="operator">|</span>                                               keys                                               </span><br><span class="line"><span class="comment">------------+--------------------------------------------------------------------------------------------------</span></span><br><span class="line"> (<span class="number">1</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-75.47339630130001,-0.12295600026845932),(-179.876998901,-43.810001373291016)&quot;)</span><br><span class="line"> (<span class="number">2</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-62.919601,-0.14835),(-74.9615020752,-54.93109893798828)&quot;)</span><br><span class="line"> (<span class="number">3</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-39.253101348877,-17.652299880981),(-62.1693,-62.1907997131)&quot;)</span><br><span class="line"> (<span class="number">4</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-14.3937,-0.6994310021400452),(-61.8465003967,-16.706899642899998)&quot;)</span><br><span class="line"> (<span class="number">5</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(22.4692001343,-2.7174999713897705),(10.674076080322266,-34.554901123)&quot;)</span><br><span class="line"> (<span class="number">6</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(63.361,-2.3089799880981445),(22.9993000031,-34.0881601675)&quot;)</span><br><span class="line"> (<span class="number">7</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(177.97799682617188,-31.94029998779297),(115.401596069,-46.8997)&quot;)</span><br><span class="line"> (<span class="number">8</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-79.3834991455,28.20170021057129),(-177.38099670410156,0.9785190224647522)&quot;)</span><br><span class="line"> (<span class="number">9</span>,<span class="number">65535</span>)  <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-51.0722007751,19.96980094909668),(-78.7492,0.0506640002131)&quot;)</span><br><span class="line"> (<span class="number">10</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(128.707992554,-0.06239889934659004),(8.754380226135254,-30.83810043334961)&quot;)</span><br><span class="line"> (<span class="number">11</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(153.56199646,-0.8918330073356628),(130.6199951171875,-31.8885993958)&quot;)</span><br><span class="line"> (<span class="number">12</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(179.951004028,-0.547458),(154.67300415039062,-31.5382995605)&quot;)</span><br><span class="line"> (<span class="number">13</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-153.7039948,71.285402),(-176.64599609375,51.87799835205078)&quot;)</span><br><span class="line"> (<span class="number">14</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-128.576009,70.33080291750001),(-152.621994019,53.25429916379999)&quot;)</span><br><span class="line"> (<span class="number">15</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-104.26300048828125,39.90879822),(-122.8130035,24.072700500499998)&quot;)</span><br><span class="line"> (<span class="number">16</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-91.149597,37.9275016785),(-103.602996826,25.54949951171875)&quot;)</span><br><span class="line"> (<span class="number">17</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-68.36340332030001,31.9512996674),(-90.25800323486328,18.25149917602539)&quot;)</span><br><span class="line"> (<span class="number">18</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-2.269860029220581,31.9475002289),(-67.14849853515625,4.3790202140808105)&quot;)</span><br><span class="line"> (<span class="number">19</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-115.78199768066,63.20940017700195),(-127.36699676513672,40.1506996155)&quot;)</span><br><span class="line"> (<span class="number">20</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-96.6707992553711,62.462799072265625),(-114.903999329,37.649899)&quot;)</span><br><span class="line"> (<span class="number">21</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-83.29579926,37.24570084),(-95.984596252441,32.30059814)&quot;)</span><br><span class="line"> (<span class="number">22</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-83.3467025756836,48.06570053),(-96.38439941,37.74010086)&quot;)</span><br><span class="line"> (<span class="number">23</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-78.31999969,47.697400654599996),(-83.072998,32.00999832)&quot;)</span><br><span class="line"> (<span class="number">24</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-64.67859649658203,47.990799),(-77.98459625,32.36399841308594)&quot;)</span><br><span class="line"> (<span class="number">25</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-74.5280990600586,79.9946975708),(-126.7979965209961,48.0532989502)&quot;)</span><br><span class="line"> (<span class="number">26</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(-13.746399879455566,82.51779937740001),(-72.2656021118164,32.697899)&quot;)</span><br><span class="line"> (<span class="number">27</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(25.3379993439,39.828335),(-9.35523,0.0226000007242)&quot;)</span><br><span class="line"> (<span class="number">28</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(1.7605600357100002,48.069499969499994),(-8.68138980865,40.471926)&quot;)</span><br><span class="line"> (<span class="number">29</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(1.954759955406189,62.0635986328125),(-9.653610229492188,48.447898864746094)&quot;)</span><br><span class="line"> (<span class="number">30</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(173.82899475097656,31.3253993988),(27.221700668300002,0.042386)&quot;)</span><br><span class="line"> (<span class="number">31</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(7.8790798,61.583599090576),(2.040833,32.38410186767578)&quot;)</span><br><span class="line"> (<span class="number">32</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(58.890499114990234,31.989853),(32.2400016784668,10.350000381469727)&quot;)</span><br><span class="line"> (<span class="number">33</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(89.4672012329,31.909400939941406),(60.3820991516,8.30148983002)&quot;)</span><br><span class="line"> (<span class="number">34</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(111.63999939,31.4281005859375),(90.30120086669922,8.09912014008)&quot;)</span><br><span class="line"> (<span class="number">35</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(169.852005,31.919701),(113.069999695,8.178509712219238)&quot;)</span><br><span class="line"> (<span class="number">36</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(17.439699172973633,52.59120178222656),(6.504444,32.6635017395)&quot;)</span><br><span class="line"> (<span class="number">37</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(31.1583003998,52.527000427246094),(17.828399658203125,32.096801757799994)&quot;)</span><br><span class="line"> (<span class="number">38</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(30.60810089111328,57.78390121459961),(6.57944011688,53.0475006104)&quot;)</span><br><span class="line"> (<span class="number">39</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(31.044900894165,78.246101379395),(6.0741000175476,58.0994987487793)&quot;)</span><br><span class="line"> (<span class="number">40</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(42.4826011658,61.88520050048828),(31.9197998046875,32.01139831542969)&quot;)</span><br><span class="line"> (<span class="number">41</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(75.634444,63.566898345947266),(43.025978088378906,32.056098938)&quot;)</span><br><span class="line"> (<span class="number">42</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(98.3414,73.51780700683594),(32.75080108642578,32.1)&quot;)</span><br><span class="line"> (<span class="number">43</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(122.853996,71.97810363769531),(100.0989990234375,32.1506)&quot;)</span><br><span class="line"> (<span class="number">44</span>,<span class="number">65535</span>) <span class="operator">|</span> (coordinates)<span class="operator">=</span>(&quot;(177.74099731445312,71.697700500488),(123.48300170898438,32.482498)&quot;)</span><br><span class="line">(<span class="number">44</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>To extract more detailed information, you can use the gevel extension,which is not included into the standard PostgreSQL distribution.</p>
-</blockquote>
-<h2 id="Operator-Class"><a href="#Operator-Class" class="headerlink" title="Operator Class"></a>Operator Class</h2><p>This query retrieves the list of support functions used by the point_ops operator class in a GiST (Generalized Search Tree) index within a PostgreSQL database</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> amprocnum, amproc::regproc</span><br><span class="line"><span class="keyword">FROM</span> pg_am am</span><br><span class="line"><span class="keyword">JOIN</span> pg_opclass opc <span class="keyword">ON</span> opcmethod <span class="operator">=</span> am.oid</span><br><span class="line"><span class="keyword">JOIN</span> pg_amproc amop <span class="keyword">ON</span> amprocfamily <span class="operator">=</span> opcfamily</span><br><span class="line"><span class="keyword">WHERE</span> amname <span class="operator">=</span> <span class="string">&#x27;gist&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> opcname <span class="operator">=</span> <span class="string">&#x27;point_ops&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> amprocnum;</span><br><span class="line"> amprocnum <span class="operator">|</span>         amproc         </span><br><span class="line"><span class="comment">-----------+------------------------</span></span><br><span class="line">         <span class="number">1</span> <span class="operator">|</span> gist_point_consistent</span><br><span class="line">         <span class="number">2</span> <span class="operator">|</span> gist_box_union</span><br><span class="line">         <span class="number">3</span> <span class="operator">|</span> gist_point_compress</span><br><span class="line">         <span class="number">5</span> <span class="operator">|</span> gist_box_penalty</span><br><span class="line">         <span class="number">6</span> <span class="operator">|</span> gist_box_picksplit</span><br><span class="line">         <span class="number">7</span> <span class="operator">|</span> gist_box_same</span><br><span class="line">         <span class="number">8</span> <span class="operator">|</span> gist_point_distance</span><br><span class="line">         <span class="number">9</span> <span class="operator">|</span> gist_point_fetch</span><br><span class="line">        <span class="number">11</span> <span class="operator">|</span> gist_point_sortsupport</span><br><span class="line">(<span class="number">9</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>必需的函数：</p>
-<p>1 consistency function used to traverse the tree during search（检查查询条件是否与索引条目一致）</p>
-<p>2 union function that merges rectangles计算边界框的并集）</p>
-<p>5 penalty function used to choose the subtree to descend to when inserting an entry （计算插入新条目的代价）</p>
-<p>6 picksplit function that distributes entries between new pages after a page split（决定节点分裂方式）</p>
-<p>7 same function that checks two keys for equality（比较索引条目是否相同）</p>
-<p>point_ops 支持的操作符如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> amopopr::regoperator, amopstrategy <span class="keyword">AS</span>  st, oprcode::regproc,</span><br><span class="line"><span class="keyword">left</span>(obj_description(opr.oid, <span class="string">&#x27;pg_operator&#x27;</span>),<span class="number">19</span>) description</span><br><span class="line"><span class="keyword">FROM</span> pg_am am</span><br><span class="line">        <span class="keyword">JOIN</span> pg_opclass opc <span class="keyword">ON</span> opcmethod <span class="operator">=</span> am.oid </span><br><span class="line">        <span class="keyword">JOIN</span> pg_amop amop <span class="keyword">ON</span> amopfamily <span class="operator">=</span> opcfamily </span><br><span class="line">        <span class="keyword">JOIN</span> pg_operator opr <span class="keyword">ON</span> opr.oid <span class="operator">=</span> amopopr</span><br><span class="line"><span class="keyword">WHERE</span> amname <span class="operator">=</span> <span class="string">&#x27;gist&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> opcname <span class="operator">=</span> <span class="string">&#x27;point_ops&#x27;</span> </span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> amopstrategy;</span><br><span class="line">      amopopr      <span class="operator">|</span> st <span class="operator">|</span>       oprcode       <span class="operator">|</span>     description     </span><br><span class="line"><span class="comment">-------------------+----+---------------------+---------------------</span></span><br><span class="line"> <span class="operator">&lt;&lt;</span>(point,point)   <span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> point_left          <span class="operator">|</span> <span class="keyword">is</span> <span class="keyword">left</span> <span class="keyword">of</span></span><br><span class="line"> <span class="operator">&gt;&gt;</span>(point,point)   <span class="operator">|</span>  <span class="number">5</span> <span class="operator">|</span> point_right         <span class="operator">|</span> <span class="keyword">is</span> <span class="keyword">right</span> <span class="keyword">of</span></span><br><span class="line"> <span class="operator">~</span><span class="operator">=</span>(point,point)   <span class="operator">|</span>  <span class="number">6</span> <span class="operator">|</span> point_eq            <span class="operator">|</span> same <span class="keyword">as</span></span><br><span class="line"> <span class="operator">&lt;&lt;</span><span class="operator">|</span>(point,point)  <span class="operator">|</span> <span class="number">10</span> <span class="operator">|</span> point_below         <span class="operator">|</span> <span class="keyword">is</span> below</span><br><span class="line"> <span class="operator">|</span><span class="operator">&gt;&gt;</span>(point,point)  <span class="operator">|</span> <span class="number">11</span> <span class="operator">|</span> point_above         <span class="operator">|</span> <span class="keyword">is</span> above</span><br><span class="line"> <span class="operator">&lt;</span><span class="operator">-</span><span class="operator">&gt;</span>(point,point)  <span class="operator">|</span> <span class="number">15</span> <span class="operator">|</span> point_distance      <span class="operator">|</span> distance <span class="keyword">between</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,box)     <span class="operator">|</span> <span class="number">28</span> <span class="operator">|</span> on_pb               <span class="operator">|</span> point inside box</span><br><span class="line"> <span class="operator">&lt;</span><span class="operator">^</span>(point,point)   <span class="operator">|</span> <span class="number">29</span> <span class="operator">|</span> point_below         <span class="operator">|</span> deprecated, use <span class="operator">&lt;&lt;</span><span class="operator">|</span></span><br><span class="line"> <span class="operator">&gt;</span><span class="operator">^</span>(point,point)   <span class="operator">|</span> <span class="number">30</span> <span class="operator">|</span> point_above         <span class="operator">|</span> deprecated, use <span class="operator">|</span><span class="operator">&gt;&gt;</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,polygon) <span class="operator">|</span> <span class="number">48</span> <span class="operator">|</span> pt_contained_poly   <span class="operator">|</span> <span class="keyword">is</span> contained <span class="keyword">by</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,circle)  <span class="operator">|</span> <span class="number">68</span> <span class="operator">|</span> pt_contained_circle <span class="operator">|</span> <span class="keyword">is</span> contained <span class="keyword">by</span></span><br><span class="line">(<span class="number">11</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>操作符的名字通常并不能准确反映其语义，因此这个查询还会显示底层函数的名称和它们的描述。无论具体形式如何，这些操作符都处理几何对象之间的相对位置关系（如在左侧、右侧、上方、下方、包含、被包含）以及它们之间的距离。<br>与 B-tree 相比，GiST 提供了更多的策略（strategy）。一些策略号在多种类型的索引中是通用的，而另一些则是通过公式计算出来的（例如，策略号 28、48 和 68 实际上代表相同的策略：对矩形、多边形和圆形来说都是“被包含”）。此外，GiST 还支持一些已经过时的操作符名称（例如 &lt;&lt;| 和 |&gt;&gt;）。<br>一个操作符类（operator class）可能只实现了部分可用的策略。举个例子：点类型的操作符类不支持“包含”这个策略，但这个策略在那些具有可度量面积的几何体操作符类（如 box_ops、poly_ops 和 circle_ops）中是可用的。</p>
-<h2 id="Search-for-Contained-Elements"><a href="#Search-for-Contained-Elements" class="headerlink" title="Search for Contained Elements"></a>Search for Contained Elements</h2><p>一个典型的可以通过索引加速的查询是返回指定区域内的所有点。例如，我们来查找距离莫斯科中心一度以内的所有机场：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> airport_code, airport_name<span class="operator">-</span><span class="operator">&gt;&gt;</span><span class="string">&#x27;en&#x27;</span></span><br><span class="line"><span class="keyword">FROM</span> airports_big</span><br><span class="line"><span class="keyword">WHERE</span> coordinates <span class="operator">&lt;</span>@ <span class="string">&#x27;&lt;(37.622513,55.753220),1.0&gt;&#x27;</span>::circle;</span><br><span class="line"> airport_code <span class="operator">|</span>              ?<span class="keyword">column</span>?              </span><br><span class="line"><span class="comment">--------------+------------------------------------</span></span><br><span class="line"> SVO          <span class="operator">|</span> Sheremetyevo International Airport</span><br><span class="line"> VKO          <span class="operator">|</span> Vnukovo International Airport</span><br><span class="line"> DME          <span class="operator">|</span> Domodedovo International Airport</span><br><span class="line"> BKA          <span class="operator">|</span> Bykovo Airport</span><br><span class="line"> ZIA          <span class="operator">|</span> Zhukovsky International Airport</span><br><span class="line"> CKL          <span class="operator">|</span> Chkalovskiy Air Base</span><br><span class="line"> OSF          <span class="operator">|</span> Ostafyevo International Airport</span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># EXPLAIN (costs off) <span class="keyword">SELECT</span> airport_code</span><br><span class="line"><span class="keyword">FROM</span> airports_big</span><br><span class="line"><span class="keyword">WHERE</span> coordinates <span class="operator">&lt;</span>@ <span class="string">&#x27;&lt;(37.622513,55.753220),1.0&gt;&#x27;</span>::circle;</span><br><span class="line">                               QUERY PLAN                                </span><br><span class="line"><span class="comment">-------------------------------------------------------------------------</span></span><br><span class="line"> Bitmap Heap Scan <span class="keyword">on</span> airports_big</span><br><span class="line">   Recheck Cond: (coordinates <span class="operator">&lt;</span>@ <span class="string">&#x27;&lt;(37.622513,55.75322),1&gt;&#x27;</span>::circle)</span><br><span class="line">   <span class="operator">-</span><span class="operator">&gt;</span>  Bitmap Index Scan <span class="keyword">on</span> airports_gist_idx</span><br><span class="line">         Index Cond: (coordinates <span class="operator">&lt;</span>@ <span class="string">&#x27;&lt;(37.622513,55.75322),1&gt;&#x27;</span>::circle)</span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>我们可以通过下图所示的一个简单示例来更仔细地查看这个操作符</p>
-<p><img src="/images/RTree/rtree1.png" alt="rtree1"></p>
-<p>如果以这种方式选择边界框，索引结构将如下所示：</p>
-<p><img src="/images/RTree/rtree2.png" alt="rtree2"></p>
-<p>包含操作符 &lt;@ 用于判断某个点是否位于指定矩形内部。对于该操作符，其一致性函数（consistency function）会在索引条目的矩形与指定矩形有任何重合点时返回“是”。这意味着，对于叶子节点中的索引条目（它们通常是退化为点的矩形），该函数实际上是在判断这个点是否被指定的矩形所包含。</p>
-<p>例如，假设我们要查找位于矩形 (1,2)–(4,7) 内部的点，该矩形在下图中以阴影表示：</p>
-<p><img src="/images/RTree/rtree3.png" alt="rtree3"></p>
-<p>搜索从根节点开始。目标矩形与索引项 (0,0)–(3,4) 有重叠，但与 (5,3)–(9,9) 没有重叠，这意味着我们不需要进入第二棵子树。<br>在下一层中，目标矩形与 (0,3)–(3,4) 有重叠，并且与 (0,0)–(3,2) 有接触（边界相交），所以我们需要检查这两个子树。<br>一旦到达叶子节点，我们只需遍历它们包含的所有点，并返回那些满足一致性函数的点</p>
-<p><img src="/images/RTree/rtree4.png" alt="rtree4"></p>
-<p>B-tree 的搜索总是只选择一个子节点进行查找。而 GiST 的搜索可能需要扫描多个子树，特别是当它们的边界框（bounding boxes）发生重叠时。</p>
-<h2 id="Nearest-Neighbor-Search"><a href="#Nearest-Neighbor-Search" class="headerlink" title="Nearest Neighbor Search"></a>Nearest Neighbor Search</h2><p>大多数索引支持的操作符（例如上一个例子中的 &#x3D; 或 &lt;@）通常被称为搜索操作符，因为它们在查询中定义了搜索条件。这类操作符是谓词，即它们返回一个逻辑值（真或假）。</p>
-<p>但还有一类是排序操作符，它们返回的是参数之间的距离。这类操作符通常用于 ORDER BY 子句中，并且一般由具有 Distance Orderable 属性的索引所支持。该属性允许你快速找到指定数量的最近邻。这种类型的搜索被称为 k-NN（k 最近邻搜索）。</p>
-<p>例如，我们可以查找最接近 Kostroma 的 10 个机场：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> airport_code, airport_name<span class="operator">-</span><span class="operator">&gt;&gt;</span><span class="string">&#x27;en&#x27;</span></span><br><span class="line"><span class="keyword">FROM</span> airports_big</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> coordinates <span class="operator">&lt;</span><span class="operator">-</span><span class="operator">&gt;</span> <span class="string">&#x27;(40.926780,57.767943)&#x27;</span>::point LIMIT <span class="number">10</span>;</span><br><span class="line"> airport_code <span class="operator">|</span>                    ?<span class="keyword">column</span>?                    </span><br><span class="line"><span class="comment">--------------+------------------------------------------------</span></span><br><span class="line"> KMW          <span class="operator">|</span> Kostroma Sokerkino Airport</span><br><span class="line"> IAR          <span class="operator">|</span> Tunoshna Airport</span><br><span class="line"> IWA          <span class="operator">|</span> Ivanovo South Airport</span><br><span class="line"> VGD          <span class="operator">|</span> Vologda Airport</span><br><span class="line"> RYB          <span class="operator">|</span> Staroselye Airport</span><br><span class="line"> GOJ          <span class="operator">|</span> Nizhny Novgorod Strigino International Airport</span><br><span class="line"> CEE          <span class="operator">|</span> Cherepovets Airport</span><br><span class="line"> CKL          <span class="operator">|</span> Chkalovskiy Air Base</span><br><span class="line"> ZIA          <span class="operator">|</span> Zhukovsky International Airport</span><br><span class="line"> BKA          <span class="operator">|</span> Bykovo Airport</span><br><span class="line">(<span class="number">10</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># EXPLAIN (costs off) <span class="keyword">SELECT</span> airport_code</span><br><span class="line"><span class="keyword">FROM</span> airports_big</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> coordinates <span class="operator">&lt;</span><span class="operator">-</span><span class="operator">&gt;</span> <span class="string">&#x27;(40.926780,57.767943)&#x27;</span>::point LIMIT <span class="number">5</span>;</span><br><span class="line">                            QUERY PLAN                             </span><br><span class="line"><span class="comment">-------------------------------------------------------------------</span></span><br><span class="line"> Limit</span><br><span class="line">   <span class="operator">-</span><span class="operator">&gt;</span>  Index Scan <span class="keyword">using</span> airports_gist_idx <span class="keyword">on</span> airports_big</span><br><span class="line">         <span class="keyword">Order</span> <span class="keyword">By</span>: (coordinates <span class="operator">&lt;</span><span class="operator">-</span><span class="operator">&gt;</span> <span class="string">&#x27;(40.92678,57.767943)&#x27;</span>::point)</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>由于索引扫描是逐个返回结果，并且可以在任何时刻停止，因此前几个值可以非常快速地获取到。</p>
-<p>如果没有索引支持，要实现高效的搜索将非常困难。我们将不得不先查找某个特定区域内的所有点，然后逐步扩大该区域，直到返回所需数量的结果。<br>这将需要多次索引扫描，更不用说还存在一个难题：如何选择初始区域的大小以及每次扩展的增量。</p>
-<p>你可以在系统目录中查看操作符的类型（其中 “s” 表示搜索操作符，”o” 表示排序操作符）。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> amopopr::regoperator, amoppurpose, amopstrategy <span class="keyword">FROM</span> pg_am am</span><br><span class="line"><span class="keyword">JOIN</span> pg_opclass opc <span class="keyword">ON</span> opcmethod <span class="operator">=</span> am.oid</span><br><span class="line"><span class="keyword">JOIN</span> pg_amop amop <span class="keyword">ON</span> amopfamily <span class="operator">=</span> opcfamily <span class="keyword">WHERE</span> amname <span class="operator">=</span> <span class="string">&#x27;gist&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> opcname <span class="operator">=</span> <span class="string">&#x27;point_ops&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> amopstrategy;</span><br><span class="line">      amopopr      <span class="operator">|</span> amoppurpose <span class="operator">|</span> amopstrategy </span><br><span class="line"><span class="comment">-------------------+-------------+--------------</span></span><br><span class="line"> <span class="operator">&lt;&lt;</span>(point,point)   <span class="operator">|</span> s           <span class="operator">|</span>            <span class="number">1</span></span><br><span class="line"> <span class="operator">&gt;&gt;</span>(point,point)   <span class="operator">|</span> s           <span class="operator">|</span>            <span class="number">5</span></span><br><span class="line"> <span class="operator">~</span><span class="operator">=</span>(point,point)   <span class="operator">|</span> s           <span class="operator">|</span>            <span class="number">6</span></span><br><span class="line"> <span class="operator">&lt;&lt;</span><span class="operator">|</span>(point,point)  <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">10</span></span><br><span class="line"> <span class="operator">|</span><span class="operator">&gt;&gt;</span>(point,point)  <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">11</span></span><br><span class="line"> <span class="operator">&lt;</span><span class="operator">-</span><span class="operator">&gt;</span>(point,point)  <span class="operator">|</span> o           <span class="operator">|</span>           <span class="number">15</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,box)     <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">28</span></span><br><span class="line"> <span class="operator">&lt;</span><span class="operator">^</span>(point,point)   <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">29</span></span><br><span class="line"> <span class="operator">&gt;</span><span class="operator">^</span>(point,point)   <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">30</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,polygon) <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">48</span></span><br><span class="line"> <span class="operator">&lt;</span>@(point,circle)  <span class="operator">|</span> s           <span class="operator">|</span>           <span class="number">68</span></span><br><span class="line">(<span class="number">11</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>为了支持这类查询，操作符类必须定义一个额外的支持函数：也就是距离函数（distance function），它会在索引项上被调用，用于计算该索引项中存储的值与另一个值之间的距离。</p>
-<p>对于表示索引值的叶子节点元素，该函数必须返回与该值之间的距离。<br>如果是点（point）类型，这个距离就是常规的欧几里得距离，计算公式为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d = sqrt((x₂-x₁)²+(y₂-y₁)²)</span><br></pre></td></tr></table></figure>
-
-<p>对于一个内部节点，其距离函数必须返回其所有子叶节点中可能距离的最小值。<br>由于扫描所有子节点的条目代价较高，该函数可以乐观地低估这个距离（以牺牲效率为代价），但绝不能返回一个较大的值——否则将会破坏搜索的正确性</p>
-<p>因此，对于一个由边界框（bounding box）表示的内部节点，其与某个点之间的距离可以按照常规数学意义来理解：<br>要么是该点到矩形边界的最小距离；要么是 0（如果该点在矩形内部）。<br>这个值可以在无需遍历矩形中所有子点的情况下轻松计算出来，<br>并且它保证不会大于矩形中任意一个子点与该查询点之间的实际距离</p>
-<p>我们考虑一下寻离点（6，8）最近的3个值</p>
-<p><img src="/images/RTree/rtree5.png" alt="rtree5"></p>
-<p>搜索从根节点开始，根节点包含两个边界框（bounding box）。指定查询点到矩形 (0,0)–(3,4) 的距离被计算为到该矩形的角点 (3,4) 的距离，即 5.0。到另一个矩形 (5,3)–(9,9) 的距离为 0.0。（这里我会将所有的距离值四舍五入保留到小数点后一位，这种精度对于这个示例来说已经足够。）</p>
-<p>子节点会按照距离增大的顺序被遍历。因此，我们首先进入右子节点，该节点包含两个矩形：(5,3)–(8,5) 和 (6,6)–(9,9)。到第一个矩形的距离是 3.0，到第二个矩形的距离是 0.0。<br>再次地，我们选择右子树，并进入包含三个点的叶子节点：点 (6,6) 的距离为 2.0，点 (8,9) 的距离为 2.2，点 (9,7) 的距离为 3.2。</p>
-<p><img src="/images/RTree/rtree6.png" alt="rtree6"></p>
-<p>因此，我们已经找到了前两个点：(6,6) 和 (8,9)。但该节点中的第三个点距离（查询点）要大于矩形 (5,3)–(8,5) 的距离。</p>
-<p>所以我们需要进入左子节点，该节点包含两个点。到点 (8,5) 的距离是 3.6， 到点 (5,3) 的距离是 5.1。结果发现，之前那个子节点中的点 (9,7) 比左子树中的任何点都更接近查询点 (6,8)，因此我们可以将它作为第三个返回结果。</p>
-<p><img src="/images/RTree/rtree7.png" alt="rtree7"></p>
-<p>这个例子说明了内部条目的距离函数必须满足的要求。由于到矩形 (5,3)–(8,5) 的距离减小（3.0 而不是 3.6），导致需要额外扫描一个节点，因此搜索效率下降；不过，算法本身仍然是正确的。</p>
-<h2 id="Insertion"><a href="#Insertion" class="headerlink" title="Insertion"></a>Insertion</h2><p>当向 R 树中插入一个新键时，用于存放该键的节点是由penalty函数决定的：该节点的边界框（bounding box）大小应尽可能少地增加。</p>
-<p><img src="/images/RTree/rtree8.png" alt="rtree8"></p>
-<p>例如，点 (4,7) 将被插入到矩形 (5,3)–(9,9) 中，因为该矩形的面积只需增加 6 个单位；而如果插入到矩形 (0,0)–(3,4)，则其面积需要增加 12 个单位。在下一层（叶子层），该点也会按照相同的逻辑被加入到矩形 (6,6)–(9,9) 中。</p>
-<p>假设一个页面最多可以容纳三个元素，那么当超出这个限制时，它必须被拆分成两个页面，<br>并且这些元素需要在新的页面之间重新分配。在这个示例中，分配结果看起来很明显，但在一般情况下，数据的分布并不那么简单。最重要的是，picksplit 函数会尽量减少边界框（bounding box）之间的重叠，目标是获得更小的矩形以及在页面之间均匀分布点。</p>
-<p><img src="/images/RTree/rtree9.png" alt="rtree9"></p>
-<h2 id="Exclusion-Constraints"><a href="#Exclusion-Constraints" class="headerlink" title="Exclusion Constraints"></a>Exclusion Constraints</h2><p>GiST 索引也可以用于排除约束（exclusion constraints）。排除约束确保：对任意两条堆表元组来说，它们在某些操作符意义下的指定字段不能彼此匹配。要实现这一点，必须满足以下条件：</p>
-<ul>
-<li>排除约束（exclusion constraint）必须由索引方法本身支持（即具备 Can Exclude 属性）。</li>
-<li>所使用的操作符必须属于该索引方法的操作符类（operator class）；</li>
-<li>操作符必须是可交换的：即满足 “a operator b &#x3D; b operator a” 这个条件。</li>
-</ul>
-<p>对于上面提到的 hash 和 btree 访问方法来说，唯一合适的操作符是等于（&#x3D;）。这实际上使排除约束退化成了唯一约束，因而没有太大实际用途</p>
-<p>GiST 方法还支持另外两种适用的策略：</p>
-<ul>
-<li>重叠（overlapping）：由 &amp;&amp; 操作符表示</li>
-<li>相邻（adjacency）：由 -|- 操作符表示（该操作符主要用于区间）</li>
-</ul>
-<p>我们来试试这个功能：创建一个约束，用于禁止机场之间距离太近。<br>这个条件可以这样表达：以机场坐标为圆心、指定半径的圆形不得彼此重叠。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">ALTER TABLE</span> airports_data <span class="keyword">ADD</span> EXCLUDE <span class="keyword">USING</span> gist (circle(coordinates,<span class="number">0.2</span>) <span class="keyword">WITH</span> <span class="operator">&amp;&amp;</span>);</span><br><span class="line"><span class="keyword">ALTER TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> airports_data(</span><br><span class="line">airport_code, airport_name, city, coordinates, timezone</span><br><span class="line">) <span class="keyword">VALUES</span> (</span><br><span class="line"><span class="string">&#x27;ZIA&#x27;</span>, <span class="string">&#x27;&#123;&#125;&#x27;</span>, <span class="string">&#x27;&#123;&quot;en&quot;: &quot;Moscow&quot;&#125;&#x27;</span>, point(<span class="number">38.1517</span>, <span class="number">55.5533</span>), <span class="string">&#x27;Europe/Moscow&#x27;</span>);</span><br><span class="line">ERROR:  conflicting key <span class="keyword">value</span> violates exclusion <span class="keyword">constraint</span> &quot;airports_data_circle_excl&quot;</span><br><span class="line">DETAIL:  Key (circle(coordinates, <span class="number">0.2</span>::<span class="type">double precision</span>))<span class="operator">=</span>(<span class="operator">&lt;</span>(<span class="number">38.1517</span>,<span class="number">55.5533</span>),<span class="number">0.2</span><span class="operator">&gt;</span>) conflicts <span class="keyword">with</span> existing key (circle(coordinates, <span class="number">0.2</span>::<span class="type">double precision</span>))<span class="operator">=</span>(<span class="operator">&lt;</span>(<span class="number">37.90629959106445</span>,<span class="number">55.40879821777344</span>),<span class="number">0.2</span><span class="operator">&gt;</span>).</span><br></pre></td></tr></table></figure>
-<p>当定义一个排除约束（exclusion constraint）时，系统会自动创建一个索引来强制执行该约束。在本例中，这个索引是一个基于表达式的 GiST 索引。</p>
-<p>我们来看一个更复杂的例子。假设我们允许机场之间距离很近，但前提是这些机场属于同一个城市。一种可行的解决方案是定义一个新的完整性约束，表达如下：如果两个圆（以机场坐标为圆心）发生重叠（&amp;&amp;），且它们对应的城市名称不同（!&#x3D;），则这种情况是不允许的。</p>
-<p>尝试创建这样的约束会导致一个错误，因为对于 text 数据类型并没有可用的操作符类（operator class）。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">ALTER TABLE</span> airports_data</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">CONSTRAINT</span> airports_data_circle_excl;</span><br><span class="line"><span class="keyword">ALTER TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">ALTER TABLE</span> airports_data <span class="keyword">ADD</span> EXCLUDE <span class="keyword">USING</span> gist ( circle(coordinates,<span class="number">0.2</span>) <span class="keyword">WITH</span> <span class="operator">&amp;&amp;</span>,</span><br><span class="line">(city<span class="operator">-</span><span class="operator">&gt;&gt;</span><span class="string">&#x27;en&#x27;</span>) <span class="keyword">WITH</span> <span class="operator">!=</span></span><br><span class="line">);</span><br><span class="line">ERROR:  data type text has <span class="keyword">no</span> <span class="keyword">default</span> operator class <span class="keyword">for</span> access <span class="keyword">method</span> &quot;gist&quot;</span><br><span class="line">HINT:  You must specify an operator class <span class="keyword">for</span> the index <span class="keyword">or</span> <span class="keyword">define</span> a <span class="keyword">default</span> operator class <span class="keyword">for</span> the data type.</span><br><span class="line">demo<span class="operator">=</span># </span><br></pre></td></tr></table></figure>
-<p>虽然 GiST 原生不支持 text 或 int 等有序类型，但借助 btree_gist 扩展，可以让这些类型也具备使用 GiST 进行等值&#x2F;比较操作的能力，从而用于复杂约束（如排除约束）或混合类型索引。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION btree_gist;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">ALTER TABLE</span> airports_data <span class="keyword">ADD</span> EXCLUDE <span class="keyword">USING</span> gist ( circle(coordinates,<span class="number">0.2</span>) <span class="keyword">WITH</span> <span class="operator">&amp;&amp;</span>,</span><br><span class="line">(city<span class="operator">-</span><span class="operator">&gt;&gt;</span><span class="string">&#x27;en&#x27;</span>) <span class="keyword">WITH</span> <span class="operator">!=</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">ALTER TABLE</span></span><br><span class="line">demo<span class="operator">=</span># </span><br></pre></td></tr></table></figure>
-<p>该约束已成功创建。现在我们无法添加名为 Zhukovsky 的机场（即使它属于同名城市），<br>因为它与莫斯科的几个机场之间的距离太近，违反了约束条件。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> airports_data(</span><br><span class="line">airport_code, airport_name, city, coordinates, timezone</span><br><span class="line">) <span class="keyword">VALUES</span> (</span><br><span class="line"><span class="string">&#x27;ZIA&#x27;</span>, <span class="string">&#x27;&#123;&#125;&#x27;</span>, <span class="string">&#x27;&#123;&quot;en&quot;: &quot;Zhukovsky&quot;&#125;&#x27;</span>, point(<span class="number">38.1517</span>, <span class="number">55.5533</span>), <span class="string">&#x27;Europe/Moscow&#x27;</span></span><br><span class="line">);</span><br><span class="line">ERROR:  conflicting key <span class="keyword">value</span> violates exclusion <span class="keyword">constraint</span> &quot;airports_data_circle_expr_excl&quot;</span><br><span class="line">DETAIL:  Key (circle(coordinates, <span class="number">0.2</span>::<span class="type">double precision</span>), (city <span class="operator">-</span><span class="operator">&gt;&gt;</span> <span class="string">&#x27;en&#x27;</span>::text))<span class="operator">=</span>(<span class="operator">&lt;</span>(<span class="number">38.1517</span>,<span class="number">55.5533</span>),<span class="number">0.2</span><span class="operator">&gt;</span>, Zhukovsky) conflicts <span class="keyword">with</span> existing key (circle(coordinates, <span class="number">0.2</span>::<span class="type">double precision</span>), (city <span class="operator">-</span><span class="operator">&gt;&gt;</span> <span class="string">&#x27;en&#x27;</span>::text))<span class="operator">=</span>(<span class="operator">&lt;</span>(<span class="number">37.90629959106445</span>,<span class="number">55.40879821777344</span>),<span class="number">0.2</span><span class="operator">&gt;</span>, Moscow).</span><br><span class="line">demo<span class="operator">=</span># </span><br></pre></td></tr></table></figure>
-<p>但是我们可以在莫斯科创建机场</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> airports_data(</span><br><span class="line">airport_code, airport_name, city, coordinates, timezone</span><br><span class="line">) <span class="keyword">VALUES</span> (</span><br><span class="line"><span class="string">&#x27;ZIA&#x27;</span>, <span class="string">&#x27;&#123;&#125;&#x27;</span>, <span class="string">&#x27;&#123;&quot;en&quot;: &quot;Moscow&quot;&#125;&#x27;</span>, point(<span class="number">38.1517</span>, <span class="number">55.5533</span>), <span class="string">&#x27;Europe/Moscow&#x27;</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">demo<span class="operator">=</span># </span><br></pre></td></tr></table></figure>
-<p>需要注意的是，尽管 GiST 支持大于、小于和等于等操作符，但 B-tree 在这方面效率要高得多，尤其是在访问一段范围值时。因此，只有当确实有其他合理原因需要使用 GiST 索引时，<br>才有意义使用上面提到的 btree_gist 扩展技巧。</p>
-<h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>访问方法属性（Access Method Properties）以下是 GiST 访问方法的属性：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> a.amname, p.name, pg_indexam_has_property(a.oid, p.name) </span><br><span class="line"><span class="keyword">FROM</span> pg_am a, <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;can_order&#x27;</span>, <span class="string">&#x27;can_unique&#x27;</span>, <span class="string">&#x27;can_multi_col&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;can_exclude&#x27;</span>, <span class="string">&#x27;can_include&#x27;</span> </span><br><span class="line">]) p(name)</span><br><span class="line"><span class="keyword">WHERE</span> a.amname <span class="operator">=</span> <span class="string">&#x27;gist&#x27;</span>;</span><br><span class="line"> amname <span class="operator">|</span>     name      <span class="operator">|</span> pg_indexam_has_property </span><br><span class="line"><span class="comment">--------+---------------+-------------------------</span></span><br><span class="line"> gist   <span class="operator">|</span> can_order     <span class="operator">|</span> f</span><br><span class="line"> gist   <span class="operator">|</span> can_unique    <span class="operator">|</span> f</span><br><span class="line"> gist   <span class="operator">|</span> can_multi_col <span class="operator">|</span> t</span><br><span class="line"> gist   <span class="operator">|</span> can_exclude   <span class="operator">|</span> t</span><br><span class="line"> gist   <span class="operator">|</span> can_include   <span class="operator">|</span> t</span><br><span class="line">(<span class="number">5</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-
-<p>GiST 索引不支持唯一约束（Unique constraints）和排序（sorting）。GiST 索引可以通过额外的 INCLUDE 列来创建。正如我们所知，我们可以在多个列上构建索引，也可以将其用于完整性约束（integrity constraints）。</p>
-<p>索引级别属性（Index-level properties）。这些属性是在索引层面定义的。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_has_property(<span class="string">&#x27;airports_gist_idx&#x27;</span>, p.name) </span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;clusterable&#x27;</span>, <span class="string">&#x27;index_scan&#x27;</span>, <span class="string">&#x27;bitmap_scan&#x27;</span>, <span class="string">&#x27;backward_scan&#x27;</span> </span><br><span class="line">]) p(name);</span><br><span class="line">     name      <span class="operator">|</span> pg_index_has_property </span><br><span class="line"><span class="comment">---------------+-----------------------</span></span><br><span class="line"> clusterable   <span class="operator">|</span> t</span><br><span class="line"> index_scan    <span class="operator">|</span> t</span><br><span class="line"> bitmap_scan   <span class="operator">|</span> t</span><br><span class="line"> backward_scan <span class="operator">|</span> f</span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>GiST 索引可以用于聚簇（clusterization）操作。在数据检索方式方面，GiST 支持常规（逐行）索引扫描和位图扫描（bitmap scan）。但 GiST 不支持反向扫描（backward scanning）。</p>
-<p>列级别属性（Column-level properties）：大多数列属性是在访问方法（access method）级别定义的，并且保持不变。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;airports_gist_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;orderable&#x27;</span>, <span class="string">&#x27;search_array&#x27;</span>, <span class="string">&#x27;search_nulls&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line"> </span><br><span class="line">     name     <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------+------------------------------</span></span><br><span class="line"> orderable    <span class="operator">|</span> f</span><br><span class="line"> search_array <span class="operator">|</span> f</span><br><span class="line"> search_nulls <span class="operator">|</span> t</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>所有与排序相关的属性都是禁用的。</p>
-<p>GiST 索引允许 NULL 值存在，但处理效率并不高。一般认为，NULL 值不会扩展边界框（bounding box），所以这些值会被随机插入某个子树中。因此，在查询时需要遍历整棵 GiST 树来查找这些值。</p>
-<p>不过，有少数列级属性是依赖于具体操作符类（operator class）的。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;airports_gist_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> t</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>GiST 索引允许执行索引仅扫描（Index-only scan），因为叶子节点中保留了完整的索引键值。</p>
-<p>正如前文所述，某些操作符类（operator class）提供了用于最近邻搜索的距离操作符。<br>对于 NULL 值，距离计算结果为 NULL，这种情况下这些值会排在最后返回（类似 B-tree 中的 NULLS LAST 语法）。</p>
-<p>然而，对于范围类型（range types）而言，并不存在“距离操作符”（因为它们表示的是线段，也就是线性几何体，而不是面状几何体）。所以，当索引建立在这些类型上时，上述性质会有所不同。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> reservations(during tsrange);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> reservations <span class="keyword">USING</span> gist(during);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;reservations_during_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/01/postgresql/GiST/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/12/01/postgresql/GiST/" class="post-title-link" itemprop="url">GiST framework</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-12-01 08:40:54" itemprop="dateCreated datePublished" datetime="2025-12-01T08:40:54+08:00">2025-12-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p>
-<ul>
-<li>R-tree（二维&#x2F;多维空间数据）</li>
-<li>RD-tree（集合之间的相似性度量）</li>
-<li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li>
-</ul>
-<p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p>
-<p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p>
-<p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p>
-<p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p>
-<p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p>
-<p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p>
-<p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p>
-<p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p>
-<p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p>
-<p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/" class="post-title-link" itemprop="url">Lehman–Yao B-tree</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-11-22 09:24:06" itemprop="dateCreated datePublished" datetime="2025-11-22T09:24:06+08:00">2025-11-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="1-Lehman–Yao-B-Trees"><a href="#1-Lehman–Yao-B-Trees" class="headerlink" title="1. Lehman–Yao B*-Trees"></a>1. Lehman–Yao B*-Trees</h2><p>Lehman–Yao构造了一个供并发进程使用的数据结构。该数据结构是 Wedekind提出的 B*-树的一个简单变体（其基础是 Bayer 和 McCreight定义的 B 树）。<br>Lehman–Yao B*-树定义如下。</p>
-<h3 id="1-1-定义"><a href="#1-1-定义" class="headerlink" title="1.1 定义"></a>1.1 定义</h3><ol>
-<li>Each path from the root to any leaf has the same length, h.</li>
-<li>内部节点（非 root、非叶子）至少要有 k + 1 个孩子（sons）。 (k is a tree parameter; 2k is the maximum number of elements in a node, neglecting the “high key,” which is explained below.)</li>
-<li>root要么是页节点要么至少有两个孩子（sons）</li>
-<li>每个node最多有2k+1个孩子（sons）</li>
-<li>Lehman–Yao B-tree中的所有数据的键（key）都存储在叶子节点中，叶子节点还包含指向数据库记录的指针（每一条记录都与一个 key 对应）。<br>非叶子节点包含指针，以及用于沿着这些指针继续查找的 key 值（b+ tree）。</li>
-</ol>
-<p>B*-树的节点看起来如图 1 所示。Ki 表示 key 域的实例Pi 表示指针。Pi 可以指向其他节点，或者——在叶子节点的情况下——指向与存储在叶子节点中的 key 值关联的记录。这种安排使得在我们的模型中，叶子节点和非叶子节点的结构基本相同。M 是一个标记，用于指示该节点是叶子节点，它占据了非叶子节点中第一个指针的位置。图 2 显示了一个 B*-树示例。</p>
-<h3 id="1-2-Sequencing（顺序规则）"><a href="#1-2-Sequencing（顺序规则）" class="headerlink" title="1.2 Sequencing（顺序规则）"></a>1.2 Sequencing（顺序规则）</h3><ol>
-<li>每个节点内部，key 按升序排列。</li>
-<li>在 B*-tree 中，有时会在非叶子节点追加一个额外的值，称为 “high key”（见图 3）。</li>
-<li>在任意节点 N 中，每个指针 Pi 指向一个子树 Ti（Pi 指向的节点为 Ti 的根）。Ti 中存储的 key 值被 Pi 左右的两个 key （Ki 和 Ki+1）界定。 这就给非叶子节点提供了一组 (pointer, value) 对    <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">key(Ti) ∈ (Ki-1, Ki]</span><br></pre></td></tr></table></figure>
- 其中，k0 &#x3D; -∞（在 N 中物理上不存在），K2k+1 &#x3D; high key（如果存在），high key 提供了 Pi 指向的子树的上界，因此它也是以 N 为根的子树中所有值的上界。<br>叶子节点 定义类似（见图 3）：Ki &#x3D; 叶子中存储的 key；Pi &#x3D; 指向对应记录的指针</li>
-</ol>
-<h3 id="1-3-Insertion-Rule-插入规则"><a href="#1-3-Insertion-Rule-插入规则" class="headerlink" title="1.3 Insertion Rule(插入规则)"></a>1.3 Insertion Rule(插入规则)</h3><ol>
-<li>如果一个叶子节点的条目（entries）少于 2k 个，那么一个新的条目以及指向其对应记录的指针可以直接插入到该节点中。</li>
-<li>如果一个叶子节点已有 2k 个条目，则插入新的条目时，需要通过将该节点分裂为两个节点来进行，每个新节点包含原节点一半的条目。新的条目会被插入到这两个节点中的一个（在合适的位置）。由于其中一个节点是新创建的，因此必须在原单节点的父节点中插入一个新的指针。这个新的指针指向新节点；新的键值是对应于原节点拆分后左半部分的键值。此外，需要为这两个新节点分别设置高键（high key）。图 4 展示了一个节点分裂的示例。</li>
-<li>对非叶子节点的插入操作与叶子节点完全相同，只是指针指向的是子节点，而不是数据记录。</li>
-</ol>
-<p>一个节点（按照上面给出的规则），如果条目数少于 2k，则称其为“安全节点”（就插入操作而言），因为插入可以通过对该节点的简单操作完成。同样，如果一个节点有 2k 个条目，则称其为“非安全节点”，因为必须进行分裂操作。对节点的删除操作也有类似的定义：如果删除可以在节点内完成而不会影响其他节点，则该节点称为“安全节点”；反之，如果删除会影响其他节点，则称为“非安全节点”。也就是说，如果节点的条目数多于 k + 1，则安全；如果恰好有 k + 1 条目，则非安全。</p>
-<p>一个简单的例子就足以说明，对 B*-树进行并发操作的简单做法是错误的。<br>考虑图 5a 所示的 B*-树片段。假设有两个进程：一个搜索值 15，另一个插入值 9。插入操作应当导致树结构修改为图 5b 所示的样子。现在考虑下面这一系列操作：  </p>
-<table>
-<thead>
-<tr>
-<th>select(15)</th>
-<th>insert(9)</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>C&lt;-read(x)</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>A&lt;-read(x)</td>
-</tr>
-<tr>
-<td>exam C;get ptr to y</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>exam A;get ptr to y</td>
-</tr>
-<tr>
-<td></td>
-<td>A &lt;- read(y)</td>
-</tr>
-<tr>
-<td></td>
-<td>insert 9 into A; must split into A, B</td>
-</tr>
-<tr>
-<td></td>
-<td>PUT(B, Y’)</td>
-</tr>
-<tr>
-<td></td>
-<td>PUT(A, Y)</td>
-</tr>
-<tr>
-<td></td>
-<td>Add to node x a pointer to node y’.</td>
-</tr>
-<tr>
-<td>C &lt;- read(y)</td>
-<td></td>
-</tr>
-<tr>
-<td>error!15 not found</td>
-<td></td>
-</tr>
-</tbody></table>
-<p>问题在于，搜索操作首先返回指向 y 的指针（从 X 获得），然后才读取包含 y 的页面。在这两个操作之间，插入操作已经修改了树的结构。</p>
-<h2 id="2-Previous-Approaches"><a href="#2-Previous-Approaches" class="headerlink" title="2. Previous Approaches"></a>2. Previous Approaches</h2><p>前面的例子表明，对并发 B 树问题采取简单做法是行不通的：如果不防范并发操作带来的潜在问题，多个进程的操作可能导致结果不正确。为了更好地理解这个问题，我们在此简要概述一些已经提出的其他方法和解决方案。</p>
-<p>针对并发 B 树问题的第一个解决方案是由 Samadi 提出的.他的做法是最直接的一种，并且是最早考虑并发问题的方法。该方案简单地使用信号量来独占锁定任何一次树结构修改可能经过的整条路径。这实际上锁定了受影响的最高节点所在的整个子树</p>
-<p>Bayer 和 Schkolnick 提出的算法对 Samadi 的方法进行了实质性的改进。他们提出了一种用于 B*-树并发操作的方案；该方案包含一些参数，可以根据所需的并发程度和类型进行设置。<br>首先，修改操作会对树的上部节点加写者排他锁（writer-exclusion locks）（这种锁只排斥其他写者，而不会阻止读者）。<br>当需要真正进行修改操作时，会施加独占锁（exclusive locks），大多应用在树的下部节点。<br>这种对独占锁的稀疏使用提高了算法的并发性能。</p>
-<p>Miller 和 Snyder [12] 研究了一种方案，该方案锁定树中一个有界大小的区域。该算法使用先导锁（pioneer locks）和跟随锁（follower locks），以防止其他进程进入当前进程正在修改的树区域。被锁定的区域沿树向上移动，同时执行相应的修改操作.在使用队列管理的锁策略的帮助下，沿树向下移动的读者可以“越过”被锁定的区域，从而避免死锁。这种算法与本文提出的算法的权衡在于：本文的算法锁定树的区域明显更小，但需要对普通的 B-tree 或 B*-tree 结构进行稍微的修改，以便支持并发。</p>
-<p>Ellis [6] 提出了一种针对 2-3 树的并发解决方案。文中采用了几种方法以提高并发能力，并且（据称）这些方法可以很容易地推广到 B 树。<br>该论文应用了两种思想：一是在相反方向上对一组数据进行读写（由 Lamport [11] 提出）；二是允许数据结构暂时出现轻微退化，同时允许进程不必立即完成操作，可以将工作推迟到更合适的时间再执行。</p>
-<p>Guibas 和 Sedgewick [6a] 提出了一种针对平衡树的统一“双色框架”（dichromatic framework）。这是一种研究平衡树的简化方法：它将所有平衡树方案归约为“带颜色”的二叉树的特例，并具有概念上的清晰性。这些作者利用他们的框架研究一种自上而下的并发锁定方案，其中包括在沿树向下访问时对“几乎满的”节点进行分裂。我们预计，他们的方案将锁定比我们的方案更多的节点（降低并发性），并且需要略多的存储空间。</p>
-<p>另一种针对 B 树并发操作的方法目前正在由 Kwong 和 Wood [10] 进行研究。</p>
-<h2 id="3-Blink-Tree-for-Concurrency"><a href="#3-Blink-Tree-for-Concurrency" class="headerlink" title="3. Blink-Tree for Concurrency"></a>3. Blink-Tree for Concurrency</h2><p>B-link 树是一种在 B*-树基础上修改而成的结构，它在每个节点中增加了一个“链接（link）”指针字段（记作 P2k+1 ——见图 6）。<br>（B-link-tree 的发音是 “Blink-tree”。）   </p>
-<p>这个链接指针指向当前节点所在层的下一个节点；只有在该层最右侧的节点中，这个链接指针才是空指针（null）。这样的链接指针定义是自洽的，因为所有叶子节点都位于树的同一层。  </p>
-<p>因此，在 B-link 树中，同一层的所有节点都被连接成一条链表，如图 7 所示。</p>
-<p>Link 指针的目的，是提供一种到达某个节点的额外途径。<br>当一个节点因为数据溢出而被分裂时，原来的单一节点会被两个新的节点取代。</p>
-<p>在分裂后：</p>
-<ul>
-<li><p>第一个新节点的 link 指针指向第二个新节点；</p>
-</li>
-<li><p>第二个新节点的 link 指针则保存了原来旧节点的 link 指针内容。</p>
-</li>
-</ul>
-<p>通常情况下，第一个新节点会占用旧节点在磁盘上的同一个物理页面。</p>
-<p>设计这个方案的意图是：<br>因为这两个新节点被 link 指针连接起来，在父节点中的正确指针尚未更新之前，它们在功能上仍然等价于原来的那个单一节点。<br>Blink-tree 的精确查找与插入算法将在接下来的两个章节中给出。</p>
-<p>对于树中的任意一个节点（处于某一层且不是该层的第一个节点），通常会有两种指针指向它：</p>
-<p>来自其父节点的“子指针”（son pointer），以及</p>
-<p>来自其左兄弟节点的 link 指针。</p>
-<p>当一个节点被插入到树中时，这两个指针之中必定有一个会先被创建。<br>我们规定：在这两个指针中，link 指针必须最先存在。<br>也就是说，一个节点在树中出现时，可以暂时没有父节点的指针指向它，但必须已经有一个左兄弟指向它的 link 指针。</p>
-<p>这种结构依然被定义为一个合法的树结构，因为新的“右兄弟”节点可以通过“左兄弟”到达。（这两个兄弟节点在功能上仍然可以视作一个节点。）</p>
-<p>当然，为了保证良好的查找效率，来自父节点的指针必须尽快补上。</p>
-<p>Link 指针的优势在于：它会在节点发生分裂时同步建立。<br>因此，即使针对新节点的常规树指针尚未全部更新完毕，link 指针仍可作为一种“临时修补”机制，使并发操作保持正确性。</p>
-<p>当查找键大于节点的最大键值（由 high key 标识）时，这表明树结构已经发生变化，此时应通过 link 指针继续访问右兄弟节点。<br>虽然这种方式略低效一些（因为需要额外一次磁盘读取来跟随 link 指针），但它仍然是到达目标叶子节点的正确路径。</p>
-<p>由于节点分裂本身属于例外情况，link 指针的实际使用频率应该非常低。</p>
-<p>Blink-tree 结构的另一个优点是：在对树进行顺序遍历时，link 指针可以用于快速按“按层次优先（level-major）”的顺序检索树中的所有节点，或者，例如，只检索所有叶子节点。</p>
-<h2 id="4-THE-SEARCH-ALGORITHM"><a href="#4-THE-SEARCH-ALGORITHM" class="headerlink" title="4. THE SEARCH ALGORITHM"></a>4. THE SEARCH ALGORITHM</h2><h3 id="4-1-算法示意图（Algorithm-Sketch）"><a href="#4-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="4.1 算法示意图（Algorithm Sketch）"></a>4.1 算法示意图（Algorithm Sketch）</h3><p>要在树中查找一个值 v，搜索过程从根节点开始，沿树向下比较 v 与每个节点中的键值。在每个节点中，比较键值后，决定沿节点中哪条现有指针继续向下搜索，指示应沿该指针前往下一层节点，或直接到达叶子（记录）节点。</p>
-<p>如果搜索过程中检查某个节点时，发现该节点中的最大值小于 v，则可以推断出当前节点发生了一些变化，而这些变化在搜索检查其父节点时尚未反映到父节点中。</p>
-<p>这意味着当前节点已经被分裂成两个（或更多）新的节点。<br>此时，搜索必须纠正其在树中的位置错误：不再按照普通的父节点子指针（son pointer）前进，而是沿新分裂节点的 link 指针继续搜索。</p>
-<p>搜索过程最终会到达 v 应该所在的叶子节点（如果 v 存在的话）。此时，该节点要么包含 v，要么不包含 v 且节点中的最大值大于 v。<br>因此，该算法能够正确地判断 v 是否存在于树中。</p>
-<h2 id="4-2-算法"><a href="#4-2-算法" class="headerlink" title="4.2 算法"></a>4.2 算法</h2><p><strong>搜索（Search）</strong><br>该过程用于在树中查找一个值 𝑣。如果 𝑣 存在于树中，过程结束时：𝐴包含包含 𝑣 的节点 𝑡<br>包含指向与 𝑣 关联的记录的指针；如果 𝑣 不存在于树中，𝐴 将包含 𝑣 如果存在的话应该所在的节点。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Search(v):</span><br><span class="line">    ...</span><br><span class="line">    if v exists:</span><br><span class="line">        A = 节点页 containing v</span><br><span class="line">        t = 指向 v 的记录</span><br><span class="line">    else:</span><br><span class="line">        A = 节点页 where v would be</span><br><span class="line">        t = null</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>下文算法中使用的符号在第 2 节中定义。<br>在此过程中，我们使用了一个辅助操作 scannode，其定义如下：</p>
-<blockquote>
-<p>x &lt;- scannode(u, A) denotes the operation of examining the tree node in memory block A for value u and returning the appropriate pointer from A (into x).</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">procedure search(u)</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do </span><br><span class="line">begin</span><br><span class="line">  current &lt;- scannode(u, A);</span><br><span class="line">  A &lt;- get(current) </span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">while t &lt;- scannode(u, A) = link ptr of A do</span><br><span class="line">begin</span><br><span class="line">  current + t ;</span><br><span class="line">  A &lt;- get(current)</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">if v is in A then done “success” else done “failure”</span><br></pre></td></tr></table></figure>
-<p>请注意，这种搜索过程非常简单，其行为与非并发搜索完全相同，将 link 指针与其他指针同等对待。</p>
-<p>还要注意，该过程不进行任何形式的加锁。<br>这与传统的数据库搜索算法形成对比（例如 Bayer 和 Schkolnick [3] 所述），在那些算法中，所有搜索操作都会对它们访问的节点进行读锁。</p>
-<h2 id="5-THE-INSERTION-ALGORITHM"><a href="#5-THE-INSERTION-ALGORITHM" class="headerlink" title="5. THE INSERTION ALGORITHM"></a>5. THE INSERTION ALGORITHM</h2><h3 id="5-1-算法示意图（Algorithm-Sketch）"><a href="#5-1-算法示意图（Algorithm-Sketch）" class="headerlink" title="5.1 算法示意图（Algorithm Sketch）"></a>5.1 算法示意图（Algorithm Sketch）</h3><p>要在树中插入一个值 𝑢 我们执行的操作与前面描述的搜索过程类似。从根节点开始，沿树向下扫描，直到到达应该包含 𝑢 的叶子节点。同时，我们在下降过程中记录每一层中被访问过的最右节点。沿树的下降过程实际上就是在搜索 𝑢 的正确插入位置（比如称该节点为节点 𝑎 ）。</p>
-<p>将值 u 插入叶子节点时，可能需要对该节点进行分裂（当节点不安全时）。<br>在这种情况下，我们对节点进行分裂（如图 8 所示），用两个新节点 a’（a 的新版本，写回同一磁盘页面）和 b’ 替换原来的节点 a。节点 a’ 和 b’ 的内容与原节点 a 相同，只是增加了值 u。随后，我们沿着先前记录的搜索路径回溯树的上层，在叶子节点的父节点中插入新节点 b’ 的条目以及 a’ 的新 high key。</p>
-<p>死锁的避免是由锁定方案的良序性（well-ordering）所保证的，如下所示。<br>需要注意的是，当我们沿树向上回溯时，由于节点可能被分裂，我们必须插入新指针的节点可能并不是下降过程中经过的那个节点。换句话说，我们在下降过程中使用的旧节点可能已经被分裂；此时，正确的插入位置就在原预期插入位置右侧的某个节点。我们通过 link 指针 来找到这个节点。</p>
-<h3 id="5-2-算法"><a href="#5-2-算法" class="headerlink" title="5.2 算法"></a>5.2 算法</h3><p>在下文的算法中，有些过程被视为原语操作（就像上文的 scannode 一样），因为它们容易实现，并且其具体操作对本文的目的而言并不重要。例如：</p>
-<blockquote>
-<p>A &lt;- node.insert (A, w, v) denotes the operation of inserting the pointer w and the value v into the node contained in A.<br>u &lt;- allocate(2 newpage for B) denotes the operation of allocating a new page on the disk. The node contained in B will be written onto this page, using the pointer u.<br>“A, B &lt;- rearrange old A, adding ..” denotes the operation of splitting A into two nodes, A and B, in core.</p>
-</blockquote>
-<p><strong>插入（Insert）</strong>。该算法负责将一个值 v（以及其关联的记录）插入到树中。当算法结束时，值 v 已成功插入到树中，并且在必要的情况下，算法会在从叶子向上回溯的过程中对相应的节点进行分裂。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">procedure insert(v)</span><br><span class="line">initialize stack;</span><br><span class="line">current &lt;- root;</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">while current is not a leaf do</span><br><span class="line">begin</span><br><span class="line">  t &lt;-  current;</span><br><span class="line">  current &lt;- scannode( v, A);</span><br><span class="line">  if new current was not link pointer in A then</span><br><span class="line">    push(t);</span><br><span class="line">  A &lt;- get(current);</span><br><span class="line">end;</span><br><span class="line">lock(current);</span><br><span class="line">A &lt;- get(current);</span><br><span class="line">move.right;</span><br><span class="line">if v is in A then stop “v already exists in tree”;</span><br><span class="line">w &lt;- pointer to pages allocated for record associated with v; </span><br><span class="line">Doinsertion:</span><br><span class="line">if A is safe then</span><br><span class="line">begin</span><br><span class="line">  A &lt;-  node.insert(A, w, v); </span><br><span class="line">  put(A, current); </span><br><span class="line">  unLock(current);</span><br><span class="line">end else begin</span><br><span class="line">  u &lt;- allocate(1 new page for B);</span><br><span class="line">  A, B &lt;- rearrange old A, adding v and w, to make 2 nodes,</span><br><span class="line">    where (link ptr of A, link ptr of B) &lt;- (u, link ptr of old A);</span><br><span class="line">  y &lt;- max value stored in new A;</span><br><span class="line">  put(B, u)</span><br><span class="line">  put(A, current); </span><br><span class="line">  oldnode &lt;- current;</span><br><span class="line">  v &lt;- Y;</span><br><span class="line">  w &lt;- u;</span><br><span class="line">  current &lt;- pop(stack); </span><br><span class="line">  lock(current);</span><br><span class="line">  A &lt;- get(current); </span><br><span class="line">  move.right; </span><br><span class="line">  unlock(oldnode);</span><br><span class="line">  goto Doinsertion</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
-<p>Move.right. This procedure, which is called by insert, follows link pointers at a given level, if necessary.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">procedure move.right</span><br><span class="line">while t &lt;- scannode(u, A) is a link pointer of A do</span><br><span class="line">begin</span><br><span class="line">  lock(t); </span><br><span class="line">  unlock(current); </span><br><span class="line">  current &lt;- t;</span><br><span class="line">A &lt;- get(current); </span><br><span class="line">end</span><br></pre></td></tr></table></figure>
-
-<p>需要注意的是，该过程在向上回溯树时是 逐层进行的。此外，同时最多只会锁定三个节点，而这种情况发生的频率相对较低：仅在插入分裂节点的指针时，需要沿 link 指针向右移动 的情况下才会出现。此时，被锁定的节点包括：</p>
-<ul>
-<li><p>分裂节点的原始左半部分</p>
-</li>
-<li><p>分裂节点上一层的两个节点</p>
-</li>
-</ul>
-<p>在插入沿右链移动的过程中需要锁定它们。</p>
-<p>与传统方法相比（即只有在确定节点为安全节点时才释放锁），这种做法在 锁粒度和并发性能上都有显著改进。</p>
-<p>该算法的正确性依赖于以下事实：树结构的任何变化（即任何节点的分裂）都会伴随一个 link 指针。节点分裂时，条目总是被移动到树的右侧，在右侧的新节点可以通过 link 指针被访问到，从而保证树的结构在并发操作下仍然可达且正确。</p>
-<p>具体来说，对于任何层级的一个对象（与某个值相关联），我们总能大致知道它的正确插入位置，即我们在该层搜索时经过的“记录节点”。如果该对象的正确插入位置发生了移动，这种移动方式是可预知的：也就是节点分裂向右，留下的 link 指针使得搜索或插入操作仍然能够找到它。因此，从旧的“预期”插入位置开始，始终可以访问到对象的正确插入位置。</p>
-<h2 id="6-CORRECTNESS-PROOF"><a href="#6-CORRECTNESS-PROOF" class="headerlink" title="6 CORRECTNESS PROOF"></a>6 CORRECTNESS PROOF</h2><p>为了证明系统的正确性，我们需要证明以下两个命题对每个进程都成立：</p>
-<ol>
-<li>该进程不会发生死锁（定理 1）；</li>
-<li>当进程终止时，它已经正确地完成了所需的操作。<br>  更具体地说：</li>
-</ol>
-<ul>
-<li>所有磁盘操作都保持树结构的正确性（定理 2）</li>
-<li>除正在进行修改的进程之外，所有其他进程看到的树都是一致的（交互定理 3）。</li>
-</ul>
-<h3 id="6-1-无死锁性（Freedom-from-Deadlock-）"><a href="#6-1-无死锁性（Freedom-from-Deadlock-）" class="headerlink" title="6.1 无死锁性（Freedom from Deadlock ）"></a>6.1 无死锁性（Freedom from Deadlock ）</h3><p>首先，我们开始证明系统不存在死锁。<br>为此，我们对节点施加一个顺序：跨层从下到上、同层从左到右。下面的引理（Lemma：一种 辅助性结论，用于证明后续更大、更重要的定理（Theorem））对这一点进行了严格定义。<br><strong>引理 1</strong> 插入操作对节点加锁遵循一个良序（well-ordering：严格定义的、有序的顺序关系）关系<br><strong>证明</strong> 考虑在树的节点集合上定义如下顺序关系（&lt;）：</p>
-<ol>
-<li>在任意时刻 t，如果两个节点 a 和 b 与树根的距离不同（不在同一层级），那么当且仅当 b 离树根更近（处于更高层级）时，我们称 a &lt; b。</li>
-<li>如果 a 和 b 与树根的距离相同（在同一层级），那么当且仅当 b 能通过从 a 开始沿着一条或多条链接指针到达（即 b 在 a 的右侧）时，我们称 a &lt; b。</li>
-</ol>
-<p>通过检查插入算法我们可以看到：如果在时间 t₀ 时 a &lt; b，那么在所有 t &gt; t₀ 的时间点都仍然有 a &lt; b。因为节点创建过程只是把一个节点 x 分裂成两个新节点 x′ 和 x″，并且满足 x′ &lt; x″，而且</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">y&lt;x⟺y&lt;x′</span><br></pre></td></tr></table></figure>
-<p>和</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x&lt;y⟺x′′&lt;y</span><br></pre></td></tr></table></figure>
-<p>因此，这些节点形成了一个良序关系，插入者按照良序对节点加锁。一旦在某个节点上加锁，它不会再对该节点之下的任何节点加锁，也不会对同一层中位于左侧的节点加锁。<br>因此，插入者按照给定的良序对节点加锁。证毕。<br>由于插入者是唯一对节点加锁的过程，我们可以立即得到以下定理。  </p>
-<p><strong>定理 1</strong>：无死锁性。 给定的系统不会产生死锁。</p>
-<h3 id="6-2-树结构修改的正确性"><a href="#6-2-树结构修改的正确性" class="headerlink" title="6.2 树结构修改的正确性"></a>6.2 树结构修改的正确性</h3><p>为了确保树结构的完整性，我们必须检查所有修改树结构的操作。首先，需要注意的是，树结构的修改只能通过 “put” 操作 来完成。插入过程中算法中有三个地方会执行 put 操作：</p>
-<ol>
-<li>对安全节点重写时使用 “put(A, current)”。</li>
-<li>对不安全节点的最右节点使用 “put(B, u)”。通过该操作，我们写入由节点分裂形成的两个新节点中的第二个节点。</li>
-<li>对不安全节点使用 “put(A, current)”。这里写入的是两个新节点中的第一个（最左节点）。实际上，我们重写了树中已存在的页面（节点），并修改该页面的链接指针，使其指向由 “put(B, …)” 写入的新节点。</li>
-</ol>
-<p>注意，在算法中（针对不安全节点），“put(B, u)” 紧接在 “put(A, current)” 之前执行。我们将在下面的引理中证明，这种顺序实际上将两个 put 操作简化为本质上的一次操作。 </p>
-<p><strong>引理 2</strong>. 操作 ‘put(B, u); put(A, current)’ 相当于对树结构的一次修改。<br>证明. 假设这两个操作分别写入节点 b 和 a。在执行 “put(B, u)” 时，没有其他节点指向正在写入的节点 b，因此该 put 操作对树结构没有影响。现在，当执行 “put(A, current)” 时，该操作修改了 current 指向的节点（节点 a）。修改内容包括将节点 a 的链接指针指向 b。此时，b 已经存在，并且 b 的链接指针指向与 a 的旧版本相同的节点。这样就实现了同时修改 a 并将 b 引入树结构。证毕。</p>
-<p><strong>定理 2</strong>. 所有 put 操作都能正确地修改树结构。<br><strong>证明</strong><br>case 1： 对安全节点执行 “put(A, current)”。该操作只修改树中一个已加锁的节点，因此树的正确性得到保持。<br>case 2： 对不安全节点执行 “put(B, u)”。该操作不会改变树结构。<br>case 3： 对不安全节点执行 “put(A, current)”。根据引理，该操作既修改了当前节点（比如 a），又将另一个节点（比如 b，通过 “put(B, u)” 写入）引入树结构。与情况 1 类似，节点 a 在执行 “put(A, current)” 时已加锁。本例的区别在于该节点是不安全的，需要分裂。但根据引理，我们可以通过一次操作完成，保持树结构的正确性。证毕</p>
-<h3 id="6-3-正确的交互"><a href="#6-3-正确的交互" class="headerlink" title="6.3 正确的交互"></a>6.3 正确的交互</h3><p>我们还需要证明，无论插入过程对树进行何种修改，其他进程仍能正确操作。<br><strong>定理 3</strong>：交互定理。 插入过程的操作不会破坏其他进程操作的正确性。</p>
-<p>为了证明该定理，我们首先考虑搜索过程与插入操作的交互情况，然后考虑两个插入过程的交互情况。一般来说，为了证明插入者的操作不会破坏其他进程的正确性，我们需要考虑该进程相对于该操作的行为。在所有情况下，该操作都是原子的。</p>
-<p>假设插入者在时间 t0 对节点 a 执行一次 “put” 操作。考虑另一个进程在时间 t′从磁盘读取节点 a 的情况。由于假设 “get” 和 “put” 操作是不可分割的，要么 t′&lt;t0​，要么  t0​ &lt; t′。我们将在下面的引理中证明，后一种情况不会产生问题。</p>
-<p><strong>引理 3</strong><br>如果进程 𝑃 在某个时间 𝑡′ &gt; 𝑡0 读取节点 𝑎，其中 𝑡0 是插入进程 I 修改节点 𝑎 的时间，那么这一修改不会影响进程 𝑃 的正确性。</p>
-<p><strong>证明</strong>. 考虑进程 P 通过节点 a 的路径。进程 P 在到达节点 a 之前所经过的路径不会被插入进程 I 改变。此外，根据上面的定理 2，进程 I 对树结构所做的任何修改都会产生一个正确的树（well-ording）。因此，进程 P 在 a 节点开始的路径（在时间 t&gt;t′t &gt; t’t&gt;t′）将无论修改如何都能正确执行。证毕。</p>
-<p>为了便于将定理的证明分解成不同情况，这里列出在一个节点上对一个值可能执行的三种插入类型。</p>
-<p>类型 1. 简单地将一个值及其关联指针添加到节点中。当节点是安全的（safe）时发生这种类型的插入。<br>类型 2. 对节点进行分裂，并将插入值放入分裂节点的左半部分。左半部分仍然是原来被分裂的节点。<br>类型 3. 类似地，对节点进行分裂，并将插入值放入分裂节点的右半部分。右半部分是新分配的节点。</p>
-<p>现在我们开始定理的证明。我们注意到，定理的正确性涉及几个方面（情况），并将分别证明这些情况。</p>
-<p>证明. 根据引理 3，只需考虑搜索或插入进程 𝑃 在插入进程 𝐼 修改节点之前开始读取该节点的情况。</p>
-<p>第 1 部分. 考虑插入进程 I（在时间 t0 修改节点 n）与搜索进程 S（在时间 t′&lt; t0读取节点 n）之间的交互。记 n′ 为修改后的节点。（本节的论证同样适用于另一插入进程 I′与进程 I 交互的情况，且 I′正在执行搜索。）需要考虑的操作顺序是：S 读取节点 n；然后 I 将节点 n 修改为 n′；然后 S 根据 n 的内容继续搜索。<br>考虑三种插入类型：  </p>
-<table>
-<thead>
-<tr>
-<th align="left"></th>
-<th align="left"></th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Type 1</td>
-<td align="left">进程 I 对节点 n 执行一次简单插入。如果 n 是叶子节点，插入进程不会改变任何指针。其结果等同于序列调度中 S 在 I 之前运行的情况。如果 n 是非叶子节点，则在 n 中插入一个指向下一层某节点 m′的指针&#x2F;值对。假设 m′是通过将 I 分裂为 I′ 和 m′ 创建的。唯一可能的交互是 S 在插入指向 m′ 的指针之前已经获得了指向 I 的指针。此时指向 I 的指针指向了 I′，而 S 将使用 I′中的 link pointer 访问 m′。因此搜索仍然是正确的。</td>
-</tr>
-<tr>
-<td align="left">Types 2 and 3</td>
-<td align="left">节点 n 在插入过程中被分裂为节点 n1′ 和 n2′。对于叶子节点的情况，搜索在 n 上的结果与在 n1′和 n2′上的结果相同，除了新插入的值 S 无法找到。 如果 n 不是叶子节点，则其下层的某个节点发生了分裂，导致一个新的指针&#x2F;值对被插入节点 n，从而使 n 本身也分裂。根据归纳法，下层节点的分裂是正确的。根据引理 3，下层节点的搜索也是正确的。因此，我们只需证明节点 n 的分裂是正确的。假设节点 n 分裂为节点 n1′ 和 n2′，它们包含与原节点 n 相同的指针集合，并增加了新插入的节点。则从节点 n 开始搜索，将到达下一层与从 n1′（带有指向 n2′的 link pointer）开始搜索时相同的节点集合。特殊情况是：如果搜索在读取节点 n 时，新插入的指针已经存在，本应沿该指针继续。此时实际跟随的指针位于新指针的左侧，这会将搜索引导到某个节点（假设为 k），它位于新指针指向的节点（假设为 m）左侧。然后沿 k 的 link pointer 最终到达 m，这仍然是正确的结果。（类型 3 的论证与类型 2 相同，只是新条目插入到新创建的半节点中，而不是旧半节点。但这对论证没有影响，因为节点在分裂发生前已被S读取。）</td>
-</tr>
-</tbody></table>
-<p>第2部分。接下来我们考虑插入进程 I 与另一个插入进程 I’ 的交互情况。进程 I’ 可能正在搜索用于插入的正确节点、回溯到另一层，或者实际尝试将一个值&#x2F;指针对插入节点 n。如果 I’ 正在搜索一个用于插入值&#x2F;指针对的节点，则该搜索行为与普通搜索进程完全相同。因此，证明与上文针对搜索进程的证明相同。</p>
-<p>第3部分。如果 I’ 因为下层节点分裂而需要回溯上行树，则 I’ 需要回到上层以便将指针插入到分裂节点的新半部分。</p>
-<ul>
-<li>回溯是使用在下降过程中记录在栈中的信息完成的。</li>
-<li>在每一层，被压入栈的节点是该层被检查过的最右侧节点。</li>
-<li>考虑在将某个节点 n 压入栈和回溯时再次访问该节点之间可能发生的情况：该节点可能已经分裂过一次或多次，这些分裂会在节点 n 的“右侧”产生新的节点。</li>
-<li>由于节点 n 右侧的所有节点都可以通过 link 指针访问，因此插入算法能够找到适当的位置插入值。</li>
-</ul>
-<p>第四部分。如果进程 I’ 试图在节点 n 上进行插入，它会尝试锁定该节点。但进程 I 已经持有节点 n 的锁。最终，I 会释放该锁，I’ 再锁定该节点并将其读入内存。根据上面的引理，该交互是正确的，因为 I’ 的读取发生在 I 的插入之前。节点 n 要么就是插入的正确位置——此时 I’ 会执行插入；要么搜索必须沿节点的 link 指针访问其右兄弟。</p>
-<h3 id="LiveLock"><a href="#LiveLock" class="headerlink" title="LiveLock"></a>LiveLock</h3><p>我们在此指出，我们的算法并不能完全避免活锁(LiveLock)的可能性（即某个进程无限运行）。<br>如果一个进程因为不断跟随其他进程创建的 link 指针而无法终止，就可能发生这种情况。<br>然而，根据以下观察，我们认为在实际实现中这种情况极不可能成为问题。<br>在多处理器系统中，如果该进程运行在相对非常慢的处理器上，这种情况可能发生。</p>
-<p>(1) 在我们所知的大多数系统中，处理器的运行速度大致相当。<br>(2) 在 B 树中，节点的创建和删除只占很小的比例，因此即使是较慢的处理器，也不太可能因节点的创建或删除而遇到困难（也就是说，它只需要跟随少量的 link 指针）。<br>(3) 在树的任意给定层上，只能创建固定数量的节点，从而限制了较慢处理器需要“追赶”的量。  </p>
-<p>我们认为，这些想法结合起来可以使实际系统中进程发生活锁的概率几乎为零（除非涉及的进程速度差异极大）。模拟可以帮助我们验证系统在“合理”条件下能够正常工作，并帮助确定进程相对速度的可接受范围。</p>
-<p>在进程速度确实存在极大差异的情况下，我们可能会引入一些额外机制来防止活锁。实现这种机制有多种选择。本文不讨论避免活锁的完整方法，但其中一种方法可能是为每个进程分配优先级，优先级可能基于进程的“存在时间”。这将保证每个进程最终会终止，因为它最终会成为最“老”的进程，从而成为拥有最高优先级的进程。</p>
-<h2 id="7-DELETION"><a href="#7-DELETION" class="headerlink" title="7. DELETION"></a>7. DELETION</h2><p>一种处理删除操作的简单方法是允许叶子节点中的条目少于 K 个。对于非叶子节点则不需要这样做，因为删除操作仅会移除叶子节点中的键；非叶子节点中的键仅作为其对应指针的上界，它在删除过程中并不会被移除。</p>
-<p>因此，为了从叶子节点中删除一个条目，我们对该节点执行的操作与插入操作（尤其是插入情况 1）非常类似。具体来说，我们首先搜索出值 u 所在的节点，然后锁定该节点，将其读入内存，对内存中的副本删除值 u 后再将节点重写回磁盘。有时，这样会导致节点中条目数量少于 K。<br>该算法的正确性证明与插入操作类似。例如，死锁自由性的证明非常简单，因为删除操作只需要锁定一个节点。对于操作的正确性，如果一个搜索进程在删除值 u 之前读取了节点，它仍然会报告节点中存在 u，这与序列化调度（搜索操作先于删除操作执行）是一致的，因此搜索结果仍然正确。</p>
-<p>我们刚描述的这种删除处理方法比需要处理节点下溢（underflow）和合并（concatenation）的方案要简单得多。在假设插入操作发生频率高于删除操作的情况下，这种方法几乎不需要额外存储空间。</p>
-<p>当然，在删除操作过多导致树节点存储利用率过低的情况下，可以执行批量重组（batch reorganization）或者全树锁定的下溢操作（underflow operation）来重新组织树结构，以保证空间的合理利用。</p>
-<h2 id="8-锁定效率（LOCKING-EFFICIENCY）"><a href="#8-锁定效率（LOCKING-EFFICIENCY）" class="headerlink" title="8. 锁定效率（LOCKING EFFICIENCY）"></a>8. 锁定效率（LOCKING EFFICIENCY）</h2><p>显然，在并发方案中，至少需要一个锁，以防止不同进程同时更新同一个节点。</p>
-<p>上文给出的插入操作方案，在任何时刻对任意进程使用的锁数量最多是一个常数（最多三个）。这种情况仅在特定情况下发生：当插入进程刚刚向某个节点（叶子节点或非叶子节点）插入条目，并导致该节点分裂时。在回溯树的过程中，为了向新分裂节点的一半插入指针，插入进程发现旧的父节点已经不再是正确的插入位置，因此必须沿包含父节点的这一层节点进行链式查找，以找到正确的插入位置。在整个操作过程中，同时锁定三个节点。</p>
-<p>在每个节点容量较大的 B*-树中，这种类型的锁定操作发生的频率非常低。因此，除非有大量并发进程运行，否则该结构的锁冲突概率极低。</p>
-<p>这种系统的行为可以通过模拟进行量化，模拟参数包括并发进程数量、每个节点的容量，以及搜索、插入和删除操作的相对频率。这样的模拟不仅可以评估当前方案的性能，也可用于与其他并发控制方案进行比较。</p>
-<h2 id="9-SUMMARY-AND-CONCLUSIONS"><a href="#9-SUMMARY-AND-CONCLUSIONS" class="headerlink" title="9. SUMMARY AND CONCLUSIONS"></a>9. SUMMARY AND CONCLUSIONS</h2><p>B 树在维护大型数据库时被发现非常有用。并发操作这样的数据具有明显优势，因为它允许多个用户同时共享数据；而且在大规模数据库中，用户的数据需求通常不会产生冲突，因此并发访问是可行的。</p>
-<p>本文给出了一个算法，可以在 B 树的一种变体上执行正确的并发操作。该算法的特点是任意进程在任何时刻只需使用少量常数个锁。算法本身非常直接，其流程与顺序执行的算法仅有轻微差别。（可以通过模拟来量化本文算法与顺序算法或其他并发算法相比的效率提升。）</p>
-<p>这一性能的实现依赖于对数据结构的一个小改动，使得当一个进程的位置因其他进程的操作而失效时，能够进行恢复（参见 [8]）。</p>
-<p>我们希望将这项工作扩展到更通用的并发数据库操作方案。理想的方案应当仅需对数据结构和顺序算法做极少量修改，同时能够保证当其他进程对数据结构做出改变使某进程的操作失效时，该进程能够正确恢复。</p>
-<p>另一条未来研究方向是对算法的“并行化”：研究将一个（已充分理解的）顺序算法转换为并发算法的通用方法。目标是尽可能充分利用问题的并发特性，同时保证算法的正确性不受影响。</p>
 
       
     </div>

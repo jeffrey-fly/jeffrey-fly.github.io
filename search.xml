@@ -808,7 +808,15 @@
   <entry>
     <title>gdb 异步调试</title>
     <url>/2024/11/11/debug/nonstop/</url>
-    <content><![CDATA[<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>]]></content>
+    <content><![CDATA[<h2 id="使用如下-gdbinit-文件"><a href="#使用如下-gdbinit-文件" class="headerlink" title="使用如下.gdbinit 文件"></a>使用如下.gdbinit 文件</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
+<h2 id="GDB-加载脚本条件"><a href="#GDB-加载脚本条件" class="headerlink" title="GDB 加载脚本条件"></a>GDB 加载脚本条件</h2><ol>
+<li><p>路径完全匹配（核心条件）<br>GDB 的自动加载逻辑非常死板，它会根据你的程序链接的 libstdc++.so.6 的真实物理路径来拼接查找路径。<br>如果你的程序链接的是 &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6，那么 GDB 会尝试在以下位置查找： [auto-load 根目录] + [库的绝对路径] + [-gdb.py 脚本]<br>即：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load + &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6 + -gdb.py 也就是你找到的：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6-gdb.py。</p>
+</li>
+<li><p>必须开启 safe-path 权限<br>即使文件位置对了，GDB 为了安全默认也是不运行它的。你需要给它“授权”。    </p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set auto-load safe-path /</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Check-script-load-status"><a href="#Check-script-load-status" class="headerlink" title="Check script load status"></a>Check script load status</h2><p>start gdb：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">info auto-load python-scripts</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>debug</category>
       </categories>
@@ -2399,9 +2407,9 @@
 </tbody></table>
 <h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gdbinit:/home/gbase/.gdbinit</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gitconfig:/home/gbase/.gitconfig</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.git-credentials:/home/gbase/.git-credentials</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br></pre></td></tr></table></figure>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br><span class="line"></span><br><span class="line"># stop and delete</span><br><span class="line">docker-compose -p gjf down</span><br></pre></td></tr></table></figure>
 
 <h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
 <thead>
@@ -2411,35 +2419,35 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>docker compose up -d</code></td>
+<td><code>docker-compose up -d</code></td>
 <td>创建并启动服务（后台模式）</td>
 </tr>
 <tr>
-<td><code>docker compose down</code></td>
+<td><code>docker-compose down</code></td>
 <td>停止并删除容器、网络（卷可保留）</td>
 </tr>
 <tr>
-<td><code>docker compose stop</code></td>
+<td><code>docker-compose stop</code></td>
 <td>停止容器，但不删除</td>
 </tr>
 <tr>
-<td><code>docker compose start</code></td>
+<td><code>docker-compose start</code></td>
 <td>启动已存在容器</td>
 </tr>
 <tr>
-<td><code>docker compose restart</code></td>
+<td><code>docker-compose restart</code></td>
 <td>停止 + 启动</td>
 </tr>
 <tr>
-<td><code>docker compose logs -f</code></td>
+<td><code>docker-compose logs -f</code></td>
 <td>查看实时日志</td>
 </tr>
 <tr>
-<td><code>docker compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
+<td><code>docker-compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
 <td>进入容器执行命令（类似 <code>docker exec</code>）</td>
 </tr>
 <tr>
-<td><code>docker compose ps</code></td>
+<td><code>docker-compose ps</code></td>
 <td>查看当前项目的容器状态</td>
 </tr>
 </tbody></table>
@@ -2476,8 +2484,7 @@
  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br></pre></td></tr></table></figure>
-<p> 对比 工作区 ↔ 暂存区</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br><span class="line">git diff origin/main HEAD --name-only  # 远端分支 vs HEAD</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>更改作者</p>
  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
@@ -2520,6 +2527,7 @@
     <title>How to use omnigraffle</title>
     <url>/2025/11/04/tools/how-to-use-omnigraffle/</url>
     <content><![CDATA[<p>Here are some tips for using omnigraffle</p>
+<h2 id="Draw-circle"><a href="#Draw-circle" class="headerlink" title="Draw circle"></a>Draw circle</h2><p>Hold down Shift while drawing a circle</p>
 <h2 id="Draw-curve"><a href="#Draw-curve" class="headerlink" title="Draw curve"></a>Draw curve</h2><ol>
 <li>select pen tool: draw custome sharps</li>
 <li>Click one point on the canvas, then click another point — a straight line will appear.</li>
@@ -2598,5 +2606,262 @@
 <h2 id="Generate-html-file"><a href="#Generate-html-file" class="headerlink" title="Generate html file"></a>Generate html file</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil --cov-report=html</span><br></pre></td></tr></table></figure>
 
 ]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>一致性hash</title>
+    <url>/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/</url>
+    <content><![CDATA[<p>在分布式数据库中，一行数据最终会被写入哪一台机器，取决于系统所采用的数据分布策略。在使用分布键（distribution key）的场景下，这一过程通常由哈希计算精确映射完成。</p>
+<p>这个映射过程通常从一个 <strong>distribution key（分布键）</strong> 开始，经由哈希函数，最终落到某一个具体的数据节点上。</p>
+<p>看似简单的映射关系，在系统扩容或缩容时，却会成为分布式系统设计中的一个核心难题。一致性 Hash，正是为了解决这个问题而出现的。</p>
+<hr>
+<h2 id="从一个分布式表说起"><a href="#从一个分布式表说起" class="headerlink" title="从一个分布式表说起"></a>从一个分布式表说起</h2><p>以一个分布式数据库中的表为例：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> orders (</span><br><span class="line">    id <span class="type">bigint</span>,</span><br><span class="line">    user_id <span class="type">bigint</span>,</span><br><span class="line">    payload jsonb</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> create_distributed_table(<span class="string">&#x27;orders&#x27;</span>, <span class="string">&#x27;user_id&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>user_id</code> 被指定为 <strong>distribution key</strong></li>
+<li>数据库会对 <code>user_id</code> 计算哈希值</li>
+<li>哈希值先映射到某个 <strong>shard</strong></li>
+<li>shard 再映射到具体的 <strong>database node</strong><br>（shard -&gt; databasenode, 在本文后续省略，直接表示为 数据节点id，即database n）</li>
+</ul>
+<p>从这一刻开始，<code>user_id</code> 就决定了这行数据在物理层面“住在哪里”。</p>
+<hr>
+<h2 id="最直观的方案：取模-Hash"><a href="#最直观的方案：取模-Hash" class="headerlink" title="最直观的方案：取模 Hash"></a>最直观的方案：取模 Hash</h2><p>在多数据节点之间，最容易想到的一种数据分布方式是<strong>取模 Hash</strong>。</p>
+<p>其基本思路非常直接：</p>
+<ol>
+<li>对 <code>user_id</code> 计算哈希值</li>
+<li>用哈希值对数据库节点数量取模</li>
+<li>取模结果即为目标数据库节点</li>
+</ol>
+<p>示意图如下：</p>
+<p><img src="/images/hash/hash1.png" alt="hash1"></p>
+<p>对应的算法可以表示为：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % num_of_dbs</span><br></pre></td></tr></table></figure>
+
+<p>比如，当数据库集群拥有3个数据节点：</p>
+<p>假设：<br>hash(123) &#x3D; 7<br>hash(456) &#x3D; 12<br>hash(789) &#x3D; 5</p>
+<p>则</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">user id：123 → 7 % 3  = 1 → Database 1</span><br><span class="line">user id：456 → 12 % 3 = 0 → Database 0</span><br><span class="line">user id：789 → 5 % 3  = 2 → Database 2</span><br></pre></td></tr></table></figure>
+
+<p>在数据节点数量固定的前提下，这种方式能够较为均匀地分布数据，实现也非常简单。</p>
+<p>但问题很快就会出现。</p>
+<hr>
+<h2 id="问题一：扩容几乎等于“重来一遍”"><a href="#问题一：扩容几乎等于“重来一遍”" class="headerlink" title="问题一：扩容几乎等于“重来一遍”"></a>问题一：扩容几乎等于“重来一遍”</h2><p>随着业务增长，3 台数据节点已经无法承载当前数据量，需要扩容到 4 台。</p>
+<p>算法随之变为：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % <span class="number">4</span></span><br></pre></td></tr></table></figure>
+
+<p>对于<strong>新写入的数据</strong>来说，这个变化影响不大。但对于<strong>已有数据</strong>而言，情况就完全不同了。</p>
+<p>由于取模基数发生变化，几乎所有 <code>user_id</code> 的映射结果都会改变，意味着：</p>
+<blockquote>
+<p><strong>存量数据需要在节点之间进行大规模重分布。</strong></p>
+</blockquote>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash2.png" alt="hash2"></p>
+<p>例如，用户 <code>123</code> 过去映射到 Database 1，但现在：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hash(123) % 4 = 3 （即：7%4）</span><br></pre></td></tr></table></figure>
+
+<p>这行数据必须从Database 1迁移到 Database 3。</p>
+<p>这种迁移不是个别现象，而是系统性问题，代价极其高昂。</p>
+<blockquote>
+<p>对于取模 Hash，当节点从 n 变为 n+1 时，数据迁移率约为 n&#x2F;(n+1)。这意味着如果从 9 台扩容到 10 台，会有 90% 的数据需要搬家</p>
+</blockquote>
+<hr>
+<h2 id="问题二：缩容同样不可接受"><a href="#问题二：缩容同样不可接受" class="headerlink" title="问题二：缩容同样不可接受"></a>问题二：缩容同样不可接受</h2><p>缩容的情况并不会更好。</p>
+<p>当某个节点被下线时，取模 Hash 同样会导致大规模数据重新分布，带来：</p>
+<ul>
+<li>大量数据迁移</li>
+<li>IO 抖动</li>
+<li>服务不稳定</li>
+</ul>
+<p>问题的本质在于：</p>
+<blockquote>
+<p><strong>节点数量一旦发生变化，整个哈希空间的映射关系就被彻底打乱。</strong></p>
+</blockquote>
+<p>为了解决这一问题，我们需要一种在节点变化时“尽量少动数据”的方案。</p>
+<hr>
+<h2 id="一致性-Hash-的核心思想"><a href="#一致性-Hash-的核心思想" class="headerlink" title="一致性 Hash 的核心思想"></a>一致性 Hash 的核心思想</h2><p>一致性 Hash 的目标很明确：</p>
+<blockquote>
+<p>在添加或删除节点时，尽可能减少需要重新分布的数据量。</p>
+</blockquote>
+<p>其基本做法是：</p>
+<ol>
+<li>将整个哈希值空间组织成一个<strong>虚拟的环</strong></li>
+<li>哈希空间通常是 <code>0 ～ 2³²−1</code></li>
+<li>数据节点和数据本身都映射到这个环上</li>
+<li>数据沿顺时针方向，落到遇到的第一个节点上</li>
+</ol>
+<p>为便于说明，我们将哈希空间简化为 0～100，并假设通过哈希计算，4 个数据库节点在环上大致分布在如下位置：</p>
+<p><img src="/images/hash/hash6.png" alt="hash6"></p>
+<ul>
+<li>DB1 → 0</li>
+<li>DB2 → 25</li>
+<li>DB3 → 50</li>
+<li>DB4 → 75</li>
+</ul>
+<p>当我们对 <code>user_id</code> 计算哈希后：</p>
+<ul>
+<li>不再取模</li>
+<li>而是在环上找到该哈希值</li>
+<li>顺时针查找第一个数据库节点</li>
+</ul>
+<hr>
+<h2 id="扩容时发生了什么？"><a href="#扩容时发生了什么？" class="headerlink" title="扩容时发生了什么？"></a>扩容时发生了什么？</h2><p>现在，我们在环上的位置 65 新增一个数据库节点 DB5。</p>
+<p><img src="/images/hash/hash3.png" alt="hash3"></p>
+<p>此时：</p>
+<ul>
+<li>只有哈希值位于 <code>(50, 65]</code> 区间的数据需要迁移</li>
+<li>其他数据完全不受影响</li>
+</ul>
+<p>相比取模 Hash，数据迁移范围被大幅缩小。</p>
+<hr>
+<h2 id="缩容时的行为"><a href="#缩容时的行为" class="headerlink" title="缩容时的行为"></a>缩容时的行为</h2><p>缩容同样遵循相同的规则。</p>
+<p>如果移除某个节点，其负责的哈希区间会顺延给下一个节点，而不会影响整个系统的映射关系。</p>
+<p><img src="/images/hash/hash4.png" alt="hash4"></p>
+<hr>
+<h2 id="仍然存在的问题：负载不均"><a href="#仍然存在的问题：负载不均" class="headerlink" title="仍然存在的问题：负载不均"></a>仍然存在的问题：负载不均</h2><p>到这里，一致性 Hash 看起来已经非常理想了，但在工程实践中还会遇到一个问题：</p>
+<blockquote>
+<p><strong>节点之间的负载可能严重不均衡。</strong></p>
+</blockquote>
+<p>例如，在移除 DB3 的场景中：</p>
+<p>原本属于 DB3 的全部数据会被顺延给同一个相邻节点</p>
+<p>这可能导致某一台数据库瞬间成为性能瓶颈。</p>
+<hr>
+<h2 id="虚拟节点：工程上的关键改进"><a href="#虚拟节点：工程上的关键改进" class="headerlink" title="虚拟节点：工程上的关键改进"></a>虚拟节点：工程上的关键改进</h2><p>为了解决负载不均的问题，需要引入 <strong>虚拟节点（Virtual Nodes）</strong> 的概念。</p>
+<p>核心思想是：</p>
+<blockquote>
+<p><strong>一个物理节点，在哈希环上不只占据一个位置。</strong></p>
+</blockquote>
+<p>具体做法是：</p>
+<ul>
+<li>对同一数据库节点构造多个不同的标识</li>
+<li>分别计算哈希值</li>
+<li>将这些位置都映射到同一台物理机器</li>
+</ul>
+<p>例如，对于节点 <code>database1</code>，可以构造：</p>
+<ul>
+<li><code>Hash(&quot;database1#1&quot;)</code> -&gt; pos(VDB1#1)</li>
+<li><code>Hash(&quot;database1#2&quot;)</code> -&gt; pos(VDB1#2)</li>
+<li><code>Hash(&quot;database1#3&quot;)</code> -&gt; pos(VDB1#3)</li>
+<li><code>Hash(&quot;database1#4&quot;)</code> -&gt; pos(VDB1#4)</li>
+</ul>
+<p>它们在逻辑上是 4 个独立节点，但在物理上都指向同一台服务器。</p>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash5.png" alt="hash5"></p>
+<p>引入虚拟节点后：</p>
+<ul>
+<li>数据在环上的分布更加均匀</li>
+<li>单个节点的负载波动被显著降低</li>
+<li>扩容、缩容时的数据迁移成本进一步下降</li>
+</ul>
+<p>这是一致性 Hash 能够在工程实践中落地的关键一步。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>一致性哈希的价值不在于分布是否更均匀，而在于节点变化时将重映射控制在最小范围</p>
+<p>即：当系统发生变化时，如何控制变化的影响范围</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>普通取模哈希</th>
+<th>一致性哈希</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点变化影响</td>
+<td>全局映射变化，大规模迁移</td>
+<td>仅影响 hash 环上的局部区间</td>
+</tr>
+<tr>
+<td>扩容&#x2F;缩容</td>
+<td>不支持平滑扩容</td>
+<td>支持在线、低迁移成本扩容</td>
+</tr>
+<tr>
+<td>数据迁移比例</td>
+<td>约为 1 − 1&#x2F;N</td>
+<td>约为 1&#x2F;N</td>
+</tr>
+<tr>
+<td>均衡性</td>
+<td>天然均匀（前提：hash 好）</td>
+<td>原生不均，通过虚拟节点改善</td>
+</tr>
+<tr>
+<td>典型应用</td>
+<td>本地分片、静态分区</td>
+<td>分布式缓存、KV、分布式存储</td>
+</tr>
+</tbody></table>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>hash</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>How to use pg_stat_statements extension</title>
+    <url>/2026/01/12/postgresql/how-to-use-pg-stat-statements-extension/</url>
+    <content><![CDATA[<p>pg_stat_statements 不能像 pageinspect 那样只靠 CREATE EXTENSION 就用，原因在于它们在 PostgreSQL 内核中的“级别”完全不同。</p>
+<p>pg_stat_statements 和 pageinspect 的定位完全不同：它是一个 全局统计模块<br>它需要：</p>
+<ol>
+<li>拦截每一条 SQL 的执行<ul>
+<li>使用 executor hooks</li>
+<li>在 query 开始 &#x2F; 结束时采样</li>
+</ul>
+</li>
+<li>shared memory 中维护全局 hash 表<ul>
+<li>跨 backend 共享</li>
+<li>保存长期累计统计</li>
+</ul>
+</li>
+<li>在 backend 启动阶段完成初始化<ul>
+<li>分配 shared memory</li>
+<li>注册 hooks</li>
+</ul>
+</li>
+</ol>
+<p>这些事情 只能在 postmaster 启动时完成。</p>
+<h2 id="启动步骤"><a href="#启动步骤" class="headerlink" title="启动步骤"></a>启动步骤</h2><ol>
+<li>修改 postgresql.conf<br> 确认conf位置 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gujinfei=# show config_file;</span><br><span class="line">            config_file</span><br><span class="line">---------------------------------------</span><br><span class="line">/home/gujinfei/pgdata/postgresql.conf</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">shared_preload_libraries = &#x27;pg_stat_statements&#x27;</span><br></pre></td></tr></table></figure></li>
+<li>reboot database <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pg_ctl restart</span><br></pre></td></tr></table></figure></li>
+<li>进入sql <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> shared_preload_libraries;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_stat_statements;</span><br></pre></td></tr></table></figure></li>
+<li>Test <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line"><span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br></pre></td></tr></table></figure>
+ result <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">t</span><br><span class="line"><span class="comment">---</span></span><br><span class="line">t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), a</span><br><span class="line"><span class="keyword">Group</span> Key: t.a</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), b</span><br><span class="line"><span class="keyword">Group</span> Key: t.b</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), c</span><br><span class="line"><span class="keyword">Group</span> Key: t.c</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">9219356609107396553</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br><span class="line">calls <span class="operator">|</span> <span class="keyword">rows</span> <span class="operator">|</span>                             query</span><br><span class="line"><span class="comment">-------+------+---------------------------------------------------------------</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span> <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t</span><br><span class="line">    <span class="number">2</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a</span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span>#</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11下使用wsl</title>
+    <url>/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/</url>
+    <content><![CDATA[<h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
+<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>wsl</tag>
+      </tags>
   </entry>
 </search>

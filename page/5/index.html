@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,277 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/11/11/debug/nonstop/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/11/11/debug/nonstop/" class="post-title-link" itemprop="url">gdb 异步调试</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-11-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-11-11T10:59:00+08:00">2024-11-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="使用如下-gdbinit-文件"><a href="#使用如下-gdbinit-文件" class="headerlink" title="使用如下.gdbinit 文件"></a>使用如下.gdbinit 文件</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
+<h2 id="GDB-加载脚本条件"><a href="#GDB-加载脚本条件" class="headerlink" title="GDB 加载脚本条件"></a>GDB 加载脚本条件</h2><ol>
+<li><p>路径完全匹配（核心条件）<br>GDB 的自动加载逻辑非常死板，它会根据你的程序链接的 libstdc++.so.6 的真实物理路径来拼接查找路径。<br>如果你的程序链接的是 &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6，那么 GDB 会尝试在以下位置查找： [auto-load 根目录] + [库的绝对路径] + [-gdb.py 脚本]<br>即：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load + &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6 + -gdb.py 也就是你找到的：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6-gdb.py。</p>
+</li>
+<li><p>必须开启 safe-path 权限<br>即使文件位置对了，GDB 为了安全默认也是不运行它的。你需要给它“授权”。    </p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set auto-load safe-path /</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Check-script-load-status"><a href="#Check-script-load-status" class="headerlink" title="Check script load status"></a>Check script load status</h2><p>start gdb：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">info auto-load python-scripts</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/10/27/debug/pprof/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/10/27/debug/pprof/" class="post-title-link" itemprop="url">分析tcmalloc 内存增长 —- pprof</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-10-27 09:44:27" itemprop="dateCreated datePublished" datetime="2024-10-27T09:44:27+08:00">2024-10-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>有时候程序莫名内存上涨厉害，但不是泄漏，如何定位哪申请使用的大量内存呢？</p>
+<p>如果没使用tcmalloc，使用heaptrack工具（git clone <a target="_blank" rel="noopener" href="https://github.com/KDE/heaptrack.git%EF%BC%89%EF%BC%9B">https://github.com/KDE/heaptrack.git）；</a></p>
+<p>如果使用了tcmalloc，可以通过tcmalloc自带的工具来分析</p>
+<h2 id="一-工具"><a href="#一-工具" class="headerlink" title="一 工具"></a>一 工具</h2><ol>
+<li>tcmalloc</li>
+<li>pprof</li>
+</ol>
+<p>pprof相当于分析器，阅读器，分析阅读的内容为heap文件，内容包括  </p>
+<ul>
+<li>每个活跃分配的大小</li>
+<li>分配的调用栈</li>
+<li>分配次数</li>
+</ul>
+<h2 id="二-生成heap文件"><a href="#二-生成heap文件" class="headerlink" title="二 生成heap文件"></a>二 生成heap文件</h2><ul>
+<li><p>手动<br>在程序的入口或需要开始分析的地方，添加 HeapProfilerStart(“文件路径”)。<br>在程序结束或需要停止分析的地方，添加 HeapProfilerStop()。<br>在需要手动生成快照的地方，添加 HeapProfilerDump(“文件名”)。</p>
+</li>
+<li><p>自动<br>设置环境变量，动态加载设置环境变量即可，tcmalloc库加载时会读取并解析这个环境变量，从而开启堆分析功能</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> HEAP_PROFILE=/tmp/myapp_heap</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果是静态加载，需代码中启动：HeapProfilerStart</p>
+</blockquote>
+</li>
+<li><p>补充说明<br>自动生成文件的时机：申请内存超过阈值时会自动生成，阈值可以通过HEAP_PROFILE_ALLOCATION_INTERVAL环境变量来设置</p>
+</li>
+</ul>
+<h2 id="三-分析heap文件（快照）"><a href="#三-分析heap文件（快照）" class="headerlink" title="三 分析heap文件（快照）"></a>三 分析heap文件（快照）</h2><h3 id="单次快照"><a href="#单次快照" class="headerlink" title="单次快照"></a>单次快照</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 文本格式</span></span><br><span class="line">pprof test_heap --text /tmp/test_heap.0001.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 火焰图</span></span><br><span class="line">pprof --svg /path/to/my_program.hprof &gt; flamegraph.svg</span><br></pre></td></tr></table></figure>
+<h3 id="两次快照："><a href="#两次快照：" class="headerlink" title="两次快照："></a>两次快照：</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 对比两次快照</span></span><br><span class="line">pprof --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成火焰图</span></span><br><span class="line">pprof --svg --inuse_space --base=/tmp/my_app.0001.heap /tmp/my_app.0002.heap &gt; diff_flamegraph.svg</span><br></pre></td></tr></table></figure>
+<p>火焰图需要额外安装</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install graphviz</span><br></pre></td></tr></table></figure>
+<h3 id="sample"><a href="#sample" class="headerlink" title="sample"></a>sample</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    HeapProfilerStart(<span class="string">&quot;/tmp/test_heap&quot;</span>);</span><br><span class="line">    <span class="type">void</span>* p = <span class="built_in">malloc</span>(<span class="number">16</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 分配 16MB</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;Allocated 16MB\n&quot;</span>;</span><br><span class="line">    HeapProfilerDump(<span class="string">&quot;after_alloc&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(p);</span><br><span class="line">    HeapProfilerStop();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ test_heap.cc -ltcmalloc -lpthread -lunwind -o test_heap</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/10/24/linux/File%20Descriptor%20Limits/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/10/24/linux/File%20Descriptor%20Limits/" class="post-title-link" itemprop="url">File Descriptor Limits</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-10-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-10-24T15:52:16+08:00">2024-10-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><a target="_blank" rel="noopener" href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -425,6 +696,15 @@
 
       <time title="Created: 2024-01-04 17:17:37" itemprop="dateCreated datePublished" datetime="2024-01-04T17:17:37+08:00">2024-01-04</time>
     </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+        </span>
+    </span>
 
   
 </div>
@@ -541,8 +821,7 @@
  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
- <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br></pre></td></tr></table></figure>
-<p> 对比 工作区 ↔ 暂存区</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br><span class="line">git diff origin/main HEAD --name-only  # 远端分支 vs HEAD</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>更改作者</p>
  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
@@ -663,9 +942,9 @@
 </tbody></table>
 <h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gdbinit:/home/gbase/.gdbinit</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.gitconfig:/home/gbase/.gitconfig</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/.git-credentials:/home/gbase/.git-credentials</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br></pre></td></tr></table></figure>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br><span class="line"></span><br><span class="line"># stop and delete</span><br><span class="line">docker-compose -p gjf down</span><br></pre></td></tr></table></figure>
 
 <h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
 <thead>
@@ -675,35 +954,35 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>docker compose up -d</code></td>
+<td><code>docker-compose up -d</code></td>
 <td>创建并启动服务（后台模式）</td>
 </tr>
 <tr>
-<td><code>docker compose down</code></td>
+<td><code>docker-compose down</code></td>
 <td>停止并删除容器、网络（卷可保留）</td>
 </tr>
 <tr>
-<td><code>docker compose stop</code></td>
+<td><code>docker-compose stop</code></td>
 <td>停止容器，但不删除</td>
 </tr>
 <tr>
-<td><code>docker compose start</code></td>
+<td><code>docker-compose start</code></td>
 <td>启动已存在容器</td>
 </tr>
 <tr>
-<td><code>docker compose restart</code></td>
+<td><code>docker-compose restart</code></td>
 <td>停止 + 启动</td>
 </tr>
 <tr>
-<td><code>docker compose logs -f</code></td>
+<td><code>docker-compose logs -f</code></td>
 <td>查看实时日志</td>
 </tr>
 <tr>
-<td><code>docker compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
+<td><code>docker-compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
 <td>进入容器执行命令（类似 <code>docker exec</code>）</td>
 </tr>
 <tr>
-<td><code>docker compose ps</code></td>
+<td><code>docker-compose ps</code></td>
 <td>查看当前项目的容器状态</td>
 </tr>
 </tbody></table>

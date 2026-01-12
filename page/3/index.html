@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,417 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/10/24/postgresql/Recovery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/10/24/postgresql/Recovery/" class="post-title-link" itemprop="url">Recovery in postgres</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-10-24 16:50:14" itemprop="dateCreated datePublished" datetime="2025-10-24T16:50:14+08:00">2025-10-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。</p>
+<blockquote>
+<p>startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br><span class="line">postgres@lavm-bar1guved6:/root$ </span><br></pre></td></tr></table></figure>
+<p>一个正常停止的服务器会处于“已关闭”（shut down）状态；而一个未运行的服务器却显示为“生产中”（in production）状态，则表明发生了故障。在这种情况下，启动进程（startup process）将自动从在同一个 pg_control 文件中找到的最新完成的检查点（checkpoint）**的起始 LSN 处开始进行恢复。</p>
+<blockquote>
+<p>如果 PGDATA 目录中包含与备份相关的 backup_label 文件，则起始 LSN 位置会从该文件中获取。</p>
+</blockquote>
+<p>在启动过程中，系统会从指定位置开始，逐一读取WAL（Write-Ahead Log，预写式日志）条目。如果数据页的 LSN（Log Sequence Number，日志序列号）小于当前读取到的 WAL 条目的 LSN，系统会将该 WAL 条目应用到数据页上。如果数据页的 LSN 已经大于 WAL 条目的 LSN，则不应应用该 WAL 条目；事实上，也绝不能应用，因为 WAL 条目被设计为必须严格按顺序重放。</p>
+<p>然而，有些 WAL 条目是Full Page Image（FPI）。这类条目可以应用于页面的任何状态，因为它们会完全覆盖页面内容，无论页面原先是什么状态都不重要。因此，这种修改是幂等的（idempotent）——多次应用不会改变结果另一个幂等操作的例子是注册事务状态的变更：每个事务的状态在 CLOG（事务提交日志）中是通过设置特定位来表示的，这种设置不依赖于原来的位值。因此，不需要在 CLOG 页面中记录最近变更的 LSN（日志序列号），因为日志重放时只要设置一次这些位就够了，重复设置也不会有副作用最后，系统会执行一次 checkpoint（检查点），将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了。</p>
+<p>WAL 日志条目会被应用到缓冲池（buffer cache）中的页面上，就像正常运行时对数据页的普通修改一样。</p>
+<p>文件的恢复也遵循类似方式：例如，若某条 WAL 记录表明某个文件应该存在，但实际却缺失，系统就会重新创建这个文件。<br>一旦恢复完成，所有 unlogged relations会被它们对应的 初始化副本（init fork） 覆盖。</p>
+<p>最后，系统会执行一次 checkpoint，将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了<br>在其经典形式中，恢复过程包含两个阶段：</p>
+<ul>
+<li>roll-forward阶段：重放 WAL 日志，重复执行在崩溃时丢失的操作；</li>
+<li>roll-back阶段：服务器中止那些在故障发生时尚未提交的事务。<br>在 PostgreSQL 中，向后回滚是不需要的。恢复完成后，CLOG（事务状态日志）中对未完成事务既没有提交（commit）标记，也没有中止（abort）标记（这在技术上表示该事务处于活动状态），但因为可以确定该事务已经不再运行，所以系统会将其视为已中止（aborted）。</li>
+</ul>
+<p>我们可以通过强制服务器以“立即模式”（immediate mode）停止来模拟故障：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_ctl stop -m immediate</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br></pre></td></tr></table></figure>
+<p>当我们启动服务器时，启动进程会检测到之前发生了故障，因而进入恢复模式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">2025-08-04 10:23:31.860 CST [487414] LOG:  starting PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit</span><br><span class="line">2025-08-04 10:23:31.861 CST [487414] LOG:  listening on IPv4 address &quot;127.0.0.1&quot;, port 5432</span><br><span class="line">2025-08-04 10:23:31.878 CST [487414] LOG:  listening on Unix socket &quot;/tmp/.s.PGSQL.5432&quot;</span><br><span class="line">2025-08-04 10:23:31.920 CST [487420] LOG:  database system was interrupted; last known up at 2025-08-01 09:36:11 CST</span><br><span class="line">2025-08-04 10:23:32.098 CST [487420] LOG:  database system was not properly shut down; automatic recovery in progress</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo starts at 0/01B75168</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  invalid record length at 0/01B752A8: expected at least 24, got 0</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo done at 0/01B75270 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s</span><br><span class="line">2025-08-04 10:23:32.132 CST [487418] LOG:  checkpoint starting: end-of-recovery fast wait</span><br><span class="line">2025-08-04 10:23:32.152 CST [487418] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.005 s, total=0.022 s; sync files=2, longest=0.005 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/01B752A8, redo lsn=0/01B752A8</span><br><span class="line">2025-08-04 10:23:32.155 CST [487414] LOG:  database system is ready to accept connections</span><br></pre></td></tr></table></figure>
+<p>如果服务器正在正常关闭，postmaster 会先断开所有客户端连接，然后执行最后一次检查点操作，将所有脏页（未写入磁盘的修改页面）刷写到磁盘上。</p>
+<p>看当前的WAL位置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">test=# SELECT pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line">---------------------------</span><br><span class="line"> 0/01B75358</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+<p>我们正常停止服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_ctl stop</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br></pre></td></tr></table></figure>
+<p>现在的数据库状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               shut down</span><br></pre></td></tr></table></figure>
+<p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
+<p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/09/05/postgresql/LWLock-in-postgres/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/09/05/postgresql/LWLock-in-postgres/" class="post-title-link" itemprop="url">LWLock in postgres</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-05 16:14:55" itemprop="dateCreated datePublished" datetime="2025-09-05T16:14:55+08:00">2025-09-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一-相关结构体说明"><a href="#一-相关结构体说明" class="headerlink" title="一 相关结构体说明"></a>一 相关结构体说明</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="title class_">LWLock</span></span><br><span class="line">&#123;</span><br><span class="line">    uint16           tranche;       <span class="comment">/* tranche ID */</span></span><br><span class="line">    pg_atomic_uint32 state;         <span class="comment">/* state of exclusive/nonexclusive lockers */</span></span><br><span class="line">    proclist_head    waiters;       <span class="comment">/* list of waiting PGPROCs */</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> LOCK_DEBUG</span></span><br><span class="line">    pg_atomic_uint32 nwaiters;      <span class="comment">/* number of waiters */</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">PGPROC</span>    *owner;        <span class="comment">/* last exclusive owner of the lock */</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125; LWLock;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>tranche<br>每个 LWLock 都属于某个 tranche，tranche 是一个 int 类型的 ID，代表这把锁的用途</p>
+</li>
+<li><p>state<br>bit0～23：共享锁状态，实际最多用bit0～17，因为backend最多18位<br>bit24: 排他锁状态<br>bit28：用于锁定等待队列：waiters<br>bit29: 是否允许唤醒等待队列里面的进程，初始状态：LW_FLAG_RELEASE_OK<br>bit30: LW_FLAG_HAS_WAITERS ：是否有waiter</p>
+</li>
+<li><p>waiters<br>等待队列</p>
+</li>
+</ul>
+<h2 id="二-Interface说明"><a href="#二-Interface说明" class="headerlink" title="二 Interface说明"></a>二 Interface说明</h2><h3 id="2-1-LWLockAcquire"><a href="#2-1-LWLockAcquire" class="headerlink" title="2.1 LWLockAcquire"></a>2.1 LWLockAcquire</h3><p>加锁，失败进入等待队列，直接加上锁的情况，可能会造成等待队列无效唤醒  </p>
+<blockquote>
+<p>acquire a lightweight lock in the specified mode<br>Side effect: cancel&#x2F;die interrupts are held off until lock release.</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mode == LW_EXCLUSIVE)</span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_LOCK_MASK) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_EXCLUSIVE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_VAL_EXCLUSIVE) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_SHARED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按位判断前25位即可知道此LWLock是否被进程所占</p>
+<h3 id="2-2-LWLockRelease"><a href="#2-2-LWLockRelease" class="headerlink" title="2.2 LWLockRelease"></a>2.2 LWLockRelease</h3><p>进行唤醒条件：</p>
+<ul>
+<li>oldstate &amp; LW_FLAG_HAS_WAITERS：等待队列非空。这个条件确认有进程在等待锁。  </li>
+<li>oldstate &amp; LW_FLAG_RELEASE_OK： 允许唤醒。这个标志表示系统在上次唤醒后，已经将再次唤醒其他等待者的权限交给了被唤醒的进程。</li>
+<li>(oldstate &amp; LW_LOCK_MASK) &#x3D;&#x3D; 0：锁已空闲。这个条件确认锁当前没有被任何进程占用（无论是独占模式还是共享模式，计数都为零）</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/09/03/postgresql/Lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/09/03/postgresql/Lock/" class="post-title-link" itemprop="url">Lock</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-03 11:13:57" itemprop="dateCreated datePublished" datetime="2025-09-03T11:13:57+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="全局hash"><a href="#全局hash" class="headerlink" title="全局hash"></a>全局hash</h2><p>LockMethodLockHash：存储LOCK<br>LockMethodProcLockHash：存储PROCLOCK<br>LockMethodLocalHash：存储LOCALLOCK</p>
+<p>同一个LOCK资源对象可以被多个不同的 PROCLOCK 持有，而这些 PROCLOCK 又分别属于不同的进程。</p>
+<h2 id="LOCKTAG"><a href="#LOCKTAG" class="headerlink" title="LOCKTAG"></a>LOCKTAG</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">LOCKTAG</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	uint32		locktag_field1; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint32		locktag_field2; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint32		locktag_field3; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint16		locktag_field4; <span class="comment">/* a 16-bit ID field */</span></span><br><span class="line">	uint8		locktag_type;	<span class="comment">/* see enum LockTagType */</span></span><br><span class="line">	uint8		locktag_lockmethodid;	<span class="comment">/* lockmethod indicator */</span></span><br><span class="line">&#125; LOCKTAG;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>locktag_type<br>标识这个锁是针对哪类资源的。每种 LockTagType 决定了 LOCKTAG 里后面几个字段（locktag_field1 ~ locktag_field4）是怎么解释的，比如：<br>LOCKTAG_TRANSACTION：xid<br>LOCKTAG_RELATION：dbOid + relOid<br>LOCKTAG_TUPLE：dbOid + relOid + blockNum + offNum       </li>
+<li>locktag_lockmethodid<ul>
+<li>DEFAULT_LOCKMETHOD（id &#x3D; DEFAULT_LOCKMETHOD)<br>  绝大多数用户可见的锁（relation, tuple, transactionid 等）都走它。</li>
+<li>USER_LOCKMETHOD（id &#x3D; USER_LOCKMETHOD)<br>  提供给 pg_advisory_lock() 一类的 advisory lock，用于用户自定义锁。</li>
+</ul>
+</li>
+</ul>
+<h2 id="LOCK"><a href="#LOCK" class="headerlink" title="LOCK"></a>LOCK</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">LOCK</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	LOCKTAG		tag;			</span><br><span class="line">	LOCKMASK	grantMask;		</span><br><span class="line">	LOCKMASK	waitMask;		</span><br><span class="line">	dlist_head	procLocks;		</span><br><span class="line">	dclist_head     waitProcs;		</span><br><span class="line">	<span class="type">int</span>		requested[MAX_LOCKMODES];	</span><br><span class="line">	<span class="type">int</span>		nRequested;		</span><br><span class="line">	<span class="type">int</span>		granted[MAX_LOCKMODES]; </span><br><span class="line">	<span class="type">int</span>		nGranted;		</span><br><span class="line">&#125; LOCK;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>waitProcs<br>等待本LOCK的PGPROC链表</li>
+<li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
+<li>waitMask<br>该资源上等待的锁类型</li>
+<li>grantMask<br>该资源上已经授予的锁类型</li>
+</ul>
+<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NoLock					0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessShareLock			1	<span class="comment">/* SELECT */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowShareLock			2	<span class="comment">/* SELECT FOR UPDATE/FOR SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowExclusiveLock		3	<span class="comment">/* INSERT, UPDATE, DELETE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareUpdateExclusiveLock 4	<span class="comment">/* VACUUM (non-FULL), ANALYZE, CREATE</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * INDEX CONCURRENTLY */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareLock				5	<span class="comment">/* CREATE INDEX (WITHOUT CONCURRENTLY) */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareRowExclusiveLock	6	<span class="comment">/* like EXCLUSIVE MODE, but allows ROW</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ExclusiveLock			7	<span class="comment">/* blocks ROW SHARE/SELECT...FOR UPDATE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessExclusiveLock		8	<span class="comment">/* ALTER TABLE, DROP TABLE, VACUUM FULL,</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * and unqualified LOCK TABLE */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MaxLockMode				8	<span class="comment">/* highest standard lock mode */</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="冲突矩阵"><a href="#冲突矩阵" class="headerlink" title="冲突矩阵"></a>冲突矩阵</h2><table>
+<thead>
+<tr>
+<th>Requested Lock Mode</th>
+<th>ACCESS SHARE</th>
+<th>ROW SHARE</th>
+<th>ROW EXCL.</th>
+<th>SHARE UPDATE EXCL.</th>
+<th>SHARE</th>
+<th>SHARE ROW EXCL.</th>
+<th>EXCL.</th>
+<th>ACCESS EXCL.</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ACCESS SHARE</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+</tr>
+<tr>
+<td>ROW SHARE</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>ROW EXCL.</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE UPDATE EXCL.</td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE</td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE ROW EXCL.</td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>EXCL.</td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>ACCESS EXCL.</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+</tbody></table>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -997,325 +1408,6 @@
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/07/10/database/B%E6%A0%91%E7%B4%A2%E5%BC%95/" class="post-title-link" itemprop="url">B树索引（postgres）</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-07-10 14:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T14:33:12+08:00">2025-07-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>存储引擎之所以能够快速定位数据，离不开索引。B树索引是历经考验、使用最广泛的一种索引结构。pg中的B树索引是为ordinal data types（可以比较和排序）设计的。</p>
-<h2 id="一-结构"><a href="#一-结构" class="headerlink" title="一 结构"></a>一 结构</h2><p>每一个节点就是一个页（Page）。page的大小定义决定了索引node的容量；每个节点（node）由多个element组成（element包括 索引key 和 一个指针）。内部节点中的元素指向下一层的节点；叶子节点中的元素则指向堆中的元组。这种结构就是 PostgreSQL 中 B-Tree 索引的基础：内部节点用于导航，叶子节点保存指向真实数据的引用。</p>
-<h2 id="二-特性"><a href="#二-特性" class="headerlink" title="二 特性"></a>二 特性</h2><ol>
-<li>有序(Orderable): 所有 B-Tree 索引按照给定的顺序存储值，支持 ASC&#x2F;DESC 和 NULLS FIRST&#x2F;LAST 等排序选项</li>
-<li>叶子结点存储数据（key以及tuple的指针），内部结点存储key</li>
-<li>每一层除了最有结点，均存储一个高键（high key）：每个节点中最大的值。The first entry in this page contains the high key</li>
-<li>叶子页之间有双向链表指针（左兄弟&#x2F;右兄弟），用于范围扫描（BETWEEN、ORDER BY 等范围查询优化）。</li>
-</ol>
-<h2 id="三-多列索引"><a href="#三-多列索引" class="headerlink" title="三 多列索引"></a>三 多列索引</h2><p>一个索引文件，存储多列键值组合：索引条目（index tuple）中存储这几列的值作为一个组合键。<br>多列索引的比较是逐列进行的，先比较第1列 a，如果相等，再比较第2列 b，依次类推。pg使用逐字段比较器（每列使用其数据类型对应的 &lt; 运算符）逐列比较<br>默认情况下，索引值是按照升序（ASC）排列的，但如果需要，你也可以指定为降序（DESC）。如果索引是基于单列创建的，排序顺序通常无所谓，因为扫描可以沿任意方向进行。但在多列索引中，排序顺序就变得很重要了。</p>
-<h3 id="PostgreSQL-多列-B-tree-索引的匹配原则"><a href="#PostgreSQL-多列-B-tree-索引的匹配原则" class="headerlink" title="PostgreSQL 多列 B-tree 索引的匹配原则"></a>PostgreSQL 多列 B-tree 索引的匹配原则</h3><ul>
-<li>PostgreSQL 的多列索引（比如 (a, b)）是按列的 最左前缀（left-prefix）顺序构建的。</li>
-<li>能有效利用索引的条件，必须从第一列开始匹配，且满足索引的顺序关系。</li>
-</ul>
-<p>PostgreSQL 多列索引中，当你只指定了“非第一列”的查询条件时，理论上有一种优化方法叫做 Skip Scan:<br>例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab ON mytable(a, b);</span><br><span class="line">SELECT * FROM mytable WHERE b = 42;</span><br></pre></td></tr></table></figure>
-<p>这个时候由于 没有给出 a 的值，PostgreSQL 的 B-tree 无法用这个索引来直接查找。</p>
-<p>但是，理论上如果第一列（a）的取值不多，比如只有 v1, v2, …, vn，查询可以被改写为多次扫描：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM mytable WHERE a = v1 AND b = 42;</span><br><span class="line">SELECT * FROM mytable WHERE a = v2 AND b = 42;</span><br><span class="line">...</span><br><span class="line">SELECT * FROM mytable WHERE a = vn AND b = 42;</span><br></pre></td></tr></table></figure>
-<p>每次都能利用索引 (a, b) 的“最左前缀”性质进行查找，然后再合并结果。这就是 Skip Scan 的思路。</p>
-<p>PostgreSQL 当前 不支持 Skip Scan</p>
-<h2 id="四-include"><a href="#四-include" class="headerlink" title="四 include"></a>四 include</h2><p>B-tree 索引还可以通过 INCLUDE 子句扩展额外的列，这些列不参与查找，但可以包含在索引中。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX idx_ab_inc ON t(a, b) INCLUDE (c, d);</span><br></pre></td></tr></table></figure>
-<p>这样可以使某些 SELECT 查询满足 Index-Only Scan（覆盖索引），避免回表. 类似于mysql 的聚族索引（和聚族索引不同的是：include属于冗余存储）</p>
-<h2 id="索引属性"><a href="#索引属性" class="headerlink" title="索引属性"></a>索引属性</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"> SELECT p.name,</span><br><span class="line">       pg_index_has_property(&#x27;flights_pkey&#x27;, p.name)</span><br><span class="line">FROM unnest(array[</span><br><span class="line">  &#x27;clusterable&#x27;,</span><br><span class="line">  &#x27;index_scan&#x27;,</span><br><span class="line">  &#x27;bitmap_scan&#x27;,</span><br><span class="line">  &#x27;backward_scan&#x27;</span><br><span class="line">]) p(name);</span><br><span class="line"></span><br><span class="line">      name        | pg_index_has_property</span><br><span class="line">------------------+-----------------------</span><br><span class="line"> clusterable      | t</span><br><span class="line"> index_scan       | t</span><br><span class="line"> bitmap_scan      | t</span><br><span class="line"> backward_scan    | t</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="clusterable"><a href="#clusterable" class="headerlink" title="clusterable"></a>clusterable</h3><p>clusterable 表示索引是否支持用于 CLUSTER 操作。<br>CLUSTER 命令会按照指定的索引顺序，对表中的数据行进行物理重排，让表的数据页顺序与索引顺序一致。<br>这样可以提高基于该索引的扫描性能，因为数据的物理顺序和索引顺序相同，减少随机 I&#x2F;O。</p>
-<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CLUSTER my_table USING my_index;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>会根据 my_index 的顺序，重新排列 my_table 的物理存储。</li>
-<li>聚簇后的表，在按该索引扫描时性能更好</li>
-</ul>
-<h4 id="影响和注意点"><a href="#影响和注意点" class="headerlink" title="影响和注意点"></a>影响和注意点</h4><ul>
-<li>聚簇是一次性操作，执行后数据会按索引顺序存储，但后续的 INSERT、UPDATE 可能打乱这个顺序。</li>
-<li>如果表数据频繁更新，聚簇效果会逐渐减弱，需要定期重新执行 CLUSTER。</li>
-<li>聚簇对大表的操作比较重，执行时表会被锁。</li>
-</ul>
-<h3 id="index-scan"><a href="#index-scan" class="headerlink" title="index_scan"></a>index_scan</h3><p>索引是否支持普通的 Index Scan（例如 WHERE id &#x3D; 123）</p>
-<h3 id="bitmap-scan"><a href="#bitmap-scan" class="headerlink" title="bitmap_scan"></a>bitmap_scan</h3><p>Bitmap Scan 是 PostgreSQL 查询计划中的一种索引访问方法，主要用于当多个条件组合过滤时，或者单个索引扫描返回大量行时，提高访问效率的技术。<br>它分两步完成：</p>
-<ol>
-<li>Bitmap Index Scan：先扫描索引，找到所有符合条件的行的 TID（物理行指针），把它们用一个“位图”（bitmap）来表示；</li>
-<li>Bitmap Heap Scan：再根据这个位图去访问表的 heap 页，只读取需要的行，避免全表扫描。</li>
-</ol>
-<h4 id="为什么要用-Bitmap-Scan？"><a href="#为什么要用-Bitmap-Scan？" class="headerlink" title="为什么要用 Bitmap Scan？"></a>为什么要用 Bitmap Scan？</h4><ol>
-<li>当单个条件筛选出的行比较多时，普通索引扫描会频繁跳页，导致随机 I&#x2F;O 增加。</li>
-<li>多个条件联合过滤时，可以对多个索引分别做 Bitmap Index Scan，合并位图后再访问表。</li>
-<li>通过先用位图标记符合条件的行，再按物理顺序访问表页，减少随机访问，提高缓存命中率。</li>
-</ol>
-<h4 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h4><ol>
-<li>适合返回大量结果的索引查询；</li>
-<li>通过减少随机访问，降低 I&#x2F;O；</li>
-<li>支持多个索引结果合并，提高复杂查询效率。</li>
-</ol>
-<h4 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h4><ol>
-<li>需要额外的内存存储位图，位图过大会消耗较多资源；</li>
-<li>对于返回行很少的查询，普通索引扫描往往更快。</li>
-</ol>
-<h3 id="backward-scan"><a href="#backward-scan" class="headerlink" title="backward_scan"></a>backward_scan</h3><p>即索引扫描支持双向遍历：可以从索引的左端（最小键）开始向右扫描，也可以从索引的右端（最大键）开始向左扫描。例如 ORDER BY id DESC 时利用该索引</p>
-<h2 id="关于索引膨胀"><a href="#关于索引膨胀" class="headerlink" title="关于索引膨胀"></a>关于索引膨胀</h2><p>索引可能会随着插入和删除不断膨胀，而不会自然收缩，需要通过重建或 REINDEX 来处理。</p>
-<ol>
-<li>当需要向节点中插入数据而发现节点已满时，PostgreSQL 会先尝试“修剪”冗余数据（例如：删除已过期或无效的元组），希望通过回收空间来避免进一步拆分。</li>
-<li>在 PostgreSQL 的 B-tree 实现中，节点一旦因为插入新数据而被拆分，就不会再被合并回来。哪怕后续通过 vacuum 操作清理了旧数据，节点中元素数量减少，也不会自动合并。</li>
-<li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
-</ol>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/06/04/database/TPCC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/04/database/TPCC/" class="post-title-link" itemprop="url">TPCC</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-04 10:46:58" itemprop="dateCreated datePublished" datetime="2025-06-04T10:46:58+08:00">2025-06-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ol>
-<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/05/14/postgresql/pgbench-md/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/05/14/postgresql/pgbench-md/" class="post-title-link" itemprop="url">How to use pgbench</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-05-14 11:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T11:26:53+08:00">2025-05-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
-<h2 id="1-Initialize-the-Test-Database"><a href="#1-Initialize-the-Test-Database" class="headerlink" title="1. Initialize the Test Database"></a>1. Initialize the Test Database</h2><p>This sets up the schema and populates data.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -i -s 10 mydb</span><br></pre></td></tr></table></figure>
-<ul>
-<li>-i: Initialize the database.</li>
-<li>-s 10: Scale factor. Each scale unit ~100,000 rows in the pgbench_accounts table.</li>
-<li>mydb: The database to test.</li>
-</ul>
-<h2 id="2-Run-a-Simple-Benchmark-Test"><a href="#2-Run-a-Simple-Benchmark-Test" class="headerlink" title="2. Run a Simple Benchmark Test"></a>2. Run a Simple Benchmark Test</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -c 10 -j 2 -T 60 mydb</span><br></pre></td></tr></table></figure>
-<ul>
-<li>-c 10: 10 concurrent clients.</li>
-<li>-j 2: 2 threads.</li>
-<li>-T 60: Run for 60 seconds.</li>
-<li>mydb: Target database.</li>
-</ul>
-<p>It will output something like:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$ pgbench -c 10 -j 2 -T 60 mydb</span><br><span class="line">pgbench (18devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: &lt;builtin: TPC-B (sort of)&gt;</span><br><span class="line">scaling factor: 10</span><br><span class="line">query mode: simple</span><br><span class="line">number of clients: 10</span><br><span class="line">number of threads: 2</span><br><span class="line">maximum number of tries: 1</span><br><span class="line">duration: 60 s</span><br><span class="line">number of transactions actually processed: 12841</span><br><span class="line">number of failed transactions: 0 (0.000%)</span><br><span class="line">latency average = 46.726 ms</span><br><span class="line">initial connection time = 39.072 ms</span><br><span class="line">tps = 214.013767 (without initial connection time)</span><br><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$</span><br></pre></td></tr></table></figure>
-<h2 id="3-Run-Custom-SQL-Scripts"><a href="#3-Run-Custom-SQL-Scripts" class="headerlink" title="3. Run Custom SQL Scripts"></a>3. Run Custom SQL Scripts</h2><p>You can benchmark with custom SQL transactions:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
-<p>Where myscript.sql contains something like:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
-<p>Use :variable for substitution. We can define variables using -D:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
       
     </div>
 
