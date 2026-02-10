@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="概念CAP 定理指出，在分布式系统中，系统只能在以下三个属性中同时保证两个： 一致性（Consistency，C）：所有节点看到相同的数据。对任一节点的写入操作，其后的所有读取都会返回更新后的值。 可用性（Availability，A）：每个发给非故障节点的请求都会得到响应，但不保证响应包含最新数据。 分区容错性（Partition Tolerance，P）：即使节点间发生网络分区或消息丢失，系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CAP定理">
+<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/index.html">
+<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:description" content="概念CAP 定理指出，在分布式系统中，系统只能在以下三个属性中同时保证两个： 一致性（Consistency，C）：所有节点看到相同的数据。对任一节点的写入操作，其后的所有读取都会返回更新后的值。 可用性（Availability，A）：每个发给非故障节点的请求都会得到响应，但不保证响应包含最新数据。 分区容错性（Partition Tolerance，P）：即使节点间发生网络分区或消息丢失，系统">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/cap/CAP.png">
+<meta property="article:published_time" content="2026-02-01T01:29:33.000Z">
+<meta property="article:modified_time" content="2026-02-10T01:38:10.829Z">
+<meta property="article:author" content="Jeffrey">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jeffrey-fly-github-io.pages.dev/images/cap/CAP.png">
+
+
+<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/","path":"2026/02/01/database/CAP理论/","title":"CAP定理"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>CAP定理 | QuantumRealm</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">QuantumRealm</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E4%BC%98%E5%85%88%E5%9C%BA%E6%99%AF"><span class="nav-number">2.</span> <span class="nav-text">一致性优先场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BC%98%E5%85%88%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">可用性优先场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E8%A1%A5%E5%85%85%E8%AF%B4%E6%98%8E"><span class="nav-number">4.</span> <span class="nav-text">一致性的补充说明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%BA%E4%B8%80%E8%87%B4%E6%80%A7%EF%BC%88Strong-Consistency%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">强一致性（Strong Consistency）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%A0%E6%9E%9C%E4%B8%80%E8%87%B4%E6%80%A7%EF%BC%88Causal-Consistency%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">因果一致性（Causal Consistency）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7%EF%BC%88Eventual-Consistency%EF%BC%89%EF%BC%9A"><span class="nav-number">4.3.</span> <span class="nav-text">最终一致性（Eventual Consistency）：</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="CAP定理 | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CAP定理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-01 09:29:33" itemprop="dateCreated datePublished" datetime="2026-02-01T09:29:33+08:00">2026-02-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>CAP 定理指出，在分布式系统中，系统只能在以下三个属性中同时保证两个：</p>
+<p><strong>一致性（Consistency，C）</strong>：所有节点看到相同的数据。对任一节点的写入操作，其后的所有读取都会返回更新后的值。</p>
+<p><strong>可用性（Availability，A）</strong>：每个发给非故障节点的请求都会得到响应，但不保证响应包含最新数据。</p>
+<p><strong>分区容错性（Partition Tolerance，P）</strong>：即使节点间发生网络分区或消息丢失，系统仍能继续运行。</p>
+<p>在理想情况下（网络永不中断），可以同时拥有 C 和 A。但在实际环境中，网络延迟或中断不可避免，因此 P 通常被视为默认前提。真正的取舍在于 A 与 C：当网络分区发生时，是优先保证一致性，还是优先保证可用性？</p>
+<p><img src="/images/cap/CAP.png" alt="CAP"></p>
+<h2 id="一致性优先场景"><a href="#一致性优先场景" class="headerlink" title="一致性优先场景"></a>一致性优先场景</h2><ul>
+<li><p>票务系统（如 12306）：若两个用户同时预订同一座位，系统必须确保只有一个用户成功，以避免重复分配。</p>
+</li>
+<li><p>账户余额：扣款成功后，用户在任何终端查询余额都应反映扣款后的最新结果</p>
+</li>
+</ul>
+<h2 id="可用性优先场景"><a href="#可用性优先场景" class="headerlink" title="可用性优先场景"></a>可用性优先场景</h2><ul>
+<li><p>社交媒体：用户更新个人信息后，短时间内其他用户可能仍看到旧信息，但系统不会返回错误。</p>
+</li>
+<li><p>OLAP 系统：处理海量报表数据时，由于同步延迟，系统可能无法实时反映最新写入，但仍能提供历史数据查询，保证系统可用性。</p>
+</li>
+</ul>
+<h2 id="一致性的补充说明"><a href="#一致性的补充说明" class="headerlink" title="一致性的补充说明"></a>一致性的补充说明</h2><p>CAP 定理中所指的一致性通常是强一致性，即所有读取操作都反映最新写入。除此之外，还有其他一致性模型：</p>
+<h3 id="强一致性（Strong-Consistency）"><a href="#强一致性（Strong-Consistency）" class="headerlink" title="强一致性（Strong Consistency）"></a>强一致性（Strong Consistency）</h3><p>所有读取均返回最新写入的数据，开销较大，但对银行账户等需要绝对准确性的系统至关重要。</p>
+<h3 id="因果一致性（Causal-Consistency）"><a href="#因果一致性（Causal-Consistency）" class="headerlink" title="因果一致性（Causal Consistency）"></a>因果一致性（Causal Consistency）</h3><ul>
+<li>保证具有因果关系的操作顺序一致，但允许无因果关系的操作顺序不同。</li>
+<li>因果相关操作：如用户先发帖，再有回复，系统保证先看到发帖再看到回复。</li>
+<li>并发无关操作：如不同用户同时点赞不同帖子，其顺序可以在各节点不同。</li>
+</ul>
+<p><strong>特殊实现</strong><br>读己所写（Read-Your-Own-Writes Consistency）：用户在同一会话中总能立即看到自己提交的更新。常用于社交媒体。</p>
+<h3 id="最终一致性（Eventual-Consistency）："><a href="#最终一致性（Eventual-Consistency）：" class="headerlink" title="最终一致性（Eventual Consistency）："></a>最终一致性（Eventual Consistency）：</h3><p>系统在经过一段时间后最终达到一致状态，但短期内可能存在不一致数据。典型应用：ClickHouse、分布式缓存等。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/01/20/database/Files-in-Clickhouse/" rel="prev" title="Files_in_Clickhouse">
+                  <i class="fa fa-angle-left"></i> Files_in_Clickhouse
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/02/09/tools/How-to-use-openclaw/" rel="next" title="How to use openclaw in docker">
+                  How to use openclaw in docker <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

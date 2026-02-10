@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-count">26</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,524 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/05/debug/io/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/05/debug/io/" class="post-title-link" itemprop="url">IO</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-05 18:25:48" itemprop="dateCreated datePublished" datetime="2025-08-05T18:25:48+08:00">2025-08-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
+<li><p><strong><code>iostat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
+<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
+<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
+</ul>
+</li>
+<li><p><strong><code>iotop</code></strong></p>
+<ul>
+<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
+<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
+</ul>
+</li>
+<li><p><strong><code>vmstat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
+<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
+</ul>
+</li>
+<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
+<ul>
+<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
+<li><p>测试磁盘最大写入带宽：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>oflag=direct</code> 避免缓存干扰。</li>
+<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
+</ul>
+</li>
+<li><p>同理，可以测试并发读写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
+<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
+<ul>
+<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
+</ul>
+</li>
+<li><p><strong>延迟累积</strong>：</p>
+<ul>
+<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
+</ul>
+</li>
+<li><p><strong>锁与等待</strong>：</p>
+<ul>
+<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/31/tools/wordpress/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/31/tools/wordpress/" class="post-title-link" itemprop="url">wordpress</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-31 10:59:00" itemprop="dateCreated datePublished" datetime="2025-07-31T10:59:00+08:00">2025-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Ubuntu安装wordpress"><a href="#Ubuntu安装wordpress" class="headerlink" title="Ubuntu安装wordpress"></a>Ubuntu安装wordpress</h2><ul>
+<li><p>安装apache：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2 -y</span><br><span class="line">chown -R www-data:www-data /var/www/html</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装php</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y php php-mysql php-json</span><br><span class="line">yum install php php-mysqlnd php-json</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install php libapache2-mod-php php-mysql -y</span><br><span class="line">apt install php-cli php-curl php-gd php-mbstring php-xml php-zip -y</span><br></pre></td></tr></table></figure></li>
+<li><p>安装database</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install -y mariadb-server</span><br><span class="line">yum install -y mysql-server</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt install mysql-server -y</span><br></pre></td></tr></table></figure>
+<p>  修改密码：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;12345&#x27;；</span><br><span class="line"></span><br><span class="line">CREATE DATABASE wordpress_db;</span><br><span class="line">CREATE USER &#x27;wp_user&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;password&#x27;;</span><br><span class="line">GRANT ALL PRIVILEGES ON wordpress_db.* TO &#x27;wp_user&#x27;@&#x27;localhost&#x27;;</span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装wordpress</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd /var/www/html</span><br><span class="line">wget https://wordpress.org/latest.tar.gz </span><br><span class="line">tar -xvzf latest.tar.gz</span><br><span class="line">chown -R www-data:www-data /var/www/html/wordpress</span><br><span class="line">chmod -R 755 /var/www/html/wordpress</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编辑 Apache 默认虚拟主机配置</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/apache2/sites-available/000-default.conf</span><br></pre></td></tr></table></figure>
+<p>  找到：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html<br>  改成：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html&#x2F;wordpress</p>
+</li>
+<li><p>&#x2F;etc&#x2F;apache2&#x2F;apache2.conf 添加：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;Directory /var/www/html/wordpress&gt;</span><br><span class="line">    Options Indexes FollowSymLinks</span><br><span class="line">    AllowOverride All</span><br><span class="line">    Require all granted</span><br><span class="line">&lt;/Directory&gt;</span><br></pre></td></tr></table></figure>
+<p>  如果你希望支持 WordPress 的 .htaccess 功能，请保留 AllowOverride All</p>
+</li>
+<li><p>固定连接</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apache2ctl -M | grep rewrite</span><br><span class="line">a2enmod rewrite</span><br><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure>
+<p>  在 WordPress 后台重新保存固定链接</p>
+</li>
+<li><p>重启服务</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/30/postgresql/WAL-Structure-Logical-Structure/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/30/postgresql/WAL-Structure-Logical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Logical-Structure)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-30 10:46:03" itemprop="dateCreated datePublished" datetime="2025-07-30T10:46:03+08:00">2025-07-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>从wal逻辑结构来看，WAL 可被描述为变长日志条目流。每个条目都包含有关特定操作的一些数据，并以标准标头作为前缀。该标头提供的信息包括但不限于：</p>
+<ul>
+<li>与条目（entry）相关的事务 ID </li>
+<li>解释条目的资源管理器</li>
+<li>用于检测数据损坏的校验和</li>
+<li>条目长度</li>
+<li>对前一个 WAL 条目的引用<blockquote>
+<p>WAL 通常是按正向读取的，但某些工具（例如 pg_rewind）可能会反向扫描它</p>
+</blockquote>
+</li>
+</ul>
+<p>WAL 数据本身可以具有不同的格式和含义。例如，它可能是一段页片段（page fragment），需要替换某个页面中指定偏移处的一部分内容。相应的资源管理器（resource manager）必须知道如何解析并重放这一特定条目。针对表、各种索引类型、事务状态以及其他实体，PostgreSQL 都有独立的资源管理器来处理它们各自的 WAL。</p>
+<p>WAL 文件会占用服务器共享内存中的特殊缓冲区。用于 WAL 的缓存大小由参数 wal_buffers 决定。默认情况下，这个大小会自动设为总缓冲区缓存（buffer cache）大小的 1&#x2F;32。</p>
+<p>WAL 缓存与缓冲区缓存（buffer cache）非常相似，但它通常以环形缓冲区（ring buffer）的方式运行：新的日志条目被添加到缓冲区的头部，而旧的条目则从尾部开始写入磁盘。如果 WAL 缓存太小，就会比必要的更频繁地进行磁盘同步操作。</p>
+<p>在系统负载较低的情况下，插入位置（即缓冲区的头部）几乎总是与已经写入磁盘的条目位置（即缓冲区的尾部）保持一致。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_lsn(), pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_lsn <span class="operator">|</span> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">--------------------+---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDC2CD8         <span class="operator">|</span> <span class="number">1</span><span class="operator">/</span>EBDC2CD8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在PostgreSQL 10之前，所有函数名称都包含XLOG首字母缩写词，而不是WAL。</p>
+</blockquote>
+<p>为了引用某个特定的日志条目，PostgreSQL 使用一种特殊的数据类型：pg_lsn（日志序列号，Log Sequence Number，简称 LSN）。它表示从 WAL 起始位置开始，以字节为单位的 64 位偏移量。LSN 通常以两个十六进制数字表示，中间用斜杠（&#x2F;）分隔。</p>
+<p>我们创建一个表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> wal(id <span class="type">integer</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> wal <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">启动一个事务，并记录下当前 WAL 插入位置的 LSN。</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA4F8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>现在执行一个任意命令，例如，更新一行数据。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">UPDATE</span> wal <span class="keyword">SET</span> id <span class="operator">=</span> id <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>页面的修改是在 RAM 中的缓冲区缓存（buffer cache）中进行的。这个更改也会记录在位于 RAM 中的 WAL 页面中。因此，插入的 LSN 会向前推进。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5E8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>为了确保修改后的数据页是在对应的 WAL 条目之后才被刷新到磁盘，数据页的页头会存储该页最新相关的 WAL 条目的 LSN。你可以使用 pageinspect 插件查看这个 LSN。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> lsn <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;wal&#x27;</span>,<span class="number">0</span>));</span><br><span class="line">    lsn     </span><br><span class="line"><span class="comment">------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5B0</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>整个数据库集群只有一个 WAL，并且新的条目会不断地追加到其中。因此，存储在数据页中的 LSN 可能会比 之前某个时刻 pg_current_wal_insert_lsn() 返回的 LSN 更小。但如果系统中没有发生任何操作，这两个数值将会相同。</p>
+<p>现在提交这个事务</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">commit</span>;</span><br><span class="line"><span class="keyword">COMMIT</span></span><br><span class="line"><span class="keyword">commit</span>操作同样被日志记录，同时<span class="keyword">insert</span> lsn再次改变</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDC500</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>为了确保某个 CLog 页在对应的 WAL 条目写入磁盘之前不会被刷新到磁盘，必须追踪该页所对应的最新 WAL 条目的 LSN。但这种 LSN 信息是保存在内存（RAM）中的，而不是存在 CLog 页本身</p>
+<p>某个时刻，WAL 日志条目会被写入磁盘；此时，才能把对应的 CLOG 和数据页从缓存中淘汰（evict）。如果必须更早淘汰这些缓存页，那么系统会发现这一点，并会先强制将对应的 WAL 条目写入磁盘。<br>如果你知道两个 LSN（日志序列号）的位置，就可以通过简单地相减计算这两者之间的 WAL 日志大小（以字节为单位）。只需将它们转换为 pg_lsn 类型即可进行减法运算</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;1/EBDDC500&#x27;</span>::pg_lsn <span class="operator">-</span> <span class="string">&#x27;1/EBDDA4F8&#x27;</span>::pg_lsn;</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line">     <span class="number">8200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>在这个具体案例中，更新（update）和提交（commit）操作相关的 WAL 条目大约占用了几千字节。可以用相同的方法，估算某个工作负载在单位时间内产生的 WAL 日志量。<br>这些信息对设置检查点（checkpoint）参数非常重要。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/07/29/postgresql/WAL-Structure-Physical-Structure/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/29/postgresql/WAL-Structure-Physical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Physical-Structure)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-29 16:17:08" itemprop="dateCreated datePublished" datetime="2025-07-29T16:17:08+08:00">2025-07-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在磁盘上，WAL 被存储在 PGDATA&#x2F;pg_wal 目录中，以单独的文件（或称为段）的形式存在。它们的大小由只读参数 wal_segment_size 指示。</p>
+<p>对于高负载系统，增加段大小可能是有意义的，因为这可以减少开销。但这个设置只能在集群初始化时修改（通过 initdb –wal-segsize）。</p>
+<p>WAL 记录会写入当前文件，直到该文件空间耗尽；此时 PostgreSQL 会开始写入一个新文件。</p>
+<p>我们可以确定某条记录位于哪个文件中，以及它在该文件起始位置的偏移量。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> file_name, <span class="built_in">upper</span>(to_hex(file_offset)) file_offset <span class="keyword">FROM</span> pg_walfile_name_offset(<span class="string">&#x27;1/EBDDC500&#x27;</span>);</span><br><span class="line">        file_name         <span class="operator">|</span> file_offset </span><br><span class="line"><span class="comment">--------------------------+-------------</span></span><br><span class="line"> <span class="number">0000000100000001000000</span>EB <span class="operator">|</span> DDC500</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>该文件的名称由两部分组成。最高的八位十六进制数字（4个字节）表示用于从备份中恢复的时间线（timeline），而其余部分（8个字节）表示 LSN（日志序列号）的高位比特（LSN 的低位比特则体现在 file_offset 字段中）。</p>
+<p>要查看当前的 WAL 文件，可以调用以下函数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> pg_ls_waldir()</span><br><span class="line"><span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;0000000100000001000000EB&#x27;</span>;</span><br><span class="line">           name           <span class="operator">|</span>   size   <span class="operator">|</span>      modification      </span><br><span class="line"><span class="comment">--------------------------+----------+------------------------</span></span><br><span class="line"> <span class="number">0000000100000001000000</span>EB <span class="operator">|</span> <span class="number">16777216</span> <span class="operator">|</span> <span class="number">2025</span><span class="number">-07</span><span class="number">-28</span> <span class="number">18</span>:<span class="number">41</span>:<span class="number">49</span><span class="operator">+</span><span class="number">08</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>现在让我们使用 pg_waldump 工具查看新创建的 WAL 记录的头部信息。该工具既可以按 LSN 范围（就像这个例子中那样）过滤 WAL 记录，也可以按特定的事务 ID 过滤。</p>
+<p>pg_waldump 工具应以 postgres 用户身份运行，因为它需要访问磁盘上的 WAL 文件。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pg_waldump <span class="operator">-</span>p <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data<span class="operator">/</span>pg_wal <span class="operator">-</span>s  <span class="number">1</span><span class="operator">/</span>EBDDA4F8 <span class="operator">-</span>e <span class="number">1</span><span class="operator">/</span>EBDDC500</span><br><span class="line">rmgr: XLOG        len (rec<span class="operator">/</span>tot):     <span class="number">49</span><span class="operator">/</span>   <span class="number">109</span>, tx:          <span class="number">0</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDA4F8, prev <span class="number">1</span><span class="operator">/</span>EBDDA4C0, <span class="keyword">desc</span>: FPI_FOR_HINT , blkref #<span class="number">0</span>: rel <span class="number">1663</span><span class="operator">/</span><span class="number">32814</span><span class="operator">/</span><span class="number">376833</span> blk <span class="number">0</span> FPW</span><br><span class="line">rmgr: Heap        len (rec<span class="operator">/</span>tot):     <span class="number">69</span><span class="operator">/</span>    <span class="number">69</span>, tx:        <span class="number">961</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDA568, prev <span class="number">1</span><span class="operator">/</span>EBDDA4F8, <span class="keyword">desc</span>: HOT_UPDATE old_xmax: <span class="number">961</span>, old_off: <span class="number">1</span>, old_infobits: [], flags: <span class="number">0x40</span>, new_xmax: <span class="number">0</span>, new_off: <span class="number">2</span>, blkref #<span class="number">0</span>: rel <span class="number">1663</span><span class="operator">/</span><span class="number">32814</span><span class="operator">/</span><span class="number">376833</span> blk <span class="number">0</span></span><br><span class="line">rmgr: Standby     len (rec<span class="operator">/</span>tot):     <span class="number">54</span><span class="operator">/</span>    <span class="number">54</span>, tx:          <span class="number">0</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDA5B0, prev <span class="number">1</span><span class="operator">/</span>EBDDA568, <span class="keyword">desc</span>: RUNNING_XACTS nextXid <span class="number">962</span> latestCompletedXid <span class="number">960</span> oldestRunningXid <span class="number">961</span>; <span class="number">1</span> xacts: <span class="number">961</span></span><br><span class="line">rmgr: XLOG        len (rec<span class="operator">/</span>tot):     <span class="number">49</span><span class="operator">/</span>  <span class="number">7777</span>, tx:        <span class="number">961</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDA5E8, prev <span class="number">1</span><span class="operator">/</span>EBDDA5B0, <span class="keyword">desc</span>: FPI_FOR_HINT , blkref #<span class="number">0</span>: rel <span class="number">1663</span><span class="operator">/</span><span class="number">32814</span><span class="operator">/</span><span class="number">2691</span> blk <span class="number">19</span> FPW</span><br><span class="line">rmgr: Standby     len (rec<span class="operator">/</span>tot):     <span class="number">54</span><span class="operator">/</span>    <span class="number">54</span>, tx:          <span class="number">0</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDC468, prev <span class="number">1</span><span class="operator">/</span>EBDDA5E8, <span class="keyword">desc</span>: RUNNING_XACTS nextXid <span class="number">962</span> latestCompletedXid <span class="number">960</span> oldestRunningXid <span class="number">961</span>; <span class="number">1</span> xacts: <span class="number">961</span></span><br><span class="line">rmgr: Transaction len (rec<span class="operator">/</span>tot):     <span class="number">34</span><span class="operator">/</span>    <span class="number">34</span>, tx:        <span class="number">961</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDC4A0, prev <span class="number">1</span><span class="operator">/</span>EBDDC468, <span class="keyword">desc</span>: <span class="keyword">COMMIT</span> <span class="number">2025</span><span class="number">-07</span><span class="number">-28</span> <span class="number">16</span>:<span class="number">04</span>:<span class="number">55.325979</span> CST</span><br><span class="line">rmgr: Standby     len (rec<span class="operator">/</span>tot):     <span class="number">50</span><span class="operator">/</span>    <span class="number">50</span>, tx:          <span class="number">0</span>, lsn: <span class="number">1</span><span class="operator">/</span>EBDDC4C8, prev <span class="number">1</span><span class="operator">/</span>EBDDC4A0, <span class="keyword">desc</span>: RUNNING_XACTS nextXid <span class="number">962</span> latestCompletedXid <span class="number">961</span> oldestRunningXid <span class="number">962</span></span><br><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ </span><br></pre></td></tr></table></figure>
+<ol>
+<li>FPI_FOR_HINT（全页镜像，为 Hint Bit）   <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: XLOG len (rec/tot): 49/109, tx: 0, lsn: 1/EBDDA4F8, prev 1/EBDDA4C0, desc: FPI_FOR_HINT , blkref #0: rel 1663/32814/376833 blk 0 FPW</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>rmgr: XLOG：表示这是 XLOG（日志）资源管理器记录。</li>
+<li>FPI_FOR_HINT：全页镜像用于设置 Hint bit。为了避免 Hint bit 修改没有日志而导致数据页 checksum 校验失败，PostgreSQL 会把整个页面写入 WAL（FPW, Full Page Write）。</li>
+<li>rel 1663&#x2F;32814&#x2F;376833 blk 0：指的是某个表的第 0 页（block 0），文件标识符是：数据库OID&#x3D;32814，表OID&#x3D;376833。</li>
+<li>tx: 0：不是某个事务产生的，而是后台 hint bit 的写入。</li>
+<li>FPW：全页写入。</li>
+</ul>
+<ol start="2">
+<li>HOT_UPDATE（堆表中的更新） <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: Heap len (rec/tot): 69/69, tx: 961, lsn: 1/EBDDA568, prev 1/EBDDA4F8, desc: HOT_UPDATE old_xmax: 961, old_off: 1, old_infobits: [], flags: 0x40, new_xmax: 0, new_off: 2, blkref #0: rel 1663/32814/376833 blk 0</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>rmgr: Heap：这是 Heap 表的更新记录。</li>
+<li>HOT_UPDATE：表示使用了“Heap-Only Tuple”优化，即更新没有修改索引字段，所以新旧 tuple 都在一个页里。</li>
+<li>tx: 961：由事务 961 发起。</li>
+<li>old_off: 1 -&gt; new_off: 2：第 1 个 tuple 更新为第 2 个位置的 tuple。</li>
+<li>old_xmax: 961：原始 tuple 的删除者是当前事务。</li>
+<li>new_xmax: 0：新 tuple 尚未被删除。</li>
+<li>rel 1663&#x2F;32814&#x2F;376833 blk 0：仍然是这个表第 0 页</li>
+</ul>
+<ol start="3">
+<li>RUNNING_XACTS（记录活跃事务信息） <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: Standby len (rec/tot): 54/54, tx: 0, lsn: 1/EBDDA5B0, prev 1/EBDDA568, desc: RUNNING_XACTS nextXid 962 latestCompletedXid 960 oldestRunningXid 961; 1 xacts: 961</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>rmgr: Standby：这是为备机记录活跃事务信息。</li>
+<li>nextXid: 962：下一个将被分配的事务 ID。</li>
+<li>latestCompletedXid: 960：最后一个完成的事务。</li>
+<li>oldestRunningXid: 961：最老的活跃事务。</li>
+<li>1 xacts: 961：当前只有一个活跃事务 961。<br>  这类记录有助于逻辑解码和备机恢复时判断哪些事务是已提交、未提交。</li>
+</ul>
+<ol start="4">
+<li>FPI_FOR_HINT（另一个 hint bit 的全页写入） <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: XLOG len (rec/tot): 49/7777, tx: 961, lsn: 1/EBDDA5E8, prev 1/EBDDA5B0, desc: FPI_FOR_HINT , blkref #0: rel 1663/32814/2691 blk 19 FPW</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>又是一个 FPI_FOR_HINT，但这次是针对：<br>  rel 1663&#x2F;32814&#x2F;2691 blk 19：另外一个表的第 19 页。</li>
+<li>注意这次记录总长度达到了 7777 字节，很可能是完整的数据页写入（通常 8KB）。</li>
+</ul>
+<ol start="5">
+<li><p>RUNNING_XACTS（再次记录活跃事务）</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: Standby len (rec/tot): 54/54, tx: 0, lsn: 1/EBDDC468, prev 1/EBDDA5E8, desc: RUNNING_XACTS nextXid 962 latestCompletedXid 960 oldestRunningXid 961; 1 xacts: 961</span><br></pre></td></tr></table></figure>
+<p> 和之前类似，再次记录活跃事务 961。</p>
+</li>
+<li><p>COMMIT（事务提交）</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: Transaction len (rec/tot): 34/34, tx: 961, lsn: 1/EBDDC4A0, prev 1/EBDDC468, desc: COMMIT 2025-07-28 16:04:55.325979 CST</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>事务 961 正式提交。</li>
+<li>提交时间 是 2025-07-28 16:04:55。</li>
+</ul>
+<ol start="7">
+<li>RUNNING_XACTS（提交后活跃事务清空） <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rmgr: Standby len (rec/tot): 50/50, tx: 0, lsn: 1/EBDDC4C8, prev 1/EBDDC4A0, desc: RUNNING_XACTS nextXid 962 latestCompletedXid 961 oldestRunningXid 962</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li>事务 961 已完成，现在没有活跃事务了。</li>
+<li>nextXid 为 962，准备分配给下一个事务。</li>
+</ul>
+<p>查看日志文件路径  </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo=# SELECT pg_relation_filepath(&#x27;wal&#x27;);</span><br><span class="line"> pg_relation_filepath </span><br><span class="line">----------------------</span><br><span class="line"> base/32814/376833</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -823,483 +1341,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/" class="post-title-link" itemprop="url">gdb调试改变返回值</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-01-23 10:09:48" itemprop="dateCreated datePublished" datetime="2025-01-23T10:09:48+08:00">2025-01-23</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
-<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
-<p>步骤：</p>
-<ol>
-<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-01-15 10:44:26" itemprop="dateCreated datePublished" datetime="2025-01-15T10:44:26+08:00">2025-01-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
-<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
-<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
-<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
-<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
-</ol>
-<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
-<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
-<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
-<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
-</ul>
-<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
-<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
-<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
-<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
-</ul>
-<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
-<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
-<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
-<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
-</ul>
-<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
-<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
-<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
-</ul>
-<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
-<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
-<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
-<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
-<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
-</ol>
-<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
-<li>多实例并行运行：</li>
-</ol>
-<ul>
-<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
-<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
-</ul>
-<ol start="2">
-<li>共享底层资源：</li>
-</ol>
-<ul>
-<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
-<li>使用高效的调度机制协调实例间的资源竞争。</li>
-</ul>
-<ol start="3">
-<li>动态分片和迁移：</li>
-</ol>
-<ul>
-<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
-<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
-</ul>
-<ol start="4">
-<li>跨分片操作：</li>
-</ol>
-<ul>
-<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
-<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
-</ul>
-<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
-<thead>
-<tr>
-<th><strong>特性</strong></th>
-<th>Raft</th>
-<th>MultiRaft</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>目标</td>
-<td>提供单一一致性机制</td>
-<td>提供分区一致性机制</td>
-</tr>
-<tr>
-<td>运行实例</td>
-<td>单个 Raft 集群</td>
-<td>多个独立的 Raft 集群</td>
-</tr>
-<tr>
-<td>适用场景</td>
-<td>小规模系统</td>
-<td>大规模分布式存储或事务场景</td>
-</tr>
-<tr>
-<td>扩展性</td>
-<td>有限,单点可能成为瓶颈</td>
-<td>高扩展性，分片机制避免瓶颈</td>
-</tr>
-<tr>
-<td>复杂度</td>
-<td>较低</td>
-<td>较高，需要处理跨分片事务</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/12/31/postgresql/Buffer-Bulk-Eviction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/12/31/postgresql/Buffer-Bulk-Eviction/" class="post-title-link" itemprop="url">Buffer Bulk Eviction</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-12-31 17:14:21" itemprop="dateCreated datePublished" datetime="2024-12-31T17:14:21+08:00">2024-12-31</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>If bulk reads or writes are performed, there is a risk that one-time data can quickly oust useful pages from the buffer cache.</p>
-<p>As a precaution, bulk operations use rather small buffer rings, and eviction is performed within their boundaries, without affecting other buffers.</p>
-<p>A buffer ring of a particular size consists of an array of buffers that are used one after another. At first, the buffer ring is empty, and individual buffers join it one by one, after being selected from the buffer cache in the usual manner. Then eviction comes into play,but only within the ring limits</p>
-<p>Buffers added into a ring are not excluded from the buffer cache and can still be used by other operations. So if the buffer to be reused turns out to be pinned, or its usage count is higher than one, it will be simply detached from the ring and replaced by another buffer.<br>PostgreSQL supports three eviction strategies.</p>
-<table>
-<thead>
-<tr>
-<th><strong>strategy</strong></th>
-<th>trigger</th>
-<th>buffer ring</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Bulk reads</strong></td>
-<td>sequential scans of large tables if their size exceeds 1&#x2F;4 of the buffer cache(128MB：16384 page）</td>
-<td>256KB(32 page)</td>
-</tr>
-<tr>
-<td><strong>Bulk writes</strong></td>
-<td>applied by Copy from, create table as select , and create materialized view commands, as well as by those alter table  flavors that cause table rewrites.</td>
-<td>default: 16MB(2048 page)</td>
-</tr>
-<tr>
-<td><strong>Vacuuming</strong></td>
-<td>full table scan without taking the visibility map into account</td>
-<td>256KB(32 page)</td>
-</tr>
-</tbody></table>
-<p>Buffer rings do not always prevent undesired eviction. If UPDATE or DELETE commands affect a lot of rows, the performed table scan applies the bulk reads strategy, but since the pages are constantly being modified, buffer rings virtually become useless.</p>
-<p>Another example worth mentioning is storing oversized data in TOAST tables. In spite of a potentially large volume of data that has to be read, toasted values are always accessed via an index, so they bypass buffer rings.</p>
-<p>Let’s take a closer look at the bulk reads strategy. For simplicity, we will create a table in such a way that an inserted row takes the whole page. By default, the buffer cache size is 16,384 pages, 8 kb each. So the table must take more than 4096 pages for the scan to use a buffer ring.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">SHOW</span> shared_buffers;</span><br><span class="line"> shared_buffers </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> <span class="number">128</span>MB</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> big(</span><br><span class="line">test(# id <span class="type">integer</span> <span class="keyword">PRIMARY KEY</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s <span class="type">char</span>(<span class="number">1000</span>)</span><br><span class="line">test(# ) <span class="keyword">WITH</span> (fillfactor <span class="operator">=</span> <span class="number">10</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">INSERT INTO</span> big(s)</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">SELECT</span> <span class="string">&#x27;FOO&#x27;</span> <span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">4096</span><span class="operator">+</span><span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">4097</span></span><br><span class="line">test<span class="operator">=</span># ANALYZE big;</span><br><span class="line">ANALYZE</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> relname, relfilenode, relpages <span class="keyword">FROM</span> pg_class</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHERE</span> relname <span class="keyword">IN</span> (<span class="string">&#x27;big&#x27;</span>, <span class="string">&#x27;big_pkey&#x27;</span>);</span><br><span class="line"> relname  <span class="operator">|</span> relfilenode <span class="operator">|</span> relpages </span><br><span class="line"><span class="comment">----------+-------------+----------</span></span><br><span class="line"> big      <span class="operator">|</span>       <span class="number">16487</span> <span class="operator">|</span>     <span class="number">4097</span></span><br><span class="line"> big_pkey <span class="operator">|</span>       <span class="number">16492</span> <span class="operator">|</span>       <span class="number">14</span></span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> big;</span><br><span class="line">                 QUERY PLAN                 </span><br><span class="line"><span class="comment">--------------------------------------------</span></span><br><span class="line"> Seq Scan <span class="keyword">on</span> big (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">4097</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache</span><br><span class="line"><span class="keyword">WHERE</span> relfilenode <span class="operator">=</span> pg_relation_filenode(<span class="string">&#x27;big&#x27;</span>::regclass);</span><br><span class="line"> count </span><br><span class="line"><span class="comment">-------</span></span><br><span class="line">    <span class="number">32</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/" class="post-title-link" itemprop="url">gdb 查看指令</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-12-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-12-24T15:52:16+08:00">2024-12-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="使用-x-命令和内存地址："><a href="#使用-x-命令和内存地址：" class="headerlink" title="使用 x 命令和内存地址："></a>使用 x 命令和内存地址：</h2><p>x (examine) 命令允许你检查内存中的数据。你可以指定要检查的内存地址、格式和单位。</p>
-<p>基本语法： x &#x2F;nfu addr</p>
-<ul>
-<li><p>n：要显示的单位数量。</p>
-</li>
-<li><p>f：显示格式（例如，x 表示十六进制，t 表示二进制，d 表示十进制）。</p>
-</li>
-<li><p>u：单位大小（b 表示字节，h 表示半字（16 位），w 表示字（32 位），g 表示巨字（64 位））。</p>
-</li>
-<li><p>addr：要检查的内存地址。</p>
-</li>
-</ul>
-<p>示例： 假设有一个 32 位整数 val，其地址为 0x12345678，你想以 16 位为单位查看：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x12345678</span><br></pre></td></tr></table></figure>
-
-<p>这将显示从 0x12345678 开始的两个半字（16 位）的十六进制值。</p>
-<p>结合 p 命令获取地址： 你可以使用 p &amp;变量名 获取变量的地址，然后将其传递给 x 命令。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> val = <span class="number">0x12345678</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;val = 0x%x\n&quot;</span>, val);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>编译并用 GDB 调试：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc -g test.c -o <span class="built_in">test</span></span><br><span class="line">gdb ./test</span><br></pre></td></tr></table></figure>
-<p>在 GDB 中：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) <span class="built_in">break</span> main</span><br><span class="line">(gdb) run</span><br><span class="line">(gdb) p &amp;val</span><br><span class="line"><span class="variable">$1</span> = (int *) 0x7fffffffe0dc</span><br><span class="line">(gdb) x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0x5678  0x1234</span><br></pre></td></tr></table></figure>
-<p>这里注意字节序，在小端序机器上，低位字节在前，高位字节在后，所以显示为 0x5678 0x1234。<br>如果想要二进制显示，则使用：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x /2ht 0x7fffffffe0dc</span><br><span class="line">0x7fffffffe0dc: 0101011001111000        0001001000110100</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用表达式和位运算（对于变量值）："><a href="#使用表达式和位运算（对于变量值）：" class="headerlink" title="使用表达式和位运算（对于变量值）："></a>使用表达式和位运算（对于变量值）：</h2><p>如果你只想查看变量的值，而不需要查看内存，可以使用 C 语言的位运算来提取 16 位部分，然后使用 p&#x2F;t 显示。</p>
-<p>示例：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int val = 0x12345678;</span><br></pre></td></tr></table></figure>
-<p>在 GDB 中：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p/t (val &amp; 0xFFFF) // 获取低 16 位</span><br><span class="line"><span class="variable">$1</span> = 0101011001111000</span><br><span class="line">(gdb) p/t ((val &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0</span>xFFFF) // 获取高 <span class="number">16</span> 位</span><br><span class="line"><span class="variable">$2</span> = <span class="number">0001001000110100</span></span><br></pre></td></tr></table></figure>
-<h2 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h2><p>对于查看内存中的数据（包括变量在内存中的表示），使用 x 命令结合 h (半字) 和 t (二进制) 格式指定符是最直接的方法。<br>对于只查看变量的值，使用位运算提取 16 位部分，然后使用 p&#x2F;t 也是一个有效的选择。<br>选择哪种方法取决于你的具体需求。如果你需要查看变量在内存中的布局（例如，在结构体或数组中），x 命令是更好的选择。如果你只需要查看变量值的不同部分，位运算可能更方便。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/5/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/5/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
