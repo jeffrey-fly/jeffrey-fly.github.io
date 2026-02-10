@@ -3034,7 +3034,7 @@
       </categories>
   </entry>
   <entry>
-    <title>How to use openclaw in docker</title>
+    <title>Running OpenClaw with Docker</title>
     <url>/2026/02/09/tools/How-to-use-openclaw/</url>
     <content><![CDATA[<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
 <li><strong>Bypass internet restrictions</strong></li>
