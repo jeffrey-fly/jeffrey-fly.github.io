@@ -168,18 +168,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-count">27</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,149 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/08/database/SSTables-and-LSM-Trees/" class="post-title-link" itemprop="url">SSTables and LSM Trees</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-08 13:15:45" itemprop="dateCreated datePublished" datetime="2025-11-08T13:15:45+08:00">2025-11-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p>
+<ul>
+<li>merge简单高效</li>
+<li>因为有序，不需要维护所有记录的索引，可以是稀疏索引</li>
+<li>因为有序，可以按block进行压缩同时维护索引，除了降低磁盘占用以外，还可以降低磁盘io</li>
+</ul>
+<h2 id="构建和管理SSTables"><a href="#构建和管理SSTables" class="headerlink" title="构建和管理SSTables"></a>构建和管理SSTables</h2><p>因为写入是无序的，所以我们需要在内存中借助于红黑树或者avl树等数据结构来保证：任意写入，有序读取.</p>
+<p>构建步骤如下:</p>
+<ol>
+<li>当写入发生时，将写入的key-value加入内存平衡树（如红黑树）中，称为”memtable”</li>
+<li>当memtable增大到一定阈值后（a few megabytes），将memtable写入磁盘生成一个SSTable文件。新写入的SSTable成为数据库中最新的segment文件。 写入SSTable到磁盘时，写入可以继续写入新的memtable</li>
+<li>读请求来时，优先在memtable中查找，然后按顺序从新到老查找磁盘上的segment文件</li>
+<li>随着时间的推移，可以后台启动合并和压缩segment文件、丢弃或者覆盖掉老的文件</li>
+</ol>
+<p>这种机制工作的很好，但是存在一个问题，如果数据库宕机了，内存中的memtable还没有来得及写入磁盘，可能造成数据丢失。可以通过一个单独的log文件来记录所有的操作，这个log的作用只是用于宕机恢复memtable，每当memtable被写入磁盘，相应的log文件就可以被丢弃了</p>
+<h2 id="用SSTables构建LSM-tree"><a href="#用SSTables构建LSM-tree" class="headerlink" title="用SSTables构建LSM-tree"></a>用SSTables构建LSM-tree</h2><p>LSM-Tree用于 LevelDB 和 RocksDB、嵌入其他应用的key-value存储引擎。参考：Google’s Bigtable paper</p>
+<p>SSTables + log &#x3D; “Log-Structured Merge-Tree ”</p>
+<h3 id="LSM-tree两种文件管理策略："><a href="#LSM-tree两种文件管理策略：" class="headerlink" title="LSM-tree两种文件管理策略："></a>LSM-tree两种文件管理策略：</h3><ol>
+<li><p>Size-Tiered Compaction（STC） </p>
+<ul>
+<li><p>基本思想<br>  “当某一层（或同一大小区间）的 SSTable 文件数达到阈值时，将它们合并成一个更大的文件。”<br> 也就是说，不是按“层级”，而是按“文件大小”来触发 compaction。</p>
+</li>
+<li><p>结构示意<br> MemTable → SSTable</p>
+</li>
+<li><p>优点</p>
+<ul>
+<li>写放大低<br>  每条数据在被 flush 后只会参与少数几次合并；每次合并是“几块 → 一块”，合并次数较少。</li>
+<li>写入吞吐高<br>  flush 后直接落地；合并是批量异步进行；对写性能非常友好。</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>读放大高<br>  同一 key 可能存在于多个 SSTable 中；读时需要查多个文件（除非借助 Bloom Filter）。</li>
+<li>空间放大高<br>  合并不够积极；多个旧版本的数据同时存在；临时文件和重复 key 较多。</li>
+</ul>
+</li>
+<li><p>应用场景<br> 适合写多读少的场景；比如日志系统、时间序列数据库（TSDB）、写入密集的监控系统Cassandra 默认采用 STCS（Size-Tiered Compaction Strategy）</p>
+</li>
+</ul>
+</li>
+<li><p>Level Compaction（LC）<br> 这种策略是 LevelDB、RocksDB 采用的，更现代化。又叫 leveled compaction 或 分层压实。</p>
+<ul>
+<li><p>基本思想：<br> 数据被组织成多个层级（Level 0, Level 1, Level 2…），每一层都有固定大小的空间限制，同一层内文件的 key 范围 互不重叠。</p>
+</li>
+<li><p>层次结构：<br> Level 0: 多个小 SSTable，key 范围可能重叠。<br> Level 1: 较大文件，key 范围不重叠。<br> Level 2: 更大文件，key 范围不重叠。<br> …</p>
+</li>
+<li><p>Compaction 逻辑：<br> 当某一层（如 Level 0）容量超标；就选择一个 SSTable（或一组）与下一层（如 Level 1）中 key 范围重叠的文件；合并、去重、重写为更大的 SSTable，放入下一层。</p>
+</li>
+<li><p>优点</p>
+<ul>
+<li>读性能优异<br>  除 Level 0 外，其余层内文件 key 范围不重叠；读取某个 key 只需查找每层最多一个文件；查找代价从 O(n_files) 降到 O(levels)。</li>
+<li>空间利用率高<br>  去重及时；每层占用空间接近固定比例；不容易膨胀。</li>
+</ul>
+</li>
+<li><p>缺点</p>
+<ul>
+<li>写放大高<br>  每条数据会多次参与合并（从 L0 → L1 → L2…）；每次都要重写到下一层； 磁盘写入量是原始写入的数倍。</li>
+<li>Compaction 代价大<br>  大文件之间的合并非常消耗 I&#x2F;O；RocksDB 必须限制后台 compaction 线程数量。</li>
+</ul>
+</li>
+<li><p>应用场景<br> 适合读写比较均衡、查询多的系统；比如 RocksDB、LevelDB、TiKV、ClickHouse 的部分引擎。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><p>当查找的key在数据库中不存在时，LSM-Tree算法可能会变慢：在你确认key不存在之前，你需要检查所有memtable，所有sstable对应的磁盘文件。可以使用bloom filters：它可以检查key不在数据库中（每个sstable固化时，生成对应的bloom filter文件）</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1277,103 +1420,6 @@
 <h1 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h1><h2 id="系统io"><a href="#系统io" class="headerlink" title="系统io"></a>系统io</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
 <p>重点关注 await（平均等待时间）和 svctm（服务时间）。如果 await &gt;&gt; svctm，说明队列很长，设备忙不过来。</p>
 <h2 id="某个进程io"><a href="#某个进程io" class="headerlink" title="某个进程io"></a>某个进程io</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -d -p &lt;PID&gt; 1</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/08/11/postgresql/page/" class="post-title-link" itemprop="url">page</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-11 10:59:00" itemprop="dateCreated datePublished" datetime="2025-08-11T10:59:00+08:00">2025-08-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Each page has a certain inner layout that usually consists of the following parts:<br>page header</p>
-<ul>
-<li>page header</li>
-<li>an array of item pointers</li>
-<li>free space</li>
-<li>items (row versions)</li>
-<li>special space</li>
-</ul>
-<h2 id="Page结构示意图："><a href="#Page结构示意图：" class="headerlink" title="Page结构示意图："></a>Page结构示意图：</h2><img src="/images/page.png" alt="page.png" style="zoom:100%;" />
-
-<h2 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> EXTENSION pageinspect;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> accounts;</span><br><span class="line"> id <span class="operator">|</span> client  <span class="operator">|</span> amount </span><br><span class="line"><span class="comment">----+---------+--------</span></span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span> bob     <span class="operator">|</span> <span class="number">900.00</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span> alice   <span class="operator">|</span> <span class="number">800.00</span></span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span> charlie <span class="operator">|</span> <span class="number">100.00</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> lower, upper, special, pagesize <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize </span><br><span class="line"><span class="comment">-------+-------+---------+----------</span></span><br><span class="line">    <span class="number">40</span> <span class="operator">|</span>  <span class="number">8032</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;accounts&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_off <span class="operator">|</span> lp_flags <span class="operator">|</span> lp_len <span class="operator">|</span> t_xmin <span class="operator">|</span> t_xmax <span class="operator">|</span> t_field3 <span class="operator">|</span> t_ctid <span class="operator">|</span> t_infomask2 <span class="operator">|</span> t_infomask <span class="operator">|</span> t_hoff <span class="operator">|</span> t_bits <span class="operator">|</span> t_oid <span class="operator">|</span>                t_data                </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+--------------------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>   <span class="number">8152</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">4</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">1282</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b0081e803</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>   <span class="number">8112</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816400</span><br><span class="line">  <span class="number">3</span> <span class="operator">|</span>   <span class="number">8072</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">757</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">16387</span> <span class="operator">|</span>       <span class="number">2306</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818403</span><br><span class="line">  <span class="number">4</span> <span class="operator">|</span>   <span class="number">8032</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">758</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">49155</span> <span class="operator">|</span>      <span class="number">10498</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00812003</span><br><span class="line">  <span class="number">5</span> <span class="operator">|</span>   <span class="number">7992</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">5</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0200000009626f620b00816300</span><br><span class="line">  <span class="number">6</span> <span class="operator">|</span>   <span class="number">7952</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">37</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">6</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000009626f620b00818303</span><br><span class="line">  <span class="number">7</span> <span class="operator">|</span>   <span class="number">7912</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">39</span> <span class="operator">|</span>    <span class="number">802</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">7</span>)  <span class="operator">|</span>       <span class="number">32771</span> <span class="operator">|</span>      <span class="number">10754</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x010000000d616c6963650b00811f03</span><br><span class="line">  <span class="number">8</span> <span class="operator">|</span>   <span class="number">7864</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">809</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">8</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2562</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0300000011636861726c69650b00816400</span><br><span class="line">  <span class="number">9</span> <span class="operator">|</span>   <span class="number">7816</span> <span class="operator">|</span>        <span class="number">1</span> <span class="operator">|</span>     <span class="number">41</span> <span class="operator">|</span>    <span class="number">811</span> <span class="operator">|</span>      <span class="number">0</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">9</span>)  <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>       <span class="number">2050</span> <span class="operator">|</span>     <span class="number">24</span> <span class="operator">|</span>        <span class="operator">|</span>       <span class="operator">|</span> \x0400000011636861726c69650b00816400</span><br></pre></td></tr></table></figure>
-
-
-
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * disk page organization</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * space management information generic to any page</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *		pd_lsn		- identifies xlog record for last change to this page.</span></span><br><span class="line"><span class="comment"> *		pd_checksum - page checksum, if set.</span></span><br><span class="line"><span class="comment"> *		pd_flags	- flag bits.</span></span><br><span class="line"><span class="comment"> *		pd_lower	- offset to start of free space.</span></span><br><span class="line"><span class="comment"> *		pd_upper	- offset to end of free space.</span></span><br><span class="line"><span class="comment"> *		pd_special	- offset to start of special space.</span></span><br><span class="line"><span class="comment"> *		pd_pagesize_version - size in bytes and page layout version number.</span></span><br><span class="line"><span class="comment"> *		pd_prune_xid - oldest XID among potentially prunable tuples on page.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The LSN is used by the buffer manager to enforce the basic rule of WAL:</span></span><br><span class="line"><span class="comment"> * &quot;thou shalt write xlog before data&quot;.  A dirty buffer cannot be dumped</span></span><br><span class="line"><span class="comment"> * to disk until xlog has been flushed at least as far as the page&#x27;s LSN.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_checksum stores the page checksum, if it has been set for this page;</span></span><br><span class="line"><span class="comment"> * zero is a valid value for a checksum. If a checksum is not in use then</span></span><br><span class="line"><span class="comment"> * we leave the field unset. This will typically mean the field is zero</span></span><br><span class="line"><span class="comment"> * though non-zero values may also be present if databases have been</span></span><br><span class="line"><span class="comment"> * pg_upgraded from releases prior to 9.3, when the same byte offset was</span></span><br><span class="line"><span class="comment"> * used to store the current timelineid when the page was last updated.</span></span><br><span class="line"><span class="comment"> * Note that there is no indication on a page as to whether the checksum</span></span><br><span class="line"><span class="comment"> * is valid or not, a deliberate design choice which avoids the problem</span></span><br><span class="line"><span class="comment"> * of relying on the page contents to decide whether to verify it. Hence</span></span><br><span class="line"><span class="comment"> * there are no flag bits relating to checksums.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * pd_prune_xid is a hint field that helps determine whether pruning will be</span></span><br><span class="line"><span class="comment"> * useful.  It is currently unused in index pages.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The page version number and page size are packed together into a single</span></span><br><span class="line"><span class="comment"> * uint16 field.  This is for historical reasons: before PostgreSQL 7.3,</span></span><br><span class="line"><span class="comment"> * there was no concept of a page version number, and doing it this way</span></span><br><span class="line"><span class="comment"> * lets us pretend that pre-7.3 databases have page version number zero.</span></span><br><span class="line"><span class="comment"> * We constrain page sizes to be multiples of 256, leaving the low eight</span></span><br><span class="line"><span class="comment"> * bits available for a version number.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Minimum possible page size is perhaps 64B to fit page header, opaque space</span></span><br><span class="line"><span class="comment"> * and a minimal tuple; of course, in reality you want it much bigger, so</span></span><br><span class="line"><span class="comment"> * the constraint on pagesize mod 256 is not an important restriction.</span></span><br><span class="line"><span class="comment"> * On the high end, we can only support pages up to 32KB because lp_off/lp_len</span></span><br><span class="line"><span class="comment"> * are 15 bits.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">PageHeaderData</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="comment">/* XXX LSN is member of *any* block, not only page-organized ones */</span></span><br><span class="line">	PageXLogRecPtr pd_lsn;		<span class="comment">/* LSN: next byte after last byte of xlog</span></span><br><span class="line"><span class="comment">														 * record for last change to this page */</span></span><br><span class="line">	uint16		pd_checksum;	  <span class="comment">/* checksum */</span></span><br><span class="line">	uint16		pd_flags;		    <span class="comment">/* flag bits, see below */</span></span><br><span class="line">	LocationIndex pd_lower;		<span class="comment">/* offset to start of free space */</span></span><br><span class="line">	LocationIndex pd_upper;		<span class="comment">/* offset to end of free space */</span></span><br><span class="line">	LocationIndex pd_special;	<span class="comment">/* offset to start of special space */</span></span><br><span class="line">	uint16		pd_pagesize_version;</span><br><span class="line">	TransactionId pd_prune_xid; <span class="comment">/* oldest prunable XID, or zero if none */</span></span><br><span class="line">	ItemIdData	pd_linp[FLEXIBLE_ARRAY_MEMBER]; <span class="comment">/* line pointer array */</span></span><br><span class="line">&#125; PageHeaderData;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> PageHeaderData *PageHeader;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Record"><a href="#Record" class="headerlink" title="Record"></a>Record</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> t(</span><br><span class="line">test(# id <span class="type">integer</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s text</span><br><span class="line">test(# );</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> t(s);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">INSERT INTO</span> t(s) <span class="keyword">VALUES</span> (<span class="string">&#x27;FOO&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_xact_id();</span><br><span class="line"> pg_current_xact_id </span><br><span class="line"><span class="comment">--------------------</span></span><br><span class="line">                <span class="number">766</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span><span class="operator">*</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>))\gx</span><br><span class="line"><span class="operator">-</span>[ RECORD <span class="number">1</span> ]<span class="comment">-------------------</span></span><br><span class="line">lp          <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_off      <span class="operator">|</span> <span class="number">8160</span></span><br><span class="line">lp_flags    <span class="operator">|</span> <span class="number">1</span></span><br><span class="line">lp_len      <span class="operator">|</span> <span class="number">32</span></span><br><span class="line">t_xmin      <span class="operator">|</span> <span class="number">766</span></span><br><span class="line">t_xmax      <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_field3    <span class="operator">|</span> <span class="number">0</span></span><br><span class="line">t_ctid      <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">t_infomask2 <span class="operator">|</span> <span class="number">2</span></span><br><span class="line">t_infomask  <span class="operator">|</span> <span class="number">2050</span></span><br><span class="line">t_hoff      <span class="operator">|</span> <span class="number">24</span></span><br><span class="line">t_bits      <span class="operator">|</span> </span><br><span class="line">t_oid       <span class="operator">|</span> </span><br><span class="line">t_data      <span class="operator">|</span> \x0100000009464f4f</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;(0,&#x27;</span><span class="operator">||</span>lp<span class="operator">||</span><span class="string">&#x27;)&#x27;</span> <span class="keyword">AS</span> ctid,</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">CASE</span> lp_flags</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;unused&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">1</span> <span class="keyword">THEN</span> <span class="string">&#x27;normal&#x27;</span></span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">2</span> <span class="keyword">THEN</span> <span class="string">&#x27;redirect to &#x27;</span><span class="operator">||</span>lp_off</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHEN</span> <span class="number">3</span> <span class="keyword">THEN</span> <span class="string">&#x27;dead&#x27;</span> </span><br><span class="line">test<span class="operator">-</span># <span class="keyword">END</span> <span class="keyword">AS</span> state,</span><br><span class="line">test<span class="operator">-</span># t_xmin <span class="keyword">as</span> xmin,</span><br><span class="line">test<span class="operator">-</span># t_xmax <span class="keyword">as</span> xmax,</span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">256</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">512</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmin_aborted, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">1024</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_committed, </span><br><span class="line">test<span class="operator">-</span># (t_infomask <span class="operator">&amp;</span> <span class="number">2048</span>) <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">AS</span> xmax_aborted</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t&#x27;</span>,<span class="number">0</span>));</span><br><span class="line"> ctid  <span class="operator">|</span> state  <span class="operator">|</span> xmin <span class="operator">|</span> xmax <span class="operator">|</span> xmin_committed <span class="operator">|</span> xmin_aborted <span class="operator">|</span> xmax_committed <span class="operator">|</span> xmax_aborted </span><br><span class="line"><span class="comment">-------+--------+------+------+----------------+--------------+----------------+--------------</span></span><br><span class="line"> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> normal <span class="operator">|</span>  <span class="number">766</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> f              <span class="operator">|</span> f            <span class="operator">|</span> f              <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>Reference:</p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010217262/article/details/123879205">【转】AntDB&#x2F;PostgreSQL内部原理：表Page结构解析_postgresql对应antdb的版本-CSDN博客</a></p>
-
       
     </div>
 

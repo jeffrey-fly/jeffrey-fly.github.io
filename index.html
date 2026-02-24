@@ -168,18 +168,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-count">27</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,85 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2026/02/24/life/begin2026/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/02/24/life/begin2026/" class="post-title-link" itemprop="url">Happy forever</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-24 11:29:23" itemprop="dateCreated datePublished" datetime="2026-02-24T11:29:23+08:00">2026-02-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/life/" itemprop="url" rel="index"><span itemprop="name">life</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐</p>
+<p><img src="/images/lianyungang/liandao.jpeg" alt="liandao"></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1450,92 +1529,6 @@
 <p>如果 n_distinct 为负数，其绝对值表示该列中不同取值所占的比例，而不是实际的不同值个数。例如，−1 表示该列中所有值都是唯一的；−3 表示平均而言，每个不同的值大约出现在 3 行中。当估计的不同值数量超过表中总行数的 10% 时，分析器（analyzer）会使用这种“比例”的表示方式。</p>
 <p>如果预期数据是均匀分布的，则会直接使用不同值的数量。例如，在估算 column &#x3D; expression 这种条件的基数（cardinality）时，如果在规划阶段无法确定表达式的具体取值，查询规划器会假设该表达式可以以相同的概率取列中的任意一个值。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> flights</span><br><span class="line"><span class="keyword">WHERE</span> departure_airport <span class="operator">=</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> airport_code</span><br><span class="line">	<span class="keyword">FROM</span> airports</span><br><span class="line">	<span class="keyword">WHERE</span> city <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span></span><br><span class="line">);</span><br><span class="line">                          QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">30.56</span>.<span class="number">.5340</span><span class="number">.40</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">2066</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">	<span class="keyword">Filter</span>: (departure_airport <span class="operator">=</span> $<span class="number">0</span>)</span><br><span class="line">	InitPlan <span class="number">1</span> (<span class="keyword">returns</span> $<span class="number">0</span>)</span><br><span class="line">		−<span class="operator">&gt;</span> Seq Scan <span class="keyword">on</span> airports_data ml (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.30</span><span class="number">.56</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">1</span> wi... </span><br><span class="line">			<span class="keyword">Filter</span>: ((city −<span class="operator">&gt;&gt;</span> lang()) <span class="operator">=</span> <span class="string">&#x27;Saint Petersburg&#x27;</span>::text)</span><br><span class="line">(<span class="number">5</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/12/19/postgresql/NULL-VALUES/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/12/19/postgresql/NULL-VALUES/" class="post-title-link" itemprop="url">NULL VALUES</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-12-19 10:52:49" itemprop="dateCreated datePublished" datetime="2025-12-19T10:52:49+08:00">2025-12-19</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>虽然理论学家对此不以为然，但 NULL 值在关系型数据库中仍然扮演着重要角色：它提供了一种方便的方式来表示某个值要么未知，要么不存在。</p>
-<p>然而，特殊的值需要特殊处理。除了理论上的不一致性之外，还有许多实际问题需要考虑。常规的布尔逻辑被三值逻辑取代，因此 NOT IN 的行为可能出乎意料。对于 NULL 值应该被视为大于还是小于普通值也不明确（因此存在用于排序的 NULLS FIRST 和 NULLS LAST 子句）。是否需要在聚合函数中考虑 NULL 值也并不十分明显。严格来说，NULL 根本不是一个值，因此优化器在处理它们时需要额外的信息。</p>
-<p>除了在表级收集的最基本的统计信息之外，分析器还会为表的每一列收集统计信息。这些数据存储在系统目录的 <em>pg_statistic</em> 表中，但你也可以通过 pg_stats 视图访问，这个视图以更方便的格式提供这些信息。<br>列级统计信息中包括 NULL 值的比例；在分析过程中计算，并以 null_frac 属性表示。<br>例如，当我们查询尚未起飞的航班时，可以依赖它们的起飞时间未定义（NULL）这一事实：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights <span class="keyword">WHERE</span> actual_departure <span class="keyword">IS</span> <span class="keyword">NULL</span>;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.4772</span><span class="number">.67</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">16702</span> width<span class="operator">=</span><span class="number">63</span>) <span class="keyword">Filter</span>: (actual_departure <span class="keyword">IS</span> <span class="keyword">NULL</span>)</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
-<p>为了估算结果，优化器将表的总行数乘以 NULL 值的比例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> round(reltuples <span class="operator">*</span> s.null_frac) <span class="keyword">AS</span> <span class="keyword">rows</span> <span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">JOIN</span> pg_stats s <span class="keyword">ON</span> s.tablename <span class="operator">=</span> relname <span class="keyword">WHERE</span> s.tablename <span class="operator">=</span> <span class="string">&#x27;flights&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> s.attname <span class="operator">=</span> <span class="string">&#x27;actual_departure&#x27;</span>;</span><br><span class="line"> <span class="keyword">rows</span> </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">16702</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>以下是实际的行数：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights <span class="keyword">WHERE</span> actual_departure <span class="keyword">IS</span> <span class="keyword">NULL</span>;</span><br><span class="line"> count </span><br><span class="line">−−−−−−− </span><br><span class="line"> <span class="number">16348</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
 
       
     </div>

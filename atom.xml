@@ -6,7 +6,7 @@
   <link href="https://jeffrey-fly-github-io.pages.dev/atom.xml" rel="self"/>
   
   <link href="https://jeffrey-fly-github-io.pages.dev/"/>
-  <updated>2026-02-10T09:04:39.864Z</updated>
+  <updated>2026-02-24T03:44:03.501Z</updated>
   <id>https://jeffrey-fly-github-io.pages.dev/</id>
   
   <author>
@@ -15,6 +15,32 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Happy forever</title>
+    <link href="https://jeffrey-fly-github-io.pages.dev/2026/02/24/life/begin2026/"/>
+    <id>https://jeffrey-fly-github-io.pages.dev/2026/02/24/life/begin2026/</id>
+    <published>2026-02-24T03:29:23.000Z</published>
+    <updated>2026-02-24T03:44:03.501Z</updated>
+    
+    <content type="html"><![CDATA[<p>2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐</p><p><img src="/images/lianyungang/liandao.jpeg" alt="liandao"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/lianyungang/liandao.jpeg&quot; alt=&quot;liandao&quot;&gt;&lt;/p&gt;
+</summary>
+      
+    
+    
+    
+    <category term="life" scheme="https://jeffrey-fly-github-io.pages.dev/categories/life/"/>
+    
+    
+    <category term="travel" scheme="https://jeffrey-fly-github-io.pages.dev/tags/travel/"/>
+    
+  </entry>
   
   <entry>
     <title>Running OpenClaw with Docker</title>
@@ -491,33 +517,6 @@
     
     <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>SSTables and LSM Trees</title>
-    <link href="https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/"/>
-    <id>https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/</id>
-    <published>2025-11-08T05:15:45.000Z</published>
-    <updated>2025-12-30T07:56:30.285Z</updated>
-    
-    <content type="html"><![CDATA[<p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p><ul><li>merge简单高效</li><li>因为有序，不需要维护所有记录的索引，可以是稀疏索引</li><li>因为有序，可以按block进行压缩同时维护索引，除了降低磁盘占用以外，还可以降低磁盘io</li></ul><h2 id="构建和管理SSTables"><a href="#构建和管理SSTables" class="headerlink" title="构建和管理SSTables"></a>构建和管理SSTables</h2><p>因为写入是无序的，所以我们需要在内存中借助于红黑树或者avl树等数据结构来保证：任意写入，有序读取.</p><p>构建步骤如下:</p><ol><li>当写入发生时，将写入的key-value加入内存平衡树（如红黑树）中，称为”memtable”</li><li>当memtable增大到一定阈值后（a few megabytes），将memtable写入磁盘生成一个SSTable文件。新写入的SSTable成为数据库中最新的segment文件。 写入SSTable到磁盘时，写入可以继续写入新的memtable</li><li>读请求来时，优先在memtable中查找，然后按顺序从新到老查找磁盘上的segment文件</li><li>随着时间的推移，可以后台启动合并和压缩segment文件、丢弃或者覆盖掉老的文件</li></ol><p>这种机制工作的很好，但是存在一个问题，如果数据库宕机了，内存中的memtable还没有来得及写入磁盘，可能造成数据丢失。可以通过一个单独的log文件来记录所有的操作，这个log的作用只是用于宕机恢复memtable，每当memtable被写入磁盘，相应的log文件就可以被丢弃了</p><h2 id="用SSTables构建LSM-tree"><a href="#用SSTables构建LSM-tree" class="headerlink" title="用SSTables构建LSM-tree"></a>用SSTables构建LSM-tree</h2><p>LSM-Tree用于 LevelDB 和 RocksDB、嵌入其他应用的key-value存储引擎。参考：Google’s Bigtable paper</p><p>SSTables + log &#x3D; “Log-Structured Merge-Tree ”</p><h3 id="LSM-tree两种文件管理策略："><a href="#LSM-tree两种文件管理策略：" class="headerlink" title="LSM-tree两种文件管理策略："></a>LSM-tree两种文件管理策略：</h3><ol><li><p>Size-Tiered Compaction（STC） </p><ul><li><p>基本思想<br>  “当某一层（或同一大小区间）的 SSTable 文件数达到阈值时，将它们合并成一个更大的文件。”<br> 也就是说，不是按“层级”，而是按“文件大小”来触发 compaction。</p></li><li><p>结构示意<br> MemTable → SSTable</p></li><li><p>优点</p><ul><li>写放大低<br>  每条数据在被 flush 后只会参与少数几次合并；每次合并是“几块 → 一块”，合并次数较少。</li><li>写入吞吐高<br>  flush 后直接落地；合并是批量异步进行；对写性能非常友好。</li></ul></li><li><p>缺点</p><ul><li>读放大高<br>  同一 key 可能存在于多个 SSTable 中；读时需要查多个文件（除非借助 Bloom Filter）。</li><li>空间放大高<br>  合并不够积极；多个旧版本的数据同时存在；临时文件和重复 key 较多。</li></ul></li><li><p>应用场景<br> 适合写多读少的场景；比如日志系统、时间序列数据库（TSDB）、写入密集的监控系统Cassandra 默认采用 STCS（Size-Tiered Compaction Strategy）</p></li></ul></li><li><p>Level Compaction（LC）<br> 这种策略是 LevelDB、RocksDB 采用的，更现代化。又叫 leveled compaction 或 分层压实。</p><ul><li><p>基本思想：<br> 数据被组织成多个层级（Level 0, Level 1, Level 2…），每一层都有固定大小的空间限制，同一层内文件的 key 范围 互不重叠。</p></li><li><p>层次结构：<br> Level 0: 多个小 SSTable，key 范围可能重叠。<br> Level 1: 较大文件，key 范围不重叠。<br> Level 2: 更大文件，key 范围不重叠。<br> …</p></li><li><p>Compaction 逻辑：<br> 当某一层（如 Level 0）容量超标；就选择一个 SSTable（或一组）与下一层（如 Level 1）中 key 范围重叠的文件；合并、去重、重写为更大的 SSTable，放入下一层。</p></li><li><p>优点</p><ul><li>读性能优异<br>  除 Level 0 外，其余层内文件 key 范围不重叠；读取某个 key 只需查找每层最多一个文件；查找代价从 O(n_files) 降到 O(levels)。</li><li>空间利用率高<br>  去重及时；每层占用空间接近固定比例；不容易膨胀。</li></ul></li><li><p>缺点</p><ul><li>写放大高<br>  每条数据会多次参与合并（从 L0 → L1 → L2…）；每次都要重写到下一层； 磁盘写入量是原始写入的数倍。</li><li>Compaction 代价大<br>  大文件之间的合并非常消耗 I&#x2F;O；RocksDB 必须限制后台 compaction 线程数量。</li></ul></li><li><p>应用场景<br> 适合读写比较均衡、查询多的系统；比如 RocksDB、LevelDB、TiKV、ClickHouse 的部分引擎。</p></li></ul></li></ol><h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><p>当查找的key在数据库中不存在时，LSM-Tree算法可能会变慢：在你确认key不存在之前，你需要检查所有memtable，所有sstable对应的磁盘文件。可以使用bloom filters：它可以检查key不在数据库中（每个sstable固化时，生成对应的bloom filter文件）</p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;merge简单高效&lt;/li&gt;
-&lt;li&gt;因为有序，不需要维护所有记录的索引，可以是稀疏索引</summary>
-      
-    
-    
-    
-    <category term="database" scheme="https://jeffrey-fly-github-io.pages.dev/categories/database/"/>
-    
-    
-    <category term="storage" scheme="https://jeffrey-fly-github-io.pages.dev/tags/storage/"/>
     
   </entry>
   
