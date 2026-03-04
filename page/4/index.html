@@ -21,9 +21,9 @@
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta property="og:type" content="website">
-<meta property="og:title" content="QuantumRealm">
+<meta property="og:title" content="Jeffly">
 <meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/page/4/index.html">
-<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:site_name" content="Jeffly">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="Jeffrey">
 <meta name="twitter:card" content="summary">
@@ -35,7 +35,7 @@
 <script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"en","comments":"","permalink":"","path":"page/4/index.html","title":""}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>QuantumRealm</title>
+<title>Jeffly</title>
   
 
 
@@ -67,7 +67,7 @@
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
-<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="Jeffly" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
@@ -88,7 +88,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">QuantumRealm</h1>
+      <h1 class="site-title">Jeffly</h1>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">56</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-count">31</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -210,6 +210,203 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgresql/Background-Writing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/20/postgresql/Background-Writing/" class="post-title-link" itemprop="url">Background Writing</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-20 16:19:20" itemprop="dateCreated datePublished" datetime="2025-08-20T16:19:20+08:00">2025-08-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p>
+<p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p>
+<p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p>
+<p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p>
+<p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p>
+<p>总结</p>
+<blockquote>
+<p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
+</blockquote>
+<p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/13/debug/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/13/debug/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" class="post-title-link" itemprop="url">性能调试</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-13 18:53:59" itemprop="dateCreated datePublished" datetime="2025-08-13T18:53:59+08:00">2025-08-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h1><h2 id="top"><a href="#top" class="headerlink" title="top"></a>top</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top -H -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<p>只显示指定进程 <PID> 的所有线程，并实时显示它们的 CPU、内存等使用情况。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pstack &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="perf"><a href="#perf" class="headerlink" title="perf"></a>perf</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perf top -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
+<p>查看函数热点，采样一段时间</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">perf record -p &lt;PID&gt; -g -- sleep 10</span><br><span class="line">perf report</span><br></pre></td></tr></table></figure>
+
+<h2 id="strace"><a href="#strace" class="headerlink" title="strace"></a>strace</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -ttT -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="火焰图"><a href="#火焰图" class="headerlink" title="火焰图"></a>火焰图</h2><ul>
+<li><p>安装perf</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install linux-tools-common linux-tools-$(uname -r)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>采样数据</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf record -F 99 -p &lt;PID&gt; -g -- sleep 30</span><br></pre></td></tr></table></figure>
+
+<p>  -F 99          每秒采样 99 次<br>  -p <PID>       针对指定进程<br>  -g             采集调用栈（火焰图需要）<br>  – sleep 30    采样 30 秒</p>
+</li>
+<li><p>生成调用栈</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf script &gt; out.perf</span><br></pre></td></tr></table></figure></li>
+<li><p>下载 FlameGraph 工具</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/brendangregg/FlameGraph.git</span><br><span class="line">cd FlameGraph</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>生成火焰图</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./stackcollapse-perf.pl ../out.perf &gt; out.folded</span><br><span class="line">./flamegraph.pl out.folded &gt; flamegraph.svg</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h1><h2 id="系统io"><a href="#系统io" class="headerlink" title="系统io"></a>系统io</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+<p>重点关注 await（平均等待时间）和 svctm（服务时间）。如果 await &gt;&gt; svctm，说明队列很长，设备忙不过来。</p>
+<h2 id="某个进程io"><a href="#某个进程io" class="headerlink" title="某个进程io"></a>某个进程io</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -d -p &lt;PID&gt; 1</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/11/postgresql/page/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -218,12 +415,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -315,12 +512,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -458,12 +655,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -566,12 +763,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -681,12 +878,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -833,12 +1030,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -973,12 +1170,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -1053,12 +1250,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -1119,202 +1316,6 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
 <p>Use :variable for substitution. We can define variables using -D:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/04/03/postgresql/Checkpoint/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/04/03/postgresql/Checkpoint/" class="post-title-link" itemprop="url">Checkpoint</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-04-03 19:28:21" itemprop="dateCreated datePublished" datetime="2025-04-03T19:28:21+08:00">2025-04-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
-<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
-<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
-<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
-<ul>
-<li>CLOG（提交日志）中的事务状态信息，</li>
-<li>子事务的元数据，</li>
-<li>以及其他一些结构。</li>
-</ul>
-<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
-<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
-<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
-<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
-<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
-<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
-<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
-<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
-<p>Example：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
-<p>同样的信息也可以在 pg_control 文件中找到。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/03/16/debug/How-to-use-asan-in-linux/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/03/16/debug/How-to-use-asan-in-linux/" class="post-title-link" itemprop="url">How to use asan in linux</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-03-16 10:54:41" itemprop="dateCreated datePublished" datetime="2025-03-16T10:54:41+08:00">2025-03-16</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="1-安装编译工具"><a href="#1-安装编译工具" class="headerlink" title="1. 安装编译工具"></a>1. 安装编译工具</h2><p>ASan 是 GCC 和 Clang 内建的功能，无需额外安装 ASan，只需要你的编译器支持即可。GCC ≥ 4.8 &#x2F; Clang ≥ 3.1 就支持 ASan  </p>
-<pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">root@lavm-bar1guved6:~# clang --version</span><br><span class="line">Ubuntu clang version 14.0.0-1ubuntu1.1</span><br><span class="line">Target: x86_64-pc-linux-gnu</span><br><span class="line">Thread model: posix</span><br><span class="line">InstalledDir: /usr/bin</span><br><span class="line"></span><br><span class="line">root@lavm-bar1guved6:~# gcc --version</span><br><span class="line">gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0</span><br><span class="line">Copyright (C) 2021 Free Software Foundation, Inc.</span><br><span class="line">This is free software; see the <span class="built_in">source</span> <span class="keyword">for</span> copying conditions.  There is NO</span><br><span class="line">warranty; not even <span class="keyword">for</span> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE</span><br></pre></td></tr></table></figure>
-</code></pre>
-<h2 id="2-how-to-use"><a href="#2-how-to-use" class="headerlink" title="2. how to use"></a>2. how to use</h2><h3 id="使用gcc"><a href="#使用gcc" class="headerlink" title="使用gcc"></a>使用gcc</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -fsanitize=address -g your_file.c -o your_program</span><br></pre></td></tr></table></figure>
-</code></pre>
-<h3 id="使用cmake"><a href="#使用cmake" class="headerlink" title="使用cmake"></a>使用cmake</h3><pre><code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译阶段（C/C++）加 ASan 插桩</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_C_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_C_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_CXX_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_CXX_FLAGS&#125;</span> -fsanitize=address -fno-omit-frame-pointer -g&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 链接阶段链接 libasan</span></span><br><span class="line"><span class="built_in">set</span>(CMAKE_EXE_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_EXE_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"><span class="built_in">set</span>(CMAKE_SHARED_LINKER_FLAGS <span class="string">&quot;<span class="variable">$&#123;CMAKE_SHARED_LINKER_FLAGS&#125;</span> -fsanitize=address&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#or</span></span><br><span class="line">cmake -DCMAKE_C_FLAGS=<span class="string">&quot;-fsanitize=address -fno-omit-frame-pointer -g&quot;</span> \</span><br><span class="line">    -DCMAKE_EXE_LINKER_FLAGS=<span class="string">&quot;-fsanitize=address&quot;</span> \</span><br><span class="line">    -DCMAKE_BUILD_TYPE=Debug \</span><br><span class="line">    ......</span><br></pre></td></tr></table></figure>
-</code></pre>
-<h3 id="使用-Makefile"><a href="#使用-Makefile" class="headerlink" title="使用 Makefile"></a>使用 Makefile</h3><p>可以在 CFLAGS 中添加：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS += -fsanitize=address -g -fno-omit-frame-pointer</span><br><span class="line">LDFLAGS += -fsanitize=address</span><br></pre></td></tr></table></figure>
-<h3 id="使用-LSAN（泄漏检测）"><a href="#使用-LSAN（泄漏检测）" class="headerlink" title="使用 LSAN（泄漏检测）"></a>使用 LSAN（泄漏检测）</h3><p>GCC 和 Clang 中 ASan 自动包含 LeakSanitizer（LSan），但某些情况下要确保：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-fsanitize=address -fno-omit-frame-pointer</span><br></pre></td></tr></table></figure>
-<p>加上 -fno-omit-frame-pointer 可以让调用栈更完整。</p>
-<h2 id="3-运行程序"><a href="#3-运行程序" class="headerlink" title="3. 运行程序"></a>3. 运行程序</h2><p>编译好的程序可以直接运行：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./your_program</span><br></pre></td></tr></table></figure>
-<h2 id="4-设置环境变量"><a href="#4-设置环境变量" class="headerlink" title="4. 设置环境变量"></a>4. 设置环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:symbolize=1:quarantine_size=1024:log_path=/home/postgres/asan/asan.log</span><br></pre></td></tr></table></figure>
-<h2 id="5-Example"><a href="#5-Example" class="headerlink" title="5. Example"></a>5. Example</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">=================================================================</span><br><span class="line">==791265==ERROR: LeakSanitizer: detected memory leaks</span><br><span class="line"></span><br><span class="line">Direct leak of 1024 byte(s) in 1 object(s) allocated from:</span><br><span class="line">    #0 0x7f6fcee65887 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:145</span><br><span class="line">    #1 0x55adcdfee87a in main /home/postgres/codes/sample/epoll_server.c:54</span><br><span class="line">    #2 0x7f6fcebb1d8f in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58</span><br><span class="line"></span><br><span class="line">SUMMARY: AddressSanitizer: 1024 byte(s) leaked in 1 allocation(s).</span><br></pre></td></tr></table></figure>
       
     </div>
 

@@ -3091,4 +3091,249 @@
         <tag>travel</tag>
       </tags>
   </entry>
+  <entry>
+    <title>x86_64 堆栈的使用与调用栈分析</title>
+    <url>/2026/03/04/debug/analyze-with-asm/</url>
+    <content><![CDATA[<h2 id="一、栈的基本性质"><a href="#一、栈的基本性质" class="headerlink" title="一、栈的基本性质"></a>一、栈的基本性质</h2><p>在 x86_64 架构（Linux &#x2F; macOS）下：</p>
+<ul>
+<li>栈从 高地址向低地址增长</li>
+<li>栈顶由 rsp（stack pointer）指示</li>
+<li>push → rsp -&#x3D; 8</li>
+<li>pop → rsp +&#x3D; 8</li>
+</ul>
+<p>原因：</p>
+<ul>
+<li>早期内存布局约定（低地址给 code &#x2F; data）</li>
+<li>向下增长可以避免与 heap 冲突（heap 通常向上增长）</li>
+</ul>
+<h2 id="二、Sample-code"><a href="#二、Sample-code" class="headerlink" title="二、Sample code"></a>二、Sample code</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> c = a + b;</span><br><span class="line">    <span class="keyword">return</span> c;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> x = <span class="number">3</span>;</span><br><span class="line">    <span class="type">int</span> y = <span class="number">4</span>;</span><br><span class="line">    <span class="type">int</span> z = add(x, y);</span><br><span class="line">    <span class="keyword">return</span> z;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、Disassem"><a href="#三、Disassem" class="headerlink" title="三、Disassem"></a>三、Disassem</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(lldb) disassem</span><br><span class="line">test`main:</span><br><span class="line">    0x100003f80 &lt;+0&gt;:  pushq  %rbp</span><br><span class="line">    0x100003f81 &lt;+1&gt;:  movq   %rsp, %rbp</span><br><span class="line">    0x100003f84 &lt;+4&gt;:  subq   $0x10, %rsp</span><br><span class="line">    0x100003f88 &lt;+8&gt;:  movl   $0x0, -0x4(%rbp)</span><br><span class="line">    0x100003f8f &lt;+15&gt;: movl   $0x3, -0x8(%rbp)</span><br><span class="line">-&gt;  0x100003f96 &lt;+22&gt;: movl   $0x4, -0xc(%rbp)</span><br><span class="line">    0x100003f9d &lt;+29&gt;: movl   -0x8(%rbp), %edi</span><br><span class="line">    0x100003fa0 &lt;+32&gt;: movl   -0xc(%rbp), %esi</span><br><span class="line">    0x100003fa3 &lt;+35&gt;: callq  0x100003f60               ; add(int, int)</span><br><span class="line">    0x100003fa8 &lt;+40&gt;: movl   %eax, -0x10(%rbp)</span><br><span class="line">    0x100003fab &lt;+43&gt;: movl   -0x10(%rbp), %eax</span><br><span class="line">    0x100003fae &lt;+46&gt;: addq   $0x10, %rsp</span><br><span class="line">    0x100003fb2 &lt;+50&gt;: popq   %rbp</span><br><span class="line">    0x100003fb3 &lt;+51&gt;: retq </span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(lldb) disassemble --name add</span><br><span class="line">test`add:</span><br><span class="line">    0x100003f60 &lt;+0&gt;:  pushq  %rbp</span><br><span class="line">    0x100003f61 &lt;+1&gt;:  movq   %rsp, %rbp</span><br><span class="line">    0x100003f64 &lt;+4&gt;:  movl   %edi, -0x4(%rbp)</span><br><span class="line">    0x100003f67 &lt;+7&gt;:  movl   %esi, -0x8(%rbp)</span><br><span class="line">    0x100003f6a &lt;+10&gt;: movl   -0x4(%rbp), %eax</span><br><span class="line">    0x100003f6d &lt;+13&gt;: addl   -0x8(%rbp), %eax</span><br><span class="line">    0x100003f70 &lt;+16&gt;: movl   %eax, -0xc(%rbp)</span><br><span class="line">    0x100003f73 &lt;+19&gt;: movl   -0xc(%rbp), %eax</span><br><span class="line">    0x100003f76 &lt;+22&gt;: popq   %rbp</span><br><span class="line">    0x100003f77 &lt;+23&gt;: retq   </span><br><span class="line">    0x100003f78 &lt;+24&gt;: nopl   (%rax,%rax)</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、函数栈帧的建立（Prologue）"><a href="#四、函数栈帧的建立（Prologue）" class="headerlink" title="四、函数栈帧的建立（Prologue）"></a>四、函数栈帧的建立（Prologue）</h2><p>前3条指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pushq %rbp</span><br><span class="line">movq  %rsp, %rbp</span><br><span class="line">subq  $0x10, %rsp</span><br></pre></td></tr></table></figure>
+<p>作用：</p>
+<ul>
+<li>保存上一层函数的 rbp</li>
+<li>建立当前函数栈帧基址</li>
+<li>为局部变量分配 16 字节空间</li>
+</ul>
+<p>注意：<br>即便只需要 12 字节（3 个 int），编译器仍分配 16 字节。</p>
+<p>原因：</p>
+<ul>
+<li>栈 16 字节对齐（System V ABI 要求）</li>
+<li>调用其他函数前必须满足对齐约束</li>
+</ul>
+<h2 id="五、System-V-ABI-参数传递"><a href="#五、System-V-ABI-参数传递" class="headerlink" title="五、System V ABI 参数传递"></a>五、System V ABI 参数传递</h2><p>在 x86_64 下（System V ABI）：</p>
+<p>前 6 个整数参数通过寄存器传递：</p>
+<table>
+<thead>
+<tr>
+<th>参数序号</th>
+<th>寄存器</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>rdi</td>
+</tr>
+<tr>
+<td>2</td>
+<td>rsi</td>
+</tr>
+<tr>
+<td>3</td>
+<td>rdx</td>
+</tr>
+<tr>
+<td>4</td>
+<td>rcx</td>
+</tr>
+<tr>
+<td>5</td>
+<td>r8</td>
+</tr>
+<tr>
+<td>6</td>
+<td>r9</td>
+</tr>
+</tbody></table>
+<p>因此：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">movl -0x8(%rbp), %edi</span><br><span class="line">movl -0xc(%rbp), %esi</span><br></pre></td></tr></table></figure>
+<p>并不是通过栈传参。</p>
+<h2 id="六、call-指令的真实语义"><a href="#六、call-指令的真实语义" class="headerlink" title="六、call 指令的真实语义"></a>六、call 指令的真实语义</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">callq 0x100003f60</span><br></pre></td></tr></table></figure>
+<p>等价于 </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rsp -= 8</span><br><span class="line">*(rsp) = rip_after_call</span><br><span class="line">rip = target</span><br></pre></td></tr></table></figure>
+<p>即：</p>
+<p>返回地址被压入栈中。在本例中：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x100003fa8 被压入栈</span><br></pre></td></tr></table></figure>
+
+<h2 id="七、执行-call-后的栈结构"><a href="#七、执行-call-后的栈结构" class="headerlink" title="七、执行 call 后的栈结构"></a>七、执行 call 后的栈结构</h2><p>假设进入 add 之前，main 的栈帧如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">高地址</span><br><span class="line">-------------------------</span><br><span class="line">return address (to caller of main)</span><br><span class="line">-------------------------</span><br><span class="line">saved rbp</span><br><span class="line">-------------------------  ← rbp (main)</span><br><span class="line">x   (-0x8)</span><br><span class="line">y   (-0xc)</span><br><span class="line">z   (-0x10)</span><br><span class="line">padding</span><br><span class="line">-------------------------  ← rsp</span><br><span class="line">低地址</span><br></pre></td></tr></table></figure>
+
+<p>执行 call 后：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">高地址</span><br><span class="line">-------------------------</span><br><span class="line">return address to main caller</span><br><span class="line">-------------------------</span><br><span class="line">saved rbp (main)</span><br><span class="line">-------------------------  ← rbp(main)</span><br><span class="line">local variables</span><br><span class="line">-------------------------</span><br><span class="line">return address (0x100003fa8)  ← rsp</span><br><span class="line">-------------------------</span><br><span class="line">低地址</span><br></pre></td></tr></table></figure>
+
+<h2 id="八、add-函数栈帧"><a href="#八、add-函数栈帧" class="headerlink" title="八、add 函数栈帧"></a>八、add 函数栈帧</h2><p>add 的 prologue：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pushq  %rbp</span><br><span class="line">movq   %rsp, %rbp</span><br><span class="line">movl   %edi, -0x4(%rbp)</span><br></pre></td></tr></table></figure>
+<p>这里 没有 sub rsp。</p>
+<blockquote>
+<p>该版本编译器没有显式为 add 分配额外栈空间。</p>
+</blockquote>
+<p>本例中 add 为 leaf function。虽然未显式 sub rsp 分配空间，但由于使用了 push %rbp，局部变量仍然位于当前栈帧中，并未实际使用 red zone。<br>在 macOS &#x2F; Linux 的 System V ABI 下：</p>
+<blockquote>
+<p>栈顶以下 128 字节称为 red zone，可在 leaf function 中使用。</p>
+</blockquote>
+<p>所以 add 是一个 leaf function：</p>
+<ul>
+<li>没有再调用其他函数</li>
+<li>不需要保持 16-byte 对齐给下一级</li>
+<li>编译器优化掉 sub rsp</li>
+</ul>
+<p>栈变为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">高地址</span><br><span class="line">--------------------------------</span><br><span class="line">main 的局部变量</span><br><span class="line">--------------------------------</span><br><span class="line">saved rbp (main)</span><br><span class="line">--------------------------------</span><br><span class="line">return addr → main caller</span><br><span class="line">--------------------------------</span><br><span class="line">return addr → main  ← 8(%rbp_add)</span><br><span class="line">saved rbp (main)    ← 0(%rbp_add)</span><br><span class="line">--------------------------------  ← rbp(add)</span><br><span class="line">local a copy</span><br><span class="line">local b copy</span><br><span class="line">local c</span><br><span class="line">--------------------------------  ← rsp</span><br><span class="line">低地址</span><br></pre></td></tr></table></figure>
+<p>注意：<br>每次函数调用都会：</p>
+<ul>
+<li>保存调用者 rbp</li>
+<li>建立新的栈帧</li>
+</ul>
+<p>形成一条链。</p>
+<blockquote>
+<p>本例中 add 为 leaf function，未显式执行 sub rsp。<br>在 System V ABI 下允许使用 128 字节 red zone，因此编译器可省略栈空间分配。</p>
+</blockquote>
+<h2 id="九、rbp-与-rsp-的角色"><a href="#九、rbp-与-rsp-的角色" class="headerlink" title="九、rbp 与 rsp 的角色"></a>九、rbp 与 rsp 的角色</h2><table>
+<thead>
+<tr>
+<th>寄存器</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>rsp</td>
+<td>当前栈顶</td>
+</tr>
+<tr>
+<td>rbp</td>
+<td>当前函数栈帧基址</td>
+</tr>
+</tbody></table>
+<p>局部变量用 rbp - offset 访问。</p>
+<p>返回地址在：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">8(%rbp)</span><br></pre></td></tr></table></figure>
+
+<p>saved rbp 在：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0(%rbp)</span><br></pre></td></tr></table></figure>
+
+<h2 id="十、ret-的行为"><a href="#十、ret-的行为" class="headerlink" title="十、ret 的行为"></a>十、ret 的行为</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ret</span><br></pre></td></tr></table></figure>
+<p>等价于</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rip = *(rsp)</span><br><span class="line">rsp += 8</span><br></pre></td></tr></table></figure>
+<p>即：</p>
+<ul>
+<li>弹出返回地址</li>
+<li>跳转回调用点</li>
+</ul>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>函数调用 &#x3D;</p>
+<ol>
+<li>保存返回地址</li>
+<li>建立栈帧</li>
+<li>执行函数</li>
+<li>恢复栈帧</li>
+<li>跳回</li>
+</ol>
+<p>栈本质是：</p>
+<blockquote>
+<p>一种严格的 LIFO 调用上下文保存机制</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>栈从高地址向低地址增长</li>
+<li>call 会压入返回地址</li>
+<li>每个函数建立自己的栈帧</li>
+<li>rbp 固定当前帧</li>
+<li>rsp 始终指向栈顶</li>
+<li>System V ABI 下参数主要走寄存器</li>
+</ul>
+]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+      <tags>
+        <tag>assembly</tag>
+        <tag>x86_64</tag>
+        <tag>ABI</tag>
+        <tag>stack</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>How to use addr2line</title>
+    <url>/2026/03/01/debug/how-to-use-addr2line/</url>
+    <content><![CDATA[<p>addr2line 是 GNU Binutils 提供的一个调试工具，用于将程序地址转换为源代码文件 + 行号。<br>其底层依赖 ELF 文件中的 DWARF 调试信息。</p>
+<p>典型使用场景：</p>
+<ul>
+<li>core dump 分析</li>
+<li>崩溃栈回溯解析</li>
+<li>日志中只有地址信息</li>
+<li>线上二进制与调试符号分离</li>
+</ul>
+<h2 id="示例分析"><a href="#示例分析" class="headerlink" title="示例分析"></a>示例分析</h2><p>例如某崩溃日志中看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">.../your_binary(_ZN19MyTableC1EPS_+0x10d)[0x1f792fd]</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>含义：  </p>
+<ul>
+<li><em>ZN19MyTableC1EPS</em> → C++ mangled 名字</li>
+<li>+0x10d → 相对于函数起始地址的偏移</li>
+<li>[0x1f792fd] → 实际程序地址</li>
+</ul>
+<ol>
+<li><p>如果符号信息在可执行文件上 </p>
+ <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">addr2line -e your_binary -f -C 0x1f792fd</span><br></pre></td></tr></table></figure></li>
+<li><p>use eu-addr2line 加载symbol</p>
+ <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">eu-addr2line -e ./your_binary --debuginfo-path=./your_binary.debug 0x1f792fd</span><br></pre></td></tr></table></figure>
+<p> output：<br> mytable&#x2F;MyTable.cpp:1070</p>
+</li>
+<li><p>只有函数名 + 偏移<br>例如日志只有： MyTable::insert+0x52<br>需要手动计算地址。</p>
+<ul>
+<li>查函数起始地址  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nm -C your_binary | grep my_func</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果 binary 已 strip，需要对 debug 文件执行 nm：  </p>
+</blockquote>
+  或  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">objdump -t your_binary | grep MyTable::insert</span><br></pre></td></tr></table></figure>
+  假设得到：    <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401230 T MyTable::insert</span><br></pre></td></tr></table></figure></li>
+<li>加上偏移  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x401230 + 0x52 = 0x401282</span><br></pre></td></tr></table></figure></li>
+<li>再 addr2line  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">addr2line -e your_binary -f -C 0x401282</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ol>
+<h2 id="PIE-ASLR-注意事项"><a href="#PIE-ASLR-注意事项" class="headerlink" title="PIE &#x2F; ASLR 注意事项"></a>PIE &#x2F; ASLR 注意事项</h2><p>如果二进制是 PIE（Position Independent Executable）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">readelf -h your_binary | grep Type</span><br></pre></td></tr></table></figure>
+<p>如果看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Type: DYN (Position-Independent Executable file)</span><br></pre></td></tr></table></figure>
+<p>说明是 PIE。</p>
+<p>这时：</p>
+<ul>
+<li><p>崩溃日志中的地址 &#x3D; load_base + offset</p>
+</li>
+<li><p>必须减去加载基地址</p>
+</li>
+</ul>
+<p>在 core dump 中：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">info proc mappings</span><br></pre></td></tr></table></figure>
+<p>或者</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /proc/&lt;pid&gt;/maps</span><br></pre></td></tr></table></figure>
+
+<p>找到加载基址，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7f3c2d400000-...</span><br><span class="line">真实地址 = 崩溃地址 - 基址</span><br></pre></td></tr></table></figure>
+<p>再传给 addr2line。</p>
+<p>否则会解析失败或定位错误。</p>
+<h2 id="常用排错检查"><a href="#常用排错检查" class="headerlink" title="常用排错检查"></a>常用排错检查</h2><ol>
+<li><p>是否包含调试信息</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">readelf --sections your_binary | grep debug</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>是否被 strip</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">file your_binary</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+  </entry>
 </search>

@@ -24,7 +24,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="R-tree for points">
 <meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/12/02/postgresql/r-tree-for-points/index.html">
-<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:site_name" content="Jeffly">
 <meta property="og:description" content="第一个示例涉及在平面上对点（或其他几何形状）进行索引。常规的B树无法用于这种数据类型，因为点没有定义比较运算符。显然，我们可以自己实现这样的运算符，但几何形状需要索引支持完全不同的操作。我将只讨论其中的两种：搜索特定区域内包含的对象和最近邻搜索。 R树在平面上绘制矩形；这些矩形合起来必须覆盖所有被索引的点。一个索引条目存储边界框，谓词可以定义如下：点位于该边界框内。 R树的根节点包含若干个大矩形（">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://jeffrey-fly-github-io.pages.dev/images/RTree/rtree1.png">
@@ -50,7 +50,7 @@
 <script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/12/02/postgresql/r-tree-for-points/","path":"2025/12/02/postgresql/r-tree-for-points/","title":"R-tree for points"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>R-tree for points | QuantumRealm</title>
+<title>R-tree for points | Jeffly</title>
   
 
 
@@ -82,7 +82,7 @@
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
-<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="Jeffly" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
@@ -103,7 +103,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <p class="site-title">QuantumRealm</p>
+      <p class="site-title">Jeffly</p>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -184,7 +184,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">56</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -195,7 +195,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-count">31</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -235,12 +235,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="R-tree for points | QuantumRealm">
+      <meta itemprop="name" content="R-tree for points | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">

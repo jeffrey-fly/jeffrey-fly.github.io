@@ -21,9 +21,9 @@
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.26.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta property="og:type" content="website">
-<meta property="og:title" content="QuantumRealm">
+<meta property="og:title" content="Jeffly">
 <meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/page/3/index.html">
-<meta property="og:site_name" content="QuantumRealm">
+<meta property="og:site_name" content="Jeffly">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="Jeffrey">
 <meta name="twitter:card" content="summary">
@@ -35,7 +35,7 @@
 <script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"en","comments":"","permalink":"","path":"page/3/index.html","title":""}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>QuantumRealm</title>
+<title>Jeffly</title>
   
 
 
@@ -67,7 +67,7 @@
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
-<link rel="alternate" href="/atom.xml" title="QuantumRealm" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="Jeffly" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
@@ -88,7 +88,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">QuantumRealm</h1>
+      <h1 class="site-title">Jeffly</h1>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">56</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-count">31</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -210,6 +210,186 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/13/postgresql/an-example-of-using-pageinspect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/13/postgresql/an-example-of-using-pageinspect/" class="post-title-link" itemprop="url">an_example_of_using_pageinspect</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-13 14:52:14" itemprop="dateCreated datePublished" datetime="2025-11-13T14:52:14+08:00">2025-11-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="准备表数据"><a href="#准备表数据" class="headerlink" title="准备表数据"></a>准备表数据</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">create table</span> users(id <span class="type">int</span> generated always <span class="keyword">as</span> <span class="keyword">identity</span> <span class="keyword">primary key</span>, name text);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> oid, relname, relfilenode <span class="keyword">from</span> pg_class <span class="keyword">where</span> relname <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>;</span><br><span class="line">  oid  <span class="operator">|</span> relname <span class="operator">|</span> relfilenode </span><br><span class="line"><span class="comment">-------+---------+-------------</span></span><br><span class="line"> <span class="number">40980</span> <span class="operator">|</span> users   <span class="operator">|</span>       <span class="number">40980</span></span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> c.oid, c.relname, i.indisprimary <span class="keyword">from</span> pg_class c <span class="keyword">join</span> pg_index i <span class="keyword">on</span> c.oid <span class="operator">=</span> i.indexrelid <span class="keyword">where</span> i.indrelid <span class="operator">=</span> <span class="string">&#x27;users&#x27;</span>::regclass <span class="keyword">and</span> i.indisprimary;</span><br><span class="line">  oid  <span class="operator">|</span>  relname   <span class="operator">|</span> indisprimary </span><br><span class="line"><span class="comment">-------+------------+--------------</span></span><br><span class="line"> <span class="number">40986</span> <span class="operator">|</span> users_pkey <span class="operator">|</span> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">ERROR:  block number <span class="number">0</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span> <span class="keyword">for</span> relation &quot;users&quot;</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line">ERROR:  block number <span class="number">1</span> <span class="keyword">is</span> <span class="keyword">out</span> <span class="keyword">of</span> <span class="keyword">range</span></span><br><span class="line">test<span class="operator">=</span># <span class="operator">^</span>C</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="insert-values"><a href="#insert-values" class="headerlink" title="insert values"></a>insert values</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;jeffrey&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F5E7A0 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">28</span> <span class="operator">|</span>  <span class="number">8152</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">insert into</span> users(name) <span class="keyword">values</span>(<span class="string">&#x27;Ethan&#x27;</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span>  <span class="keyword">from</span> page_header(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line">    lsn     <span class="operator">|</span> checksum <span class="operator">|</span> flags <span class="operator">|</span> lower <span class="operator">|</span> upper <span class="operator">|</span> special <span class="operator">|</span> pagesize <span class="operator">|</span> version <span class="operator">|</span> prune_xid </span><br><span class="line"><span class="comment">------------+----------+-------+-------+-------+---------+----------+---------+-----------</span></span><br><span class="line"> <span class="number">0</span><span class="operator">/</span><span class="number">03</span>F62810 <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>     <span class="number">0</span> <span class="operator">|</span>    <span class="number">32</span> <span class="operator">|</span>  <span class="number">8112</span> <span class="operator">|</span>    <span class="number">8192</span> <span class="operator">|</span>     <span class="number">8192</span> <span class="operator">|</span>       <span class="number">4</span> <span class="operator">|</span>         <span class="number">0</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> lp,lp_len,t_data <span class="keyword">from</span> heap_page_items(get_raw_page(<span class="string">&#x27;users&#x27;</span>, <span class="number">0</span>));</span><br><span class="line"> lp <span class="operator">|</span> lp_len <span class="operator">|</span>           t_data           </span><br><span class="line"><span class="comment">----+--------+----------------------------</span></span><br><span class="line">  <span class="number">1</span> <span class="operator">|</span>     <span class="number">36</span> <span class="operator">|</span> \x01000000116a656666726579</span><br><span class="line">  <span class="number">2</span> <span class="operator">|</span>     <span class="number">34</span> <span class="operator">|</span> \x020000000d457468616e</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> bt_page_items(<span class="string">&#x27;users_pkey&#x27;</span>,<span class="number">1</span>);</span><br><span class="line"> itemoffset <span class="operator">|</span> ctid  <span class="operator">|</span> itemlen <span class="operator">|</span> nulls <span class="operator">|</span> vars <span class="operator">|</span>          data           <span class="operator">|</span> dead <span class="operator">|</span> htid  <span class="operator">|</span> tids </span><br><span class="line"><span class="comment">------------+-------+---------+-------+------+-------------------------+------+-------+------</span></span><br><span class="line">          <span class="number">1</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">1</span>) <span class="operator">|</span> </span><br><span class="line">          <span class="number">2</span> <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span>      <span class="number">16</span> <span class="operator">|</span> f     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">02</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="operator">|</span> f    <span class="operator">|</span> (<span class="number">0</span>,<span class="number">2</span>) <span class="operator">|</span> </span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/11/database/install-oceanbase/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/11/database/install-oceanbase/" class="post-title-link" itemprop="url">install_oceanbase</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-11 20:23:40" itemprop="dateCreated datePublished" datetime="2025-11-11T20:23:40+08:00">2025-11-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
+
+<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
+<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
+<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
+
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
+<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
+<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
+<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
+
+<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/11/08/database/SSTables-and-LSM-Trees/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -218,12 +398,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -361,12 +541,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -458,12 +638,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -563,12 +743,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -680,12 +860,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -845,12 +1025,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -957,12 +1137,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -1055,12 +1235,12 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
+      <meta itemprop="name" content="Jeffly">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
+      <meta itemprop="name" content=" | Jeffly">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
@@ -1223,203 +1403,6 @@
 </tbody></table>
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/20/postgresql/Background-Writing/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/08/20/postgresql/Background-Writing/" class="post-title-link" itemprop="url">Background Writing</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-20 16:19:20" itemprop="dateCreated datePublished" datetime="2025-08-20T16:19:20+08:00">2025-08-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p>
-<p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p>
-<p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p>
-<p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p>
-<p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p>
-<p>总结</p>
-<blockquote>
-<p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
-</blockquote>
-<p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/08/13/debug/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | QuantumRealm">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/08/13/debug/%E6%80%A7%E8%83%BD%E8%B0%83%E8%AF%95/" class="post-title-link" itemprop="url">性能调试</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-13 18:53:59" itemprop="dateCreated datePublished" datetime="2025-08-13T18:53:59+08:00">2025-08-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h1><h2 id="top"><a href="#top" class="headerlink" title="top"></a>top</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top -H -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
-
-<p>只显示指定进程 <PID> 的所有线程，并实时显示它们的 CPU、内存等使用情况。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pstack &lt;PID&gt;</span><br></pre></td></tr></table></figure>
-
-<h2 id="perf"><a href="#perf" class="headerlink" title="perf"></a>perf</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">perf top -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
-
-<p>查看函数热点，采样一段时间</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">perf record -p &lt;PID&gt; -g -- sleep 10</span><br><span class="line">perf report</span><br></pre></td></tr></table></figure>
-
-<h2 id="strace"><a href="#strace" class="headerlink" title="strace"></a>strace</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -ttT -p &lt;PID&gt;</span><br></pre></td></tr></table></figure>
-<h2 id="火焰图"><a href="#火焰图" class="headerlink" title="火焰图"></a>火焰图</h2><ul>
-<li><p>安装perf</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install linux-tools-common linux-tools-$(uname -r)</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>采样数据</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf record -F 99 -p &lt;PID&gt; -g -- sleep 30</span><br></pre></td></tr></table></figure>
-
-<p>  -F 99          每秒采样 99 次<br>  -p <PID>       针对指定进程<br>  -g             采集调用栈（火焰图需要）<br>  – sleep 30    采样 30 秒</p>
-</li>
-<li><p>生成调用栈</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo perf script &gt; out.perf</span><br></pre></td></tr></table></figure></li>
-<li><p>下载 FlameGraph 工具</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/brendangregg/FlameGraph.git</span><br><span class="line">cd FlameGraph</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>生成火焰图</p>
-  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./stackcollapse-perf.pl ../out.perf &gt; out.folded</span><br><span class="line">./flamegraph.pl out.folded &gt; flamegraph.svg</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h1 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h1><h2 id="系统io"><a href="#系统io" class="headerlink" title="系统io"></a>系统io</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
-<p>重点关注 await（平均等待时间）和 svctm（服务时间）。如果 await &gt;&gt; svctm，说明队列很长，设备忙不过来。</p>
-<h2 id="某个进程io"><a href="#某个进程io" class="headerlink" title="某个进程io"></a>某个进程io</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pidstat -d -p &lt;PID&gt; 1</span><br></pre></td></tr></table></figure>
       
     </div>
 
