@@ -1385,7 +1385,7 @@ pre code {
     vertical-align: middle;
   }
   .links-of-author a::before {
-    background: #bbff1d;
+    background: #7e6cff;
     display: inline-block;
     margin-right: 3px;
     transform: translateY(-2px);
@@ -2935,46 +2935,4 @@ header.header {
   .pagination {
     margin-bottom: 10px;
   }
-}
-.collection-title .collection-header {
-  display: none !important;
-}
-.post-comment {
-  border-top: 1px solid #eee;
-  margin-top: 40px;
-  padding-top: 20px;
-}
-.comment-form input,
-.comment-form textarea {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-.comment-form button {
-  background-color: #37c6c0;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
-}
-.comment-form button:hover {
-  background-color: #2aa8a3;
-}
-.comment {
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #ddd;
-}
-.comment-author {
-  font-weight: bold;
-}
-.comment-date {
-  font-size: 0.85em;
-  color: #888;
-}
-.comment-content {
-  margin-top: 5px;
 }
