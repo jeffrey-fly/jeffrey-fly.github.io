@@ -244,110 +244,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Raft协议</title>
-    <url>/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</url>
-    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
-<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
-<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
-<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
-<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
-</ol>
-<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
-<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
-<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
-<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
-</ul>
-<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
-<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
-<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
-<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
-</ul>
-<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
-<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
-<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
-<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
-</ul>
-<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
-<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
-<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
-</ul>
-<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
-<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
-<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
-<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
-<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
-</ol>
-<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
-<li>多实例并行运行：</li>
-</ol>
-<ul>
-<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
-<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
-</ul>
-<ol start="2">
-<li>共享底层资源：</li>
-</ol>
-<ul>
-<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
-<li>使用高效的调度机制协调实例间的资源竞争。</li>
-</ul>
-<ol start="3">
-<li>动态分片和迁移：</li>
-</ol>
-<ul>
-<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
-<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
-</ul>
-<ol start="4">
-<li>跨分片操作：</li>
-</ol>
-<ul>
-<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
-<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
-</ul>
-<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
-<thead>
-<tr>
-<th><strong>特性</strong></th>
-<th>Raft</th>
-<th>MultiRaft</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>目标</td>
-<td>提供单一一致性机制</td>
-<td>提供分区一致性机制</td>
-</tr>
-<tr>
-<td>运行实例</td>
-<td>单个 Raft 集群</td>
-<td>多个独立的 Raft 集群</td>
-</tr>
-<tr>
-<td>适用场景</td>
-<td>小规模系统</td>
-<td>大规模分布式存储或事务场景</td>
-</tr>
-<tr>
-<td>扩展性</td>
-<td>有限,单点可能成为瓶颈</td>
-<td>高扩展性，分片机制避免瓶颈</td>
-</tr>
-<tr>
-<td>复杂度</td>
-<td>较低</td>
-<td>较高，需要处理跨分片事务</td>
-</tr>
-</tbody></table>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Lehman–Yao B-tree</title>
     <url>/2025/11/22/database/Lehman%E2%80%93Yao-B-tree/</url>
     <content><![CDATA[<h2 id="1-Lehman–Yao-B-Trees"><a href="#1-Lehman–Yao-B-Trees" class="headerlink" title="1. Lehman–Yao B*-Trees"></a>1. Lehman–Yao B*-Trees</h2><p>Lehman–Yao构造了一个供并发进程使用的数据结构。该数据结构是 Wedekind提出的 B*-树的一个简单变体（其基础是 Bayer 和 McCreight定义的 B 树）。<br>Lehman–Yao B*-树定义如下。</p>
@@ -582,6 +478,110 @@
       </tags>
   </entry>
   <entry>
+    <title>Raft协议</title>
+    <url>/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</url>
+    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
+<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
+<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
+<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
+<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
+</ol>
+<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
+<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
+<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
+<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
+</ul>
+<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
+<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
+<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
+<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
+</ul>
+<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
+<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
+<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
+<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
+</ul>
+<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
+<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
+<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
+</ul>
+<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
+<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
+<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
+<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
+<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
+</ol>
+<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
+<li>多实例并行运行：</li>
+</ol>
+<ul>
+<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
+<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
+</ul>
+<ol start="2">
+<li>共享底层资源：</li>
+</ol>
+<ul>
+<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
+<li>使用高效的调度机制协调实例间的资源竞争。</li>
+</ul>
+<ol start="3">
+<li>动态分片和迁移：</li>
+</ol>
+<ul>
+<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
+<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
+</ul>
+<ol start="4">
+<li>跨分片操作：</li>
+</ol>
+<ul>
+<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
+<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
+</ul>
+<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th>Raft</th>
+<th>MultiRaft</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标</td>
+<td>提供单一一致性机制</td>
+<td>提供分区一致性机制</td>
+</tr>
+<tr>
+<td>运行实例</td>
+<td>单个 Raft 集群</td>
+<td>多个独立的 Raft 集群</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小规模系统</td>
+<td>大规模分布式存储或事务场景</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>有限,单点可能成为瓶颈</td>
+<td>高扩展性，分片机制避免瓶颈</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>较低</td>
+<td>较高，需要处理跨分片事务</td>
+</tr>
+</tbody></table>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+      <tags>
+        <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>SSTables and LSM Trees</title>
     <url>/2025/11/08/database/SSTables-and-LSM-Trees/</url>
     <content><![CDATA[<p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p>
@@ -657,6 +657,34 @@
       <tags>
         <tag>storage</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>install_oceanbase</title>
+    <url>/2025/11/11/database/install-oceanbase/</url>
+    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
+
+<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
+<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
+<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
+
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
+<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
+<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
+<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
+
+<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
   </entry>
   <entry>
     <title>TPCC</title>
@@ -770,34 +798,6 @@
       <tags>
         <tag>storage</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>install_oceanbase</title>
-    <url>/2025/11/11/database/install-oceanbase/</url>
-    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
-
-<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
-<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
-<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
-
-<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
-<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
-<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
-<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
-
-<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
   </entry>
   <entry>
     <title>一致性hash</title>
@@ -1191,24 +1191,6 @@
       </tags>
   </entry>
   <entry>
-    <title>gdb调试改变返回值</title>
-    <url>/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
-<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
-<p>步骤：</p>
-<ol>
-<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
-]]></content>
-      <categories>
-        <category>debug</category>
-      </categories>
-      <tags>
-        <tag>gdb</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>gdb 查看指令</title>
     <url>/2024/12/24/debug/gdb-%E6%9F%A5%E7%9C%8B%E6%8C%87%E4%BB%A4/</url>
     <content><![CDATA[<h2 id="使用-x-命令和内存地址："><a href="#使用-x-命令和内存地址：" class="headerlink" title="使用 x 命令和内存地址："></a>使用 x 命令和内存地址：</h2><p>x (examine) 命令允许你检查内存中的数据。你可以指定要检查的内存地址、格式和单位。</p>
@@ -1323,6 +1305,43 @@
       </categories>
   </entry>
   <entry>
+    <title>gdb调试改变返回值</title>
+    <url>/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
+<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
+<p>步骤：</p>
+<ol>
+<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
+]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+      <tags>
+        <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>gdb 异步调试</title>
+    <url>/2024/11/11/debug/nonstop/</url>
+    <content><![CDATA[<h2 id="使用如下-gdbinit-文件"><a href="#使用如下-gdbinit-文件" class="headerlink" title="使用如下.gdbinit 文件"></a>使用如下.gdbinit 文件</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
+<h2 id="GDB-加载脚本条件"><a href="#GDB-加载脚本条件" class="headerlink" title="GDB 加载脚本条件"></a>GDB 加载脚本条件</h2><ol>
+<li><p>路径完全匹配（核心条件）<br>GDB 的自动加载逻辑非常死板，它会根据你的程序链接的 libstdc++.so.6 的真实物理路径来拼接查找路径。<br>如果你的程序链接的是 &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6，那么 GDB 会尝试在以下位置查找： [auto-load 根目录] + [库的绝对路径] + [-gdb.py 脚本]<br>即：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load + &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6 + -gdb.py 也就是你找到的：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6-gdb.py。</p>
+</li>
+<li><p>必须开启 safe-path 权限<br>即使文件位置对了，GDB 为了安全默认也是不运行它的。你需要给它“授权”。    </p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set auto-load safe-path /</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Check-script-load-status"><a href="#Check-script-load-status" class="headerlink" title="Check script load status"></a>Check script load status</h2><p>start gdb：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">info auto-load python-scripts</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>debug</category>
+      </categories>
+      <tags>
+        <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>IO</title>
     <url>/2025/08/05/debug/io/</url>
     <content><![CDATA[<h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
@@ -1397,25 +1416,6 @@
       </categories>
       <tags>
         <tag>performance</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>gdb 异步调试</title>
-    <url>/2024/11/11/debug/nonstop/</url>
-    <content><![CDATA[<h2 id="使用如下-gdbinit-文件"><a href="#使用如下-gdbinit-文件" class="headerlink" title="使用如下.gdbinit 文件"></a>使用如下.gdbinit 文件</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
-<h2 id="GDB-加载脚本条件"><a href="#GDB-加载脚本条件" class="headerlink" title="GDB 加载脚本条件"></a>GDB 加载脚本条件</h2><ol>
-<li><p>路径完全匹配（核心条件）<br>GDB 的自动加载逻辑非常死板，它会根据你的程序链接的 libstdc++.so.6 的真实物理路径来拼接查找路径。<br>如果你的程序链接的是 &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6，那么 GDB 会尝试在以下位置查找： [auto-load 根目录] + [库的绝对路径] + [-gdb.py 脚本]<br>即：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load + &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6 + -gdb.py 也就是你找到的：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6-gdb.py。</p>
-</li>
-<li><p>必须开启 safe-path 权限<br>即使文件位置对了，GDB 为了安全默认也是不运行它的。你需要给它“授权”。    </p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set auto-load safe-path /</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="Check-script-load-status"><a href="#Check-script-load-status" class="headerlink" title="Check script load status"></a>Check script load status</h2><p>start gdb：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">info auto-load python-scripts</span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>debug</category>
-      </categories>
-      <tags>
-        <tag>gdb</tag>
       </tags>
   </entry>
   <entry>
@@ -1675,44 +1675,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Checkpoint</title>
-    <url>/2025/04/03/postgresql/Checkpoint/</url>
-    <content><![CDATA[<p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
-<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
-<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
-<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
-<ul>
-<li>CLOG（提交日志）中的事务状态信息，</li>
-<li>子事务的元数据，</li>
-<li>以及其他一些结构。</li>
-</ul>
-<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
-<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
-<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
-<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
-<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
-<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
-<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
-<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
-<p>Example：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
-<p>同样的信息也可以在 pg_control 文件中找到。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>postgresql</category>
-      </categories>
-      <tags>
-        <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Buffer Bulk Eviction</title>
     <url>/2024/12/31/postgresql/Buffer-Bulk-Eviction/</url>
     <content><![CDATA[<p>If bulk reads or writes are performed, there is a risk that one-time data can quickly oust useful pages from the buffer cache.</p>
@@ -1747,6 +1709,44 @@
 <p>Another example worth mentioning is storing oversized data in TOAST tables. In spite of a potentially large volume of data that has to be read, toasted values are always accessed via an index, so they bypass buffer rings.</p>
 <p>Let’s take a closer look at the bulk reads strategy. For simplicity, we will create a table in such a way that an inserted row takes the whole page. By default, the buffer cache size is 16,384 pages, 8 kb each. So the table must take more than 4096 pages for the scan to use a buffer ring.</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">test<span class="operator">=</span># <span class="keyword">SHOW</span> shared_buffers;</span><br><span class="line"> shared_buffers </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> <span class="number">128</span>MB</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> big(</span><br><span class="line">test(# id <span class="type">integer</span> <span class="keyword">PRIMARY KEY</span> GENERATED ALWAYS <span class="keyword">AS</span> <span class="keyword">IDENTITY</span>, s <span class="type">char</span>(<span class="number">1000</span>)</span><br><span class="line">test(# ) <span class="keyword">WITH</span> (fillfactor <span class="operator">=</span> <span class="number">10</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">INSERT INTO</span> big(s)</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">SELECT</span> <span class="string">&#x27;FOO&#x27;</span> <span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">4096</span><span class="operator">+</span><span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">4097</span></span><br><span class="line">test<span class="operator">=</span># ANALYZE big;</span><br><span class="line">ANALYZE</span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> relname, relfilenode, relpages <span class="keyword">FROM</span> pg_class</span><br><span class="line">test<span class="operator">-</span># <span class="keyword">WHERE</span> relname <span class="keyword">IN</span> (<span class="string">&#x27;big&#x27;</span>, <span class="string">&#x27;big_pkey&#x27;</span>);</span><br><span class="line"> relname  <span class="operator">|</span> relfilenode <span class="operator">|</span> relpages </span><br><span class="line"><span class="comment">----------+-------------+----------</span></span><br><span class="line"> big      <span class="operator">|</span>       <span class="number">16487</span> <span class="operator">|</span>     <span class="number">4097</span></span><br><span class="line"> big_pkey <span class="operator">|</span>       <span class="number">16492</span> <span class="operator">|</span>       <span class="number">14</span></span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> big;</span><br><span class="line">                 QUERY PLAN                 </span><br><span class="line"><span class="comment">--------------------------------------------</span></span><br><span class="line"> Seq Scan <span class="keyword">on</span> big (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">4097</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache</span><br><span class="line"><span class="keyword">WHERE</span> relfilenode <span class="operator">=</span> pg_relation_filenode(<span class="string">&#x27;big&#x27;</span>::regclass);</span><br><span class="line"> count </span><br><span class="line"><span class="comment">-------</span></span><br><span class="line">    <span class="number">32</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Checkpoint</title>
+    <url>/2025/04/03/postgresql/Checkpoint/</url>
+    <content><![CDATA[<p>要在发生故障后恢复数据一致性（即执行恢复操作），PostgreSQL 需要向前回放 WAL 日志，并将其中表示丢失变更的记录应用到相应的数据页上。为了确定哪些变更丢失了，系统会将磁盘上数据页的 LSN（日志序列号）与 WAL 记录的 LSN 进行比较。但问题是，我们应该从哪里开始恢复？如果恢复起点选得太晚，那么在此之前已经写入磁盘的数据页将无法接收到所有应有的变更，最终导致无法修复的数据损坏。而从日志的起始位置开始恢复又不现实：不仅无法长期保存如此巨量的数据，也无法接受过长的恢复时间。因此，我们需要一个不断向前推进的检查点（checkpoint），从而可以从这个位置安全地开始恢复，同时删除所有更早的 WAL 记录。</p>
+<p>创建检查点最直接的方式是：定期暂停系统所有操作，并将所有脏页强制刷新到磁盘。但这种方式显然是不可接受的，因为系统会因此暂停不定但相当长的时间。</p>
+<p>正因为如此，PostgreSQL 将检查点的过程分摊到一段时间内完成，实际上构成了一个“区间”（interval）。检查点的执行是由一个特殊的后台进程负责的，这个进程叫做 checkpointer（检查点进程）</p>
+<h2 id="检查点开始（Checkpoint-start）："><a href="#检查点开始（Checkpoint-start）：" class="headerlink" title="检查点开始（Checkpoint start）："></a>检查点开始（Checkpoint start）：</h2><p>checkpointer 进程会将所有可以立即写入磁盘的内容进行刷新，包括：</p>
+<ul>
+<li>CLOG（提交日志）中的事务状态信息，</li>
+<li>子事务的元数据，</li>
+<li>以及其他一些结构。</li>
+</ul>
+<h2 id="检查点执行过程（Checkpoint-execution）："><a href="#检查点执行过程（Checkpoint-execution）：" class="headerlink" title="检查点执行过程（Checkpoint execution）："></a>检查点执行过程（Checkpoint execution）：</h2><p>检查点执行的大部分时间都耗费在将 脏页（dirty pages）刷新到磁盘上。</p>
+<p>首先，在检查点开始时，所有当时处于“脏”状态的缓冲区（buffer）的页头会被打上一个特殊标记（tag）。这个过程非常迅速，因为它不涉及任何 I&#x2F;O 操作，只是内存中的标记设置。</p>
+<p>随后，checkpointer 会遍历所有缓冲区，并将带有该标记的页写入磁盘。这些页不会被驱逐出缓存（即它们仍然保留在缓冲池中），只是被刷盘，因此在这个过程中可以忽略使用计数（usage count）和 pin 计数（pin count）。</p>
+<p>页面按 ID 顺序处理，以尽可能避免随机写入。为实现更好的负载均衡，PostgreSQL 会在多个表空间之间交替进行写入（因为它们可能位于不同的物理设备上）。</p>
+<p>后端进程（backend）也可以将打了标记的缓冲页写入磁盘 —— 如果它们先访问到了这些页的话。无论由谁写入，缓冲区的标记都会在这个阶段被清除，因此每个缓冲页在此次检查点中只会被写一次。  </p>
+<p>很自然地，在 checkpoint 进行期间，缓冲区中的页面仍然可能被修改。但由于这些新的脏页没有被打上标记，checkpointer 会忽略它们。</p>
+<h2 id="检查点完成："><a href="#检查点完成：" class="headerlink" title="检查点完成："></a>检查点完成：</h2><p>当在检查点开始时被标记为脏的所有缓冲页都已经写入磁盘后，检查点就被视为完成。从现在起（但不是在此之前！），本次检查点的起始位置将被作为恢复操作的新起点。在这个点之前写入的所有 WAL 日志都不再需要了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Time →</span><br><span class="line">LSN：</span><br><span class="line">      ┌──────────────────────────────────────────────────────────────────────┐</span><br><span class="line">      │                                                                      │</span><br><span class="line">  0 ──┴─────┬───────────────────────────────────────────┬────────────┬───────┘</span><br><span class="line">            │                                           │            │</span><br><span class="line">            ▼                                           ▼            ▼</span><br><span class="line">            1                                           2            3</span><br><span class="line">✔ 若 3 写入成功：恢复可从 2 开始（即 redo = 2）</span><br><span class="line">✘ 若 3 写入失败：恢复只能从 1 开始（上次 checkpoint）</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">- 1：上一次 checkpoint 的起始 LSN（redo）</span><br><span class="line">- 2：本次 checkpoint 开始时wallog最大LSN（新的redo点）</span><br><span class="line">- 3：本次 checkpoint 完成后写入 WAL 的记录（记录了 redo=2）</span><br></pre></td></tr></table></figure>
+<p>最后，checkpointer 进程会创建一条表示检查点完成的 WAL 记录，并在其中标明此次检查点的起始 LSN。由于检查点在开始时不会写入任何日志，因此这个起始 LSN 可以是任意类型的 WAL 记录所属的 LSN。<br>此外，PGDATA&#x2F;global&#x2F;pg_control 文件也会被更新，以指向最近完成的检查点。（在此过程完成之前，pg_control 始终保留着上一个检查点的信息。）</p>
+<p>Example：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">UPDATE</span> big <span class="keyword">SET</span> s <span class="operator">=</span> <span class="string">&#x27;FOO&#x27;</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">4119</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn</span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF7E0 (<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> CHECKPOINT;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> pg_buffercache <span class="keyword">WHERE</span> isdirty;</span><br><span class="line">count </span><br><span class="line">−−−−−−−</span><br><span class="line"><span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line">pg_current_wal_insert_lsn </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line"><span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF890 </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+<p>最新的 WAL 条目与检查点完成有关（CHECKPOINT_ONLINE）。该检查点的起始 LSN 出现在 redo 之后；这个位置对应的是检查点开始时最新插入的 WAL 条目。</p>
+<p>同样的信息也可以在 pg_control 文件中找到。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">postgres$ <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>bin<span class="operator">/</span>pg_controldata \</span><br><span class="line"><span class="operator">-</span>D <span class="operator">/</span>usr<span class="operator">/</span><span class="keyword">local</span><span class="operator">/</span>pgsql<span class="operator">/</span>data <span class="operator">|</span> egrep <span class="string">&#x27;Latest.*location&#x27;</span> Latest checkpoint location: <span class="number">0</span><span class="operator">/</span><span class="number">3E7</span>EF818</span><br><span class="line">Latest checkpoint<span class="string">&#x27;s REDO location: 0/3E7EF7E0</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
@@ -2286,52 +2286,6 @@
       </categories>
   </entry>
   <entry>
-    <title>Recovery in postgres</title>
-    <url>/2025/10/24/postgresql/Recovery/</url>
-    <content><![CDATA[<p>服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。</p>
-<blockquote>
-<p>startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br><span class="line">postgres@lavm-bar1guved6:/root$ </span><br></pre></td></tr></table></figure>
-<p>一个正常停止的服务器会处于“已关闭”（shut down）状态；而一个未运行的服务器却显示为“生产中”（in production）状态，则表明发生了故障。在这种情况下，启动进程（startup process）将自动从在同一个 pg_control 文件中找到的最新完成的检查点（checkpoint）**的起始 LSN 处开始进行恢复。</p>
-<blockquote>
-<p>如果 PGDATA 目录中包含与备份相关的 backup_label 文件，则起始 LSN 位置会从该文件中获取。</p>
-</blockquote>
-<p>在启动过程中，系统会从指定位置开始，逐一读取WAL（Write-Ahead Log，预写式日志）条目。如果数据页的 LSN（Log Sequence Number，日志序列号）小于当前读取到的 WAL 条目的 LSN，系统会将该 WAL 条目应用到数据页上。如果数据页的 LSN 已经大于 WAL 条目的 LSN，则不应应用该 WAL 条目；事实上，也绝不能应用，因为 WAL 条目被设计为必须严格按顺序重放。</p>
-<p>然而，有些 WAL 条目是Full Page Image（FPI）。这类条目可以应用于页面的任何状态，因为它们会完全覆盖页面内容，无论页面原先是什么状态都不重要。因此，这种修改是幂等的（idempotent）——多次应用不会改变结果另一个幂等操作的例子是注册事务状态的变更：每个事务的状态在 CLOG（事务提交日志）中是通过设置特定位来表示的，这种设置不依赖于原来的位值。因此，不需要在 CLOG 页面中记录最近变更的 LSN（日志序列号），因为日志重放时只要设置一次这些位就够了，重复设置也不会有副作用最后，系统会执行一次 checkpoint（检查点），将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了。</p>
-<p>WAL 日志条目会被应用到缓冲池（buffer cache）中的页面上，就像正常运行时对数据页的普通修改一样。</p>
-<p>文件的恢复也遵循类似方式：例如，若某条 WAL 记录表明某个文件应该存在，但实际却缺失，系统就会重新创建这个文件。<br>一旦恢复完成，所有 unlogged relations会被它们对应的 初始化副本（init fork） 覆盖。</p>
-<p>最后，系统会执行一次 checkpoint，将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了<br>在其经典形式中，恢复过程包含两个阶段：</p>
-<ul>
-<li>roll-forward阶段：重放 WAL 日志，重复执行在崩溃时丢失的操作；</li>
-<li>roll-back阶段：服务器中止那些在故障发生时尚未提交的事务。<br>在 PostgreSQL 中，向后回滚是不需要的。恢复完成后，CLOG（事务状态日志）中对未完成事务既没有提交（commit）标记，也没有中止（abort）标记（这在技术上表示该事务处于活动状态），但因为可以确定该事务已经不再运行，所以系统会将其视为已中止（aborted）。</li>
-</ul>
-<p>我们可以通过强制服务器以“立即模式”（immediate mode）停止来模拟故障：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_ctl stop -m immediate</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br></pre></td></tr></table></figure>
-<p>当我们启动服务器时，启动进程会检测到之前发生了故障，因而进入恢复模式：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2025-08-04 10:23:31.860 CST [487414] LOG:  starting PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit</span><br><span class="line">2025-08-04 10:23:31.861 CST [487414] LOG:  listening on IPv4 address &quot;127.0.0.1&quot;, port 5432</span><br><span class="line">2025-08-04 10:23:31.878 CST [487414] LOG:  listening on Unix socket &quot;/tmp/.s.PGSQL.5432&quot;</span><br><span class="line">2025-08-04 10:23:31.920 CST [487420] LOG:  database system was interrupted; last known up at 2025-08-01 09:36:11 CST</span><br><span class="line">2025-08-04 10:23:32.098 CST [487420] LOG:  database system was not properly shut down; automatic recovery in progress</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo starts at 0/01B75168</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  invalid record length at 0/01B752A8: expected at least 24, got 0</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo done at 0/01B75270 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s</span><br><span class="line">2025-08-04 10:23:32.132 CST [487418] LOG:  checkpoint starting: end-of-recovery fast wait</span><br><span class="line">2025-08-04 10:23:32.152 CST [487418] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.005 s, total=0.022 s; sync files=2, longest=0.005 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/01B752A8, redo lsn=0/01B752A8</span><br><span class="line">2025-08-04 10:23:32.155 CST [487414] LOG:  database system is ready to accept connections</span><br></pre></td></tr></table></figure>
-<p>如果服务器正在正常关闭，postmaster 会先断开所有客户端连接，然后执行最后一次检查点操作，将所有脏页（未写入磁盘的修改页面）刷写到磁盘上。</p>
-<p>看当前的WAL位置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test=# SELECT pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line">---------------------------</span><br><span class="line"> 0/01B75358</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
-<p>我们正常停止服务</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_ctl stop</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br></pre></td></tr></table></figure>
-<p>现在的数据库状态：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               shut down</span><br></pre></td></tr></table></figure>
-<p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
-<p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>postgresql</category>
-      </categories>
-      <tags>
-        <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>RD-Trees for Full-Text Search</title>
     <url>/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/</url>
     <content><![CDATA[<h2 id="关于全文搜索"><a href="#关于全文搜索" class="headerlink" title="关于全文搜索"></a>关于全文搜索</h2><p>全文搜索的目标是从提供的文档集中选择与搜索查询匹配的文档</p>
@@ -2384,6 +2338,52 @@
 <h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>我已经展示了访问方法的属性，其中大多数在所有操作符类中都是相同的。但是下面两个列级别的属性值得一提：</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;mail_messages_tsv_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> f</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 <p>现在不可能进行 Index-only 扫描了，因为无法从签名中恢复出原始值。<br>不过在这个特定的场景下这是完全可以接受的：<br>tsvector 值只是用于搜索，我们真正需要的是文档本身（也就是实际的数据行）。<br>对于 tsvector_ops 类来说，也没有定义排序操作符</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Recovery in postgres</title>
+    <url>/2025/10/24/postgresql/Recovery/</url>
+    <content><![CDATA[<p>服务器启动时，第一个启动的进程是 postmaster（新版本为postgres）。postmaster 接着会生成 startup process（启动进程），startup process 负责在发生故障时进行数据恢复。</p>
+<blockquote>
+<p>startup process 是一个短暂的、一次性的进程，它的主要职责是在数据库启动时执行崩溃恢复或归档恢复。它完成它的工作后，就会退出。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br><span class="line">postgres@lavm-bar1guved6:/root$ </span><br></pre></td></tr></table></figure>
+<p>一个正常停止的服务器会处于“已关闭”（shut down）状态；而一个未运行的服务器却显示为“生产中”（in production）状态，则表明发生了故障。在这种情况下，启动进程（startup process）将自动从在同一个 pg_control 文件中找到的最新完成的检查点（checkpoint）**的起始 LSN 处开始进行恢复。</p>
+<blockquote>
+<p>如果 PGDATA 目录中包含与备份相关的 backup_label 文件，则起始 LSN 位置会从该文件中获取。</p>
+</blockquote>
+<p>在启动过程中，系统会从指定位置开始，逐一读取WAL（Write-Ahead Log，预写式日志）条目。如果数据页的 LSN（Log Sequence Number，日志序列号）小于当前读取到的 WAL 条目的 LSN，系统会将该 WAL 条目应用到数据页上。如果数据页的 LSN 已经大于 WAL 条目的 LSN，则不应应用该 WAL 条目；事实上，也绝不能应用，因为 WAL 条目被设计为必须严格按顺序重放。</p>
+<p>然而，有些 WAL 条目是Full Page Image（FPI）。这类条目可以应用于页面的任何状态，因为它们会完全覆盖页面内容，无论页面原先是什么状态都不重要。因此，这种修改是幂等的（idempotent）——多次应用不会改变结果另一个幂等操作的例子是注册事务状态的变更：每个事务的状态在 CLOG（事务提交日志）中是通过设置特定位来表示的，这种设置不依赖于原来的位值。因此，不需要在 CLOG 页面中记录最近变更的 LSN（日志序列号），因为日志重放时只要设置一次这些位就够了，重复设置也不会有副作用最后，系统会执行一次 checkpoint（检查点），将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了。</p>
+<p>WAL 日志条目会被应用到缓冲池（buffer cache）中的页面上，就像正常运行时对数据页的普通修改一样。</p>
+<p>文件的恢复也遵循类似方式：例如，若某条 WAL 记录表明某个文件应该存在，但实际却缺失，系统就会重新创建这个文件。<br>一旦恢复完成，所有 unlogged relations会被它们对应的 初始化副本（init fork） 覆盖。</p>
+<p>最后，系统会执行一次 checkpoint，将恢复后的所有修改持久化到磁盘，此时 启动进程（startup process） 的任务就完成了<br>在其经典形式中，恢复过程包含两个阶段：</p>
+<ul>
+<li>roll-forward阶段：重放 WAL 日志，重复执行在崩溃时丢失的操作；</li>
+<li>roll-back阶段：服务器中止那些在故障发生时尚未提交的事务。<br>在 PostgreSQL 中，向后回滚是不需要的。恢复完成后，CLOG（事务状态日志）中对未完成事务既没有提交（commit）标记，也没有中止（abort）标记（这在技术上表示该事务处于活动状态），但因为可以确定该事务已经不再运行，所以系统会将其视为已中止（aborted）。</li>
+</ul>
+<p>我们可以通过强制服务器以“立即模式”（immediate mode）停止来模拟故障：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:/root$ pg_ctl stop -m immediate</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br><span class="line">postgres@lavm-bar1guved6:/root$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               in production</span><br></pre></td></tr></table></figure>
+<p>当我们启动服务器时，启动进程会检测到之前发生了故障，因而进入恢复模式：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2025-08-04 10:23:31.860 CST [487414] LOG:  starting PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit</span><br><span class="line">2025-08-04 10:23:31.861 CST [487414] LOG:  listening on IPv4 address &quot;127.0.0.1&quot;, port 5432</span><br><span class="line">2025-08-04 10:23:31.878 CST [487414] LOG:  listening on Unix socket &quot;/tmp/.s.PGSQL.5432&quot;</span><br><span class="line">2025-08-04 10:23:31.920 CST [487420] LOG:  database system was interrupted; last known up at 2025-08-01 09:36:11 CST</span><br><span class="line">2025-08-04 10:23:32.098 CST [487420] LOG:  database system was not properly shut down; automatic recovery in progress</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo starts at 0/01B75168</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  invalid record length at 0/01B752A8: expected at least 24, got 0</span><br><span class="line">2025-08-04 10:23:32.125 CST [487420] LOG:  redo done at 0/01B75270 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.01 s</span><br><span class="line">2025-08-04 10:23:32.132 CST [487418] LOG:  checkpoint starting: end-of-recovery fast wait</span><br><span class="line">2025-08-04 10:23:32.152 CST [487418] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.005 s, total=0.022 s; sync files=2, longest=0.005 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/01B752A8, redo lsn=0/01B752A8</span><br><span class="line">2025-08-04 10:23:32.155 CST [487414] LOG:  database system is ready to accept connections</span><br></pre></td></tr></table></figure>
+<p>如果服务器正在正常关闭，postmaster 会先断开所有客户端连接，然后执行最后一次检查点操作，将所有脏页（未写入磁盘的修改页面）刷写到磁盘上。</p>
+<p>看当前的WAL位置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test=# SELECT pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line">---------------------------</span><br><span class="line"> 0/01B75358</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+<p>我们正常停止服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_ctl stop</span><br><span class="line">waiting for server to shut down.... done</span><br><span class="line">server stopped</span><br></pre></td></tr></table></figure>
+<p>现在的数据库状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_controldata -D /home/postgres/pgdata/ |grep state</span><br><span class="line">Database cluster state:               shut down</span><br></pre></td></tr></table></figure>
+<p>在WAL的末尾，我们看到了表示最后一次checkpoint的CHECKPOINT_SHUTDOWN 条目</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">postgres@lavm-bar1guved6:~$ pg_waldump  -p /home/postgres/pgdata/pg_wal -s 0/01B75358</span><br><span class="line">rmgr: XLOG        len (rec/tot):    114/   114, tx:          0, lsn: 0/01B75358, prev 0/01B75320, desc: CHECKPOINT_SHUTDOWN redo 0/01B75358; tli 1; prev tli 1; fpw true; wal_level replica; xid 0:758; oid 24576; multi 1; offset 0; oldest xid 746 in DB 1; oldest multi 1 in DB 1; oldest/newest commit timestamp xid: 0/0; oldest running xid 0; shutdown</span><br><span class="line">pg_waldump: error: error in WAL record at 0/01B75358: invalid record length at 0/01B753D0: expected at least 24, got 0</span><br><span class="line">postgres@lavm-bar1guved6:~$ </span><br></pre></td></tr></table></figure>
+<p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>
@@ -2638,45 +2638,6 @@
       </tags>
   </entry>
   <entry>
-    <title>How to use pg_stat_statements extension</title>
-    <url>/2026/01/12/postgresql/how-to-use-pg-stat-statements-extension/</url>
-    <content><![CDATA[<p>pg_stat_statements 不能像 pageinspect 那样只靠 CREATE EXTENSION 就用，原因在于它们在 PostgreSQL 内核中的“级别”完全不同。</p>
-<p>pg_stat_statements 和 pageinspect 的定位完全不同：它是一个 全局统计模块<br>它需要：</p>
-<ol>
-<li>拦截每一条 SQL 的执行<ul>
-<li>使用 executor hooks</li>
-<li>在 query 开始 &#x2F; 结束时采样</li>
-</ul>
-</li>
-<li>shared memory 中维护全局 hash 表<ul>
-<li>跨 backend 共享</li>
-<li>保存长期累计统计</li>
-</ul>
-</li>
-<li>在 backend 启动阶段完成初始化<ul>
-<li>分配 shared memory</li>
-<li>注册 hooks</li>
-</ul>
-</li>
-</ol>
-<p>这些事情 只能在 postmaster 启动时完成。</p>
-<h2 id="启动步骤"><a href="#启动步骤" class="headerlink" title="启动步骤"></a>启动步骤</h2><ol>
-<li>修改 postgresql.conf<br> 确认conf位置 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gujinfei=# show config_file;</span><br><span class="line">            config_file</span><br><span class="line">---------------------------------------</span><br><span class="line">/home/gujinfei/pgdata/postgresql.conf</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">shared_preload_libraries = &#x27;pg_stat_statements&#x27;</span><br></pre></td></tr></table></figure></li>
-<li>reboot database <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pg_ctl restart</span><br></pre></td></tr></table></figure></li>
-<li>进入sql <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> shared_preload_libraries;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_stat_statements;</span><br></pre></td></tr></table></figure></li>
-<li>Test <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line"><span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br></pre></td></tr></table></figure>
- result <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">t</span><br><span class="line"><span class="comment">---</span></span><br><span class="line">t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), a</span><br><span class="line"><span class="keyword">Group</span> Key: t.a</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), b</span><br><span class="line"><span class="keyword">Group</span> Key: t.b</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), c</span><br><span class="line"><span class="keyword">Group</span> Key: t.c</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">9219356609107396553</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br><span class="line">calls <span class="operator">|</span> <span class="keyword">rows</span> <span class="operator">|</span>                             query</span><br><span class="line"><span class="comment">-------+------+---------------------------------------------------------------</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span> <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t</span><br><span class="line">    <span class="number">2</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a</span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span>#</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-      <categories>
-        <category>postgresql</category>
-      </categories>
-      <tags>
-        <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>【译】不要给 PostgreSQL 分配过多内存</title>
     <url>/2025/12/25/postgresql/dont-give-postgres-too-much-memory/</url>
     <content><![CDATA[<blockquote>
@@ -2861,6 +2822,45 @@
         <tag>work_mem</tag>
         <tag>maintenance_work_mem</tag>
         <tag>GIN</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>How to use pg_stat_statements extension</title>
+    <url>/2026/01/12/postgresql/how-to-use-pg-stat-statements-extension/</url>
+    <content><![CDATA[<p>pg_stat_statements 不能像 pageinspect 那样只靠 CREATE EXTENSION 就用，原因在于它们在 PostgreSQL 内核中的“级别”完全不同。</p>
+<p>pg_stat_statements 和 pageinspect 的定位完全不同：它是一个 全局统计模块<br>它需要：</p>
+<ol>
+<li>拦截每一条 SQL 的执行<ul>
+<li>使用 executor hooks</li>
+<li>在 query 开始 &#x2F; 结束时采样</li>
+</ul>
+</li>
+<li>shared memory 中维护全局 hash 表<ul>
+<li>跨 backend 共享</li>
+<li>保存长期累计统计</li>
+</ul>
+</li>
+<li>在 backend 启动阶段完成初始化<ul>
+<li>分配 shared memory</li>
+<li>注册 hooks</li>
+</ul>
+</li>
+</ol>
+<p>这些事情 只能在 postmaster 启动时完成。</p>
+<h2 id="启动步骤"><a href="#启动步骤" class="headerlink" title="启动步骤"></a>启动步骤</h2><ol>
+<li>修改 postgresql.conf<br> 确认conf位置 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gujinfei=# show config_file;</span><br><span class="line">            config_file</span><br><span class="line">---------------------------------------</span><br><span class="line">/home/gujinfei/pgdata/postgresql.conf</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">shared_preload_libraries = &#x27;pg_stat_statements&#x27;</span><br></pre></td></tr></table></figure></li>
+<li>reboot database <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pg_ctl restart</span><br></pre></td></tr></table></figure></li>
+<li>进入sql <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> shared_preload_libraries;</span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_stat_statements;</span><br></pre></td></tr></table></figure></li>
+<li>Test <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line"><span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br></pre></td></tr></table></figure>
+ result <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">t</span><br><span class="line"><span class="comment">---</span></span><br><span class="line">t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), a</span><br><span class="line"><span class="keyword">Group</span> Key: t.a</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), b</span><br><span class="line"><span class="keyword">Group</span> Key: t.b</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), c</span><br><span class="line"><span class="keyword">Group</span> Key: t.c</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">9219356609107396553</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br><span class="line">calls <span class="operator">|</span> <span class="keyword">rows</span> <span class="operator">|</span>                             query</span><br><span class="line"><span class="comment">-------+------+---------------------------------------------------------------</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span> <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t</span><br><span class="line">    <span class="number">2</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a</span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span>#</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
       </tags>
   </entry>
   <entry>
@@ -3113,29 +3113,6 @@
       </categories>
   </entry>
   <entry>
-    <title>Win11下使用wsl</title>
-    <url>/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/</url>
-    <content><![CDATA[<h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
-
-<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
-<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
-
-<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
-<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>wsl</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Running OpenClaw with Docker</title>
     <url>/2026/02/09/tools/How-to-use-openclaw/</url>
     <content><![CDATA[<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
@@ -3178,6 +3155,29 @@
       </categories>
       <tags>
         <tag>AI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11下使用wsl</title>
+    <url>/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/</url>
+    <content><![CDATA[<h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
+<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>wsl</tag>
       </tags>
   </entry>
   <entry>
@@ -3313,6 +3313,32 @@
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2024/05/11/tools/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
+
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>How to use omnigraffle</title>
     <url>/2025/11/04/tools/how-to-use-omnigraffle/</url>
     <content><![CDATA[<p>Here are some tips for using omnigraffle</p>
@@ -3341,32 +3367,6 @@
       </categories>
       <tags>
         <tag>omnigraffle</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2024/05/11/tools/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
-
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
