@@ -18,12 +18,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffrey-fly-github-io.pages.dev","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"text":"Disqus 评论","order":-1}},"enable":true,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffly.cc","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"text":"Disqus 评论","order":-1}},"enable":true,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="在发生故障（例如停电、操作系统错误或数据库服务器崩溃）时，RAM 中的所有内容都将丢失；只有写入磁盘的数据会保留下来。要在故障后启动服务器，您必须恢复数据一致性。如果磁盘本身已损坏，则必须通过备份恢复来解决相同的问题。 理论上，您可以始终保持磁盘上的数据一致性。但实际上，这意味着服务器必须不断地将随机页面写入磁盘（尽管顺序写入成本更低），并且此类写入的顺序必须保证在任何特定时刻都不会损害一致性（这">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Logging">
-<meta property="og:url" content="https://jeffrey-fly-github-io.pages.dev/2025/02/27/postgresql/Logging/index.html">
+<meta property="og:url" content="https://jeffly.cc/2025/02/27/postgresql/Logging/index.html">
 <meta property="og:site_name" content="Jeffly">
 <meta property="og:description" content="在发生故障（例如停电、操作系统错误或数据库服务器崩溃）时，RAM 中的所有内容都将丢失；只有写入磁盘的数据会保留下来。要在故障后启动服务器，您必须恢复数据一致性。如果磁盘本身已损坏，则必须通过备份恢复来解决相同的问题。 理论上，您可以始终保持磁盘上的数据一致性。但实际上，这意味着服务器必须不断地将随机页面写入磁盘（尽管顺序写入成本更低），并且此类写入的顺序必须保证在任何特定时刻都不会损害一致性（这">
 <meta property="og:locale" content="en_US">
@@ -34,10 +34,10 @@
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://jeffrey-fly-github-io.pages.dev/2025/02/27/postgresql/Logging/">
+<link rel="canonical" href="https://jeffly.cc/2025/02/27/postgresql/Logging/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffrey-fly-github-io.pages.dev/2025/02/27/postgresql/Logging/","path":"2025/02/27/postgresql/Logging/","title":"Logging"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffly.cc/2025/02/27/postgresql/Logging/","path":"2025/02/27/postgresql/Logging/","title":"Logging"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>Logging | Jeffly</title>
@@ -218,7 +218,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/02/27/postgresql/Logging/">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/02/27/postgresql/Logging/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
