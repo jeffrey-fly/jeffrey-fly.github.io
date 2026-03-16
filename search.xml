@@ -148,6 +148,41 @@
       </categories>
   </entry>
   <entry>
+    <title>CAP定理</title>
+    <url>/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/</url>
+    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>CAP 定理指出，在分布式系统中，系统只能在以下三个属性中同时保证两个：</p>
+<p><strong>一致性（Consistency，C）</strong>：所有节点看到相同的数据。对任一节点的写入操作，其后的所有读取都会返回更新后的值。</p>
+<p><strong>可用性（Availability，A）</strong>：每个发给非故障节点的请求都会得到响应，但不保证响应包含最新数据。</p>
+<p><strong>分区容错性（Partition Tolerance，P）</strong>：即使节点间发生网络分区或消息丢失，系统仍能继续运行。</p>
+<p>在理想情况下（网络永不中断），可以同时拥有 C 和 A。但在实际环境中，网络延迟或中断不可避免，因此 P 通常被视为默认前提。真正的取舍在于 A 与 C：当网络分区发生时，是优先保证一致性，还是优先保证可用性？</p>
+<p><img src="/images/cap/CAP.png" alt="CAP"></p>
+<h2 id="一致性优先场景"><a href="#一致性优先场景" class="headerlink" title="一致性优先场景"></a>一致性优先场景</h2><ul>
+<li><p>票务系统（如 12306）：若两个用户同时预订同一座位，系统必须确保只有一个用户成功，以避免重复分配。</p>
+</li>
+<li><p>账户余额：扣款成功后，用户在任何终端查询余额都应反映扣款后的最新结果</p>
+</li>
+</ul>
+<h2 id="可用性优先场景"><a href="#可用性优先场景" class="headerlink" title="可用性优先场景"></a>可用性优先场景</h2><ul>
+<li><p>社交媒体：用户更新个人信息后，短时间内其他用户可能仍看到旧信息，但系统不会返回错误。</p>
+</li>
+<li><p>OLAP 系统：处理海量报表数据时，由于同步延迟，系统可能无法实时反映最新写入，但仍能提供历史数据查询，保证系统可用性。</p>
+</li>
+</ul>
+<h2 id="一致性的补充说明"><a href="#一致性的补充说明" class="headerlink" title="一致性的补充说明"></a>一致性的补充说明</h2><p>CAP 定理中所指的一致性通常是强一致性，即所有读取操作都反映最新写入。除此之外，还有其他一致性模型：</p>
+<h3 id="强一致性（Strong-Consistency）"><a href="#强一致性（Strong-Consistency）" class="headerlink" title="强一致性（Strong Consistency）"></a>强一致性（Strong Consistency）</h3><p>所有读取均返回最新写入的数据，开销较大，但对银行账户等需要绝对准确性的系统至关重要。</p>
+<h3 id="因果一致性（Causal-Consistency）"><a href="#因果一致性（Causal-Consistency）" class="headerlink" title="因果一致性（Causal Consistency）"></a>因果一致性（Causal Consistency）</h3><ul>
+<li>保证具有因果关系的操作顺序一致，但允许无因果关系的操作顺序不同。</li>
+<li>因果相关操作：如用户先发帖，再有回复，系统保证先看到发帖再看到回复。</li>
+<li>并发无关操作：如不同用户同时点赞不同帖子，其顺序可以在各节点不同。</li>
+</ul>
+<p><strong>特殊实现</strong><br>读己所写（Read-Your-Own-Writes Consistency）：用户在同一会话中总能立即看到自己提交的更新。常用于社交媒体。</p>
+<h3 id="最终一致性（Eventual-Consistency）："><a href="#最终一致性（Eventual-Consistency）：" class="headerlink" title="最终一致性（Eventual Consistency）："></a>最终一致性（Eventual Consistency）：</h3><p>系统在经过一段时间后最终达到一致状态，但短期内可能存在不一致数据。典型应用：ClickHouse、分布式缓存等。</p>
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Files_in_Clickhouse</title>
     <url>/2026/01/20/database/Files-in-Clickhouse/</url>
     <content><![CDATA[<h2 id="物理结构图"><a href="#物理结构图" class="headerlink" title="物理结构图"></a>物理结构图</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">primary.idx</span><br><span class="line"> ├─ entry 0  -&gt; granule 0</span><br><span class="line"> ├─ entry 1  -&gt; granule 1</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br><span class="line">column.mrk4 (per column)</span><br><span class="line"> ├─ mark 0 -&gt; (compressed_offset, decompressed_offset) of granule 0</span><br><span class="line"> ├─ mark 1 -&gt; (compressed_offset, decompressed_offset) of granule 1</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br><span class="line">data.bin</span><br><span class="line"> ├─ compressed block A</span><br><span class="line"> │    ├─ granule 0</span><br><span class="line"> │    └─ granule 1</span><br><span class="line"> ├─ compressed block B</span><br><span class="line"> │    └─ granule 2</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
@@ -207,41 +242,6 @@
       <tags>
         <tag>clickhouse</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>CAP定理</title>
-    <url>/2026/02/01/database/CAP%E7%90%86%E8%AE%BA/</url>
-    <content><![CDATA[<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>CAP 定理指出，在分布式系统中，系统只能在以下三个属性中同时保证两个：</p>
-<p><strong>一致性（Consistency，C）</strong>：所有节点看到相同的数据。对任一节点的写入操作，其后的所有读取都会返回更新后的值。</p>
-<p><strong>可用性（Availability，A）</strong>：每个发给非故障节点的请求都会得到响应，但不保证响应包含最新数据。</p>
-<p><strong>分区容错性（Partition Tolerance，P）</strong>：即使节点间发生网络分区或消息丢失，系统仍能继续运行。</p>
-<p>在理想情况下（网络永不中断），可以同时拥有 C 和 A。但在实际环境中，网络延迟或中断不可避免，因此 P 通常被视为默认前提。真正的取舍在于 A 与 C：当网络分区发生时，是优先保证一致性，还是优先保证可用性？</p>
-<p><img src="/images/cap/CAP.png" alt="CAP"></p>
-<h2 id="一致性优先场景"><a href="#一致性优先场景" class="headerlink" title="一致性优先场景"></a>一致性优先场景</h2><ul>
-<li><p>票务系统（如 12306）：若两个用户同时预订同一座位，系统必须确保只有一个用户成功，以避免重复分配。</p>
-</li>
-<li><p>账户余额：扣款成功后，用户在任何终端查询余额都应反映扣款后的最新结果</p>
-</li>
-</ul>
-<h2 id="可用性优先场景"><a href="#可用性优先场景" class="headerlink" title="可用性优先场景"></a>可用性优先场景</h2><ul>
-<li><p>社交媒体：用户更新个人信息后，短时间内其他用户可能仍看到旧信息，但系统不会返回错误。</p>
-</li>
-<li><p>OLAP 系统：处理海量报表数据时，由于同步延迟，系统可能无法实时反映最新写入，但仍能提供历史数据查询，保证系统可用性。</p>
-</li>
-</ul>
-<h2 id="一致性的补充说明"><a href="#一致性的补充说明" class="headerlink" title="一致性的补充说明"></a>一致性的补充说明</h2><p>CAP 定理中所指的一致性通常是强一致性，即所有读取操作都反映最新写入。除此之外，还有其他一致性模型：</p>
-<h3 id="强一致性（Strong-Consistency）"><a href="#强一致性（Strong-Consistency）" class="headerlink" title="强一致性（Strong Consistency）"></a>强一致性（Strong Consistency）</h3><p>所有读取均返回最新写入的数据，开销较大，但对银行账户等需要绝对准确性的系统至关重要。</p>
-<h3 id="因果一致性（Causal-Consistency）"><a href="#因果一致性（Causal-Consistency）" class="headerlink" title="因果一致性（Causal Consistency）"></a>因果一致性（Causal Consistency）</h3><ul>
-<li>保证具有因果关系的操作顺序一致，但允许无因果关系的操作顺序不同。</li>
-<li>因果相关操作：如用户先发帖，再有回复，系统保证先看到发帖再看到回复。</li>
-<li>并发无关操作：如不同用户同时点赞不同帖子，其顺序可以在各节点不同。</li>
-</ul>
-<p><strong>特殊实现</strong><br>读己所写（Read-Your-Own-Writes Consistency）：用户在同一会话中总能立即看到自己提交的更新。常用于社交媒体。</p>
-<h3 id="最终一致性（Eventual-Consistency）："><a href="#最终一致性（Eventual-Consistency）：" class="headerlink" title="最终一致性（Eventual Consistency）："></a>最终一致性（Eventual Consistency）：</h3><p>系统在经过一段时间后最终达到一致状态，但短期内可能存在不一致数据。典型应用：ClickHouse、分布式缓存等。</p>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
   </entry>
   <entry>
     <title>Lehman–Yao B-tree</title>
@@ -582,20 +582,6 @@
       </tags>
   </entry>
   <entry>
-    <title>TPCC</title>
-    <url>/2025/06/04/database/TPCC/</url>
-    <content><![CDATA[<ol>
-<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
-</ol>
-]]></content>
-      <categories>
-        <category>database</category>
-      </categories>
-      <tags>
-        <tag>MVCC</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>SSTables and LSM Trees</title>
     <url>/2025/11/08/database/SSTables-and-LSM-Trees/</url>
     <content><![CDATA[<p>SSTables：Sorted String Table ： 每个segment文件中key值是有序（根据key值排序）并且唯一的。sstable有如下优势：</p>
@@ -673,32 +659,18 @@
       </tags>
   </entry>
   <entry>
-    <title>install_oceanbase</title>
-    <url>/2025/11/11/database/install-oceanbase/</url>
-    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
-
-<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
-<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
-<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
-
-<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
-<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
-<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
-<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
-
-<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
-
+    <title>TPCC</title>
+    <url>/2025/06/04/database/TPCC/</url>
+    <content><![CDATA[<ol>
+<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
+</ol>
 ]]></content>
       <categories>
         <category>database</category>
       </categories>
+      <tags>
+        <tag>MVCC</tag>
+      </tags>
   </entry>
   <entry>
     <title>innodb and heap table</title>
@@ -798,6 +770,34 @@
       <tags>
         <tag>storage</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>install_oceanbase</title>
+    <url>/2025/11/11/database/install-oceanbase/</url>
+    <content><![CDATA[<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>To build OceanBase from source code, you need to install the C++ toolchain in your development environment first. If the C++ toolchain is not installed yet, you can follow the instructions in this document for installation.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install git wget rpm rpm2cpio cpio make build-essential binutils m4</span><br></pre></td></tr></table></figure>
+
+<h2 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h2><p>Clone the source code to your development machine:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/oceanbase.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h2><p>Build OceanBase from the source code in debug mode or release mode:</p>
+<h3 id="Debug-mode"><a href="#Debug-mode" class="headerlink" title="Debug mode"></a>Debug mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh debug --init --make</span><br></pre></td></tr></table></figure>
+<h3 id="Release-mode"><a href="#Release-mode" class="headerlink" title="Release mode"></a>Release mode</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash build.sh release --init --make</span><br></pre></td></tr></table></figure>
+
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Now that you built the observer binary, you can deploy an OceanBase instance with the obd.sh utility:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh prepare -p /tmp/obtest</span><br><span class="line">./tools/deploy/obd.sh deploy -c ./tools/deploy/single.yaml</span><br></pre></td></tr></table></figure>
+<p>You can check the mysql_port in .&#x2F;tools&#x2F;deploy&#x2F;single.yaml file to see the listening port. Normally, if you deploy with the root user, the OceanBase server will listen on port 10000, and the examples below are also based on this port.</p>
+<h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><p>You can use the official MySQL client to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql <span class="operator">-</span>uroot <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000</span><br></pre></td></tr></table></figure>
+<p>Alternatively, you can use the obclient to connect to OceanBase:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">.<span class="operator">/</span>deps<span class="operator">/</span><span class="number">3</span>rd<span class="operator">/</span>u01<span class="operator">/</span>obclient<span class="operator">/</span>bin<span class="operator">/</span>obclient <span class="operator">-</span>h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span> <span class="operator">-</span>P10000 <span class="operator">-</span>uroot <span class="operator">-</span>Doceanbase <span class="operator">-</span>A</span><br></pre></td></tr></table></figure>
+
+<h2 id="Shutdown"><a href="#Shutdown" class="headerlink" title="Shutdown"></a>Shutdown</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./tools/deploy/obd.sh destroy --<span class="built_in">rm</span> -n single</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>database</category>
+      </categories>
   </entry>
   <entry>
     <title>一致性hash</title>
@@ -1502,7 +1502,7 @@
       </tags>
   </entry>
   <entry>
-    <title>理解 TCP write 阻塞与信号打断</title>
+    <title>TCP write 阻塞与信号打断</title>
     <url>/2026/03/16/debug/%E7%90%86%E8%A7%A3-TCP-write-%E9%98%BB%E5%A1%9E%E4%B8%8E%E4%BF%A1%E5%8F%B7%E6%89%93%E6%96%AD/</url>
     <content><![CDATA[<p>今天工作中遇到一个有意思的事，同事调试程序发现死锁了，但是一打pstack就过去了。分析过去的堆栈，发现线程卡在 write() 上，打 pstack 后就突然继续执行了。<br>恰好还有一台出现问题的环境留着，等待分析验证</p>
 <h2 id="一-堆栈现象"><a href="#一-堆栈现象" class="headerlink" title="一 堆栈现象"></a>一 堆栈现象</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#0 ... write() from libpthread.so.0</span><br><span class="line">#1 ... ?? () from libasan.so.5</span><br><span class="line">#2 ... NetWrite(...)  // 自己封装的写函数</span><br></pre></td></tr></table></figure>
@@ -1568,19 +1568,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Happy forever</title>
-    <url>/2026/02/24/life/begin2026/</url>
-    <content><![CDATA[<p>2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐</p>
-<p><img src="/images/lianyungang/liandao.jpeg" alt="liandao"></p>
-]]></content>
-      <categories>
-        <category>life</category>
-      </categories>
-      <tags>
-        <tag>travel</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>File Descriptor Limits</title>
     <url>/2024/10/24/linux/File%20Descriptor%20Limits/</url>
     <content><![CDATA[<p><a href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
@@ -1593,27 +1580,373 @@
       </tags>
   </entry>
   <entry>
-    <title>Background Writing</title>
-    <url>/2025/08/20/postgresql/Background-Writing/</url>
-    <content><![CDATA[<p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p>
-<p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p>
-<p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p>
-<p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p>
-<p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p>
-<p>总结</p>
-<blockquote>
-<p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
-</blockquote>
-<p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+    <title>About pytest</title>
+    <url>/2024/01/04/python/about-pytest/</url>
+    <content><![CDATA[<h2 id="Install-dependencies"><a href="#Install-dependencies" class="headerlink" title="Install dependencies"></a>Install dependencies</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install pytest pytest-cov</span><br></pre></td></tr></table></figure>
+
+<h2 id="Check-coverage"><a href="#Check-coverage" class="headerlink" title="Check coverage"></a>Check coverage</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil</span><br><span class="line">python -m pytest --cov=myutil --cov-report=term-missing</span><br><span class="line"></span><br><span class="line">python -m pytest --cov=myutil.myjson</span><br><span class="line">python -m pytest tests/test_myjson.py --cov=myutil</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="Generate-html-file"><a href="#Generate-html-file" class="headerlink" title="Generate html file"></a>Generate html file</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil --cov-report=html</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>python_tricks</title>
+    <url>/2022/06/20/python/python-tricks/</url>
+    <content><![CDATA[<h2 id="python参数灵活性"><a href="#python参数灵活性" class="headerlink" title="python参数灵活性"></a>python参数灵活性</h2><p>位置参数 + 默认参数 + *args + **kwargs</p>
+<table>
+<thead>
+<tr>
+<th>语法</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>*args</code></td>
+<td>收集所有 <strong>位置参数</strong>，组成元组</td>
+</tr>
+<tr>
+<td><code>**kwargs</code></td>
+<td>收集所有 <strong>关键字参数</strong>，组成字典</td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">func</span>(<span class="params">a, b=<span class="number">2</span>, **kwargs</span>):</span><br><span class="line">    <span class="built_in">print</span>(a, b, kwargs)</span><br><span class="line"></span><br><span class="line">func(<span class="number">1</span>, c=<span class="number">3</span>, d=<span class="number">4</span>)</span><br><span class="line"><span class="comment"># 输出：1 2 &#123;&#x27;c&#x27;: 3, &#x27;d&#x27;: 4&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="返回值灵活性"><a href="#返回值灵活性" class="headerlink" title="返回值灵活性"></a>返回值灵活性</h2><p>Python 函数没有固定返回类型。可以返回任意对象：数字、字符串、列表、字典、对象，甚至函数本身。调用方只要按照约定处理即可</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">example</span>(<span class="params">x</span>):</span><br><span class="line">    <span class="keyword">if</span> x &gt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;negative&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="虚拟环境的使用"><a href="#虚拟环境的使用" class="headerlink" title="虚拟环境的使用"></a>虚拟环境的使用</h2><ul>
+<li>创建虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python3<span class="number">.14</span> -m venv .venv</span><br></pre></td></tr></table></figure></li>
+<li>终端激活虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">source .venv/<span class="built_in">bin</span>/activate</span><br><span class="line">python --version</span><br><span class="line">which python</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="导出第三方依赖"><a href="#导出第三方依赖" class="headerlink" title="导出第三方依赖"></a>导出第三方依赖</h2><ul>
+<li>激活虚拟环境</li>
+<li>使用 pip freeze 导出  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip freeze --local &gt; requirements.txt</span><br></pre></td></tr></table></figure></li>
+<li>复现环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="打包"><a href="#打包" class="headerlink" title="打包"></a>打包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install pyinstaller</span><br><span class="line"></span><br><span class="line">pyinstaller \</span><br><span class="line">  --windowed \</span><br><span class="line">  --name MyApp \</span><br><span class="line">  main.py</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>macos  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">brew install create-dmg</span><br><span class="line"></span><br><span class="line">create-dmg \</span><br><span class="line">MyApp.app \</span><br><span class="line">dist/</span><br></pre></td></tr></table></figure>
+  生成  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dist/MyApp.dmg</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Running OpenClaw with Docker</title>
+    <url>/2026/02/09/tools/How-to-use-openclaw/</url>
+    <content><![CDATA[<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
+<li><strong>Bypass internet restrictions</strong></li>
+<li>Docker Desktop (or Docker Engine) + Docker Compose v2</li>
+<li>Enough disk for images + logs</li>
+</ul>
+<h2 id="Get-code-from-github"><a href="#Get-code-from-github" class="headerlink" title="Get code from github"></a>Get code from github</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/openclaw/openclaw.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Containerized-Gateway"><a href="#Containerized-Gateway" class="headerlink" title="Containerized Gateway"></a>Containerized Gateway</h2><p>From repo root:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./docker-setup.sh</span><br></pre></td></tr></table></figure>
+<p>This script: </p>
+<ul>
+<li>builds the gateway image</li>
+<li>runs the onboarding wizard</li>
+<li>prints optional provider setup hints</li>
+<li>starts the gateway via Docker Compose</li>
+<li>generates a gateway token and writes it to .env</li>
+</ul>
+<h2 id="Control-UI-token"><a href="#Control-UI-token" class="headerlink" title="Control UI token"></a>Control UI token</h2><p>If you see “unauthorized” or “disconnected (1008): pairing required”</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&quot;gateway&quot;: &#123;</span><br><span class="line">    &quot;controlUi&quot;: &#123; &quot;dangerouslyDisableDeviceAuth&quot;: true &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>By default, OpenClaw requires every connecting device to be “paired” (approved by an administrator). Since the Control UI is running in an “insecure” context<br>(HTTP inside Docker), it cannot generate a persistent device identity. Setting allowInsecureAuth: true tells the gateway to trust the Control UI if it provides<br>the correct token, skipping the pairing requirement.</p>
+<h2 id="Install-feishu-plugin"><a href="#Install-feishu-plugin" class="headerlink" title="Install feishu plugin"></a>Install feishu plugin</h2><p>See URL below：<br><a href="https://docs.openclaw.ai/channels/feishu">Feishu</a></p>
+<h2 id="Install-skill"><a href="#Install-skill" class="headerlink" title="Install skill"></a>Install skill</h2><ol>
+<li><p>goto the following site:<br><a href="https://clawhub.ai/skills">https://clawhub.ai/skills</a></p>
+</li>
+<li><p>look for the skill you need. e.g. sonoscli</p>
+</li>
+<li><p>Execute</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npx clawhub@latest install sonoscli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Everything-is-ok"><a href="#Everything-is-ok" class="headerlink" title="Everything is ok"></a>Everything is ok</h2><p> <img src="/images/openclaw/feishu.png" alt="FEISHU"></p>
+<h2 id="Some-problems："><a href="#Some-problems：" class="headerlink" title="Some problems："></a>Some problems：</h2><ol>
+<li>“ plugin feishu: duplicate plugin id detected; later plugin may be overridden” <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node@45122743ed12:/app$ find / -name &quot;openclaw.plugin.json&quot; 2&gt;/dev/null | grep feishu   </span><br><span class="line">/home/node/.openclaw/extensions/feishu/openclaw.plugin.json  </span><br><span class="line">/app/extensions/feishu/openclaw.plugin.json</span><br></pre></td></tr></table></figure>
+ You only need one feishu, delete the other one (I deleted the one under .openclaw, and deleting the one under app will cause the container to fail to start)</li>
 </ol>
 ]]></content>
       <categories>
-        <category>postgresql</category>
+        <category>tools</category>
       </categories>
       <tags>
-        <tag>pginternal</tag>
+        <tag>AI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11下使用wsl</title>
+    <url>/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/</url>
+    <content><![CDATA[<h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
+<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>wsl</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>docker compose</title>
+    <url>/2023/11/05/tools/docker-compose/</url>
+    <content><![CDATA[<h2 id="一-Docker-Compose-是什么"><a href="#一-Docker-Compose-是什么" class="headerlink" title="一. Docker Compose 是什么"></a>一. Docker Compose 是什么</h2><ul>
+<li><p>Docker Compose 是 Docker 官方提供的工具，用于定义和管理多容器应用。</p>
+</li>
+<li><p>它允许你用一个 YAML 文件 描述整个应用的服务（containers）、网络、卷、环境变量等，然后一条命令就能创建、启动、停止、销毁整个应用。</p>
+</li>
+<li><p>主要目标是 声明式管理 —— 你只写配置文件，Compose 确保容器状态和配置一致。</p>
+</li>
+</ul>
+<p>简单理解：<br>Docker 是管一个容器，Compose 是管理一堆容器的应用。</p>
+<h2 id="二-Compose-的核心概念"><a href="#二-Compose-的核心概念" class="headerlink" title="二. Compose 的核心概念"></a>二. Compose 的核心概念</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Service（服务）</strong></td>
+<td>YAML 文件里定义的一个容器，包括镜像、端口、环境变量、卷挂载等。</td>
+</tr>
+<tr>
+<td><strong>Container（容器）</strong></td>
+<td>实际运行的 Docker 实例，由 Service 创建。</td>
+</tr>
+<tr>
+<td><strong>Volume（卷）</strong></td>
+<td>持久化数据，用宿主机目录或 Docker 卷存储数据库、缓存、照片等。</td>
+</tr>
+<tr>
+<td><strong>Network（网络）</strong></td>
+<td>内部容器间通信网络，自动创建，保证服务可以互相访问。</td>
+</tr>
+<tr>
+<td><strong>Project（项目）</strong></td>
+<td>一个 Compose 文件及其相关容器、卷、网络的集合，默认用目录名作为项目名。</td>
+</tr>
+</tbody></table>
+<h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br><span class="line"></span><br><span class="line"># stop and delete</span><br><span class="line">docker-compose -p gjf down</span><br></pre></td></tr></table></figure>
+
+<h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>docker-compose up -d</code></td>
+<td>创建并启动服务（后台模式）</td>
+</tr>
+<tr>
+<td><code>docker-compose down</code></td>
+<td>停止并删除容器、网络（卷可保留）</td>
+</tr>
+<tr>
+<td><code>docker-compose stop</code></td>
+<td>停止容器，但不删除</td>
+</tr>
+<tr>
+<td><code>docker-compose start</code></td>
+<td>启动已存在容器</td>
+</tr>
+<tr>
+<td><code>docker-compose restart</code></td>
+<td>停止 + 启动</td>
+</tr>
+<tr>
+<td><code>docker-compose logs -f</code></td>
+<td>查看实时日志</td>
+</tr>
+<tr>
+<td><code>docker-compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
+<td>进入容器执行命令（类似 <code>docker exec</code>）</td>
+</tr>
+<tr>
+<td><code>docker-compose ps</code></td>
+<td>查看当前项目的容器状态</td>
+</tr>
+</tbody></table>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>git</title>
+    <url>/2023/12/17/tools/git/</url>
+    <content><![CDATA[<ol>
+<li>配置 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git config --global user.name <span class="string">&quot;Jeffrey&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;jeffreyfly@icloud.com&quot;</span></span><br><span class="line">git config --global pull.rebase <span class="literal">true</span></span><br><span class="line">git config --global credential.helper store</span><br><span class="line">git config --global push.default simple</span><br><span class="line">git config --global -l</span><br></pre></td></tr></table></figure></li>
+<li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
+<li>commit 合并</li>
+</ol>
+<ul>
+<li>方法1:  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br><span class="line"></span><br><span class="line">pick abc123 Commit message 1</span><br><span class="line">pick def456 Commit message 2</span><br><span class="line">pick 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  将你想合并的提交改为 squash 或简写 s，保留第一个 pick 不动：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pick abc123 Commit message 1</span><br><span class="line">squash def456 Commit message 2</span><br><span class="line">squash 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
+<li>方法2  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="4">
+<li><p>忽略所有名为 build 的目录<br>编辑.gitignore 文件</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>rebase</p>
+ <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git fetch origin</span><br><span class="line">git rebase origin/main</span><br><span class="line">git add xxx.cpp</span><br><span class="line">git rebase --<span class="built_in">continue</span> / abort</span><br><span class="line">git push --force-with-lease</span><br><span class="line">git push orign &lt;localbranch&gt;:&lt;remotebranch&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>把文件回退到它的上一次修改</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br><span class="line">git diff origin/main HEAD --name-only  # 远端分支 vs HEAD</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>更改作者</p>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>GIT</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/05/11/tools/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
+
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>How to use omnigraffle</title>
+    <url>/2025/11/04/tools/how-to-use-omnigraffle/</url>
+    <content><![CDATA[<p>Here are some tips for using omnigraffle</p>
+<h2 id="Draw-circle"><a href="#Draw-circle" class="headerlink" title="Draw circle"></a>Draw circle</h2><p>Hold down Shift while drawing a circle</p>
+<h2 id="Draw-curve"><a href="#Draw-curve" class="headerlink" title="Draw curve"></a>Draw curve</h2><ol>
+<li>select pen tool: draw custome sharps</li>
+<li>Click one point on the canvas, then click another point — a straight line will appear.</li>
+<li>Select the line → double-click the middle of the line → drag the new point: a curved effect will appear.</li>
+</ol>
+<h2 id="Flexible-Control-Over-Line-Arrows"><a href="#Flexible-Control-Over-Line-Arrows" class="headerlink" title="Flexible Control Over Line Arrows"></a>Flexible Control Over Line Arrows</h2><p>When the endpoint of a line (especially an endpoint with an arrow) is connected to a shape, the default mode is <strong>“Connected Line”</strong> (automatic snapping). In this mode, the endpoint is <strong>“locked”</strong> to the shape’s boundary or center, and <strong>cannot be freely dragged</strong>.</p>
+<h3 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h3><ol>
+<li><strong>Turn on Magnets</strong>   <ul>
+<li><strong>Select</strong> the target shape.</li>
+<li><strong>Menu Bar</strong> → <strong>Edit</strong> → <strong>Magnets</strong> → <strong>Show Magnets</strong></li>
+<li>You will see <strong>small red dots</strong> (magnets) appear around the shape.</li>
+<li>These are the <strong>connectable positions</strong>.</li>
+<li>Drag the <strong>endpoint of a line</strong> near the red dot, and it will <strong>snap&#x2F;attach</strong> to that point.</li>
+</ul>
+</li>
+</ol>
+<h2 id="What-is-Magnet"><a href="#What-is-Magnet" class="headerlink" title="What is Magnet?"></a>What is Magnet?</h2><p>Magnet (magnetic points) are those positions on the shape (Shape) that can attract the end points of the lines.<br>When you draw a line with the Line Tool, endpoints that are close to these magnetic points will “snap” to it.</p>
+<h2 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h2><p><img src="/./images/page.png" alt="page"></p>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>omnigraffle</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>wordpress</title>
+    <url>/2025/07/31/tools/wordpress/</url>
+    <content><![CDATA[<h2 id="Ubuntu安装wordpress"><a href="#Ubuntu安装wordpress" class="headerlink" title="Ubuntu安装wordpress"></a>Ubuntu安装wordpress</h2><ul>
+<li><p>安装apache：</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2 -y</span><br><span class="line">chown -R www-data:www-data /var/www/html</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装php</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y php php-mysql php-json</span><br><span class="line">yum install php php-mysqlnd php-json</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install php libapache2-mod-php php-mysql -y</span><br><span class="line">apt install php-cli php-curl php-gd php-mbstring php-xml php-zip -y</span><br></pre></td></tr></table></figure></li>
+<li><p>安装database</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum install -y mariadb-server</span><br><span class="line">yum install -y mysql-server</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apt install mysql-server -y</span><br></pre></td></tr></table></figure>
+<p>  修改密码：</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;12345&#x27;；</span><br><span class="line"></span><br><span class="line">CREATE DATABASE wordpress_db;</span><br><span class="line">CREATE USER &#x27;wp_user&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;password&#x27;;</span><br><span class="line">GRANT ALL PRIVILEGES ON wordpress_db.* TO &#x27;wp_user&#x27;@&#x27;localhost&#x27;;</span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装wordpress</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cd /var/www/html</span><br><span class="line">wget https://wordpress.org/latest.tar.gz </span><br><span class="line">tar -xvzf latest.tar.gz</span><br><span class="line">chown -R www-data:www-data /var/www/html/wordpress</span><br><span class="line">chmod -R 755 /var/www/html/wordpress</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编辑 Apache 默认虚拟主机配置</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo nano /etc/apache2/sites-available/000-default.conf</span><br></pre></td></tr></table></figure>
+<p>  找到：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html<br>  改成：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html&#x2F;wordpress</p>
+</li>
+<li><p>&#x2F;etc&#x2F;apache2&#x2F;apache2.conf 添加：</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;Directory /var/www/html/wordpress&gt;</span><br><span class="line">    Options Indexes FollowSymLinks</span><br><span class="line">    AllowOverride All</span><br><span class="line">    Require all granted</span><br><span class="line">&lt;/Directory&gt;</span><br></pre></td></tr></table></figure>
+<p>  如果你希望支持 WordPress 的 .htaccess 功能，请保留 AllowOverride All</p>
+</li>
+<li><p>固定连接</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apache2ctl -M | grep rewrite</span><br><span class="line">a2enmod rewrite</span><br><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure>
+<p>  在 WordPress 后台重新保存固定链接</p>
+</li>
+<li><p>重启服务</p>
+  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+      <categories>
+        <category>tools</category>
+      </categories>
+      <tags>
+        <tag>wordpress</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Happy forever</title>
+    <url>/2026/02/24/life/begin2026/</url>
+    <content><![CDATA[<p>2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐</p>
+<p><img src="/images/lianyungang/liandao.jpeg" alt="liandao"></p>
+]]></content>
+      <categories>
+        <category>life</category>
+      </categories>
+      <tags>
+        <tag>travel</tag>
       </tags>
   </entry>
   <entry>
@@ -1672,6 +2005,30 @@
       <tags>
         <tag>pginternal</tag>
         <tag>statistics</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Background Writing</title>
+    <url>/2025/08/20/postgresql/Background-Writing/</url>
+    <content><![CDATA[<p>如果后台进程（backend）需要从缓冲区中驱逐一个脏页（dirty page），它必须将这个页面写入磁盘。这种情况是不希望发生的，因为它会导致等待（例如 I&#x2F;O 阻塞）——更好的方式是在后台异步地执行写入操作。</p>
+<p>这一工作部分由 checkpointer 进程完成，但这仍然不够。因此，PostgreSQL 还引入了另一个名为 bgwriter（后台写入进程）的进程，专门用于后台写盘操作。</p>
+<p>bgwriter 和驱逐（eviction）使用相同的缓冲区遍历算法，但有两个关键区别：</p>
+<p>bgwriter 使用自己独立的时钟指针（clock hand），该指针从不会落后于驱逐的指针，通常还会超过它；<br>在遍历缓冲区时，bgwriter 不会降低页面的 usage count（使用计数）。<br>当一个缓冲页未被固定（unpinned）且其 usage count 为 0 时，如果它是脏的，bgwriter 就会将其刷新到磁盘。换句话说，bgwriter 在驱逐操作发生之前运行，主动地将那些很可能即将被驱逐的页面提前写入磁盘。</p>
+<p>这样做的好处是：被选中驱逐的缓冲页很可能已经是干净的（clean），从而提高了驱逐操作的效率，避免了后台进程被迫同步写盘的代价。</p>
+<p>总结</p>
+<blockquote>
+<p>checkpointer 是“周期性清理工”，而 bgwriter 是“持续扫地工”。</p>
+</blockquote>
+<p>checkpointer 负责最终的数据落盘一致性，而 bgwriter 提前清理“潜在垃圾”，让后台线程少“踩雷”。二者配合，保障了 PostgreSQL 的高并发性能和写入平滑性。</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
       </tags>
   </entry>
   <entry>
@@ -1776,36 +2133,6 @@
       </tags>
   </entry>
   <entry>
-    <title>GiST framework</title>
-    <url>/2025/12/01/postgresql/GiST/</url>
-    <content><![CDATA[<p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p>
-<ul>
-<li>R-tree（二维&#x2F;多维空间数据）</li>
-<li>RD-tree（集合之间的相似性度量）</li>
-<li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li>
-</ul>
-<p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p>
-<p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p>
-<p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p>
-<p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p>
-<p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p>
-<p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p>
-<p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p>
-<p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p>
-<p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p>
-<p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>postgresql</category>
-      </categories>
-      <tags>
-        <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Extended_Query_Protocol</title>
     <url>/2025/12/16/postgresql/Extended-Query-Protocol/</url>
     <content><![CDATA[<p>当使用简单查询协议时，每个命令（即使重复多次）都必须经历上述所有阶段：</p>
@@ -1860,6 +2187,36 @@
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">BEGIN</span>;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">DECLARE</span> cur <span class="keyword">CURSOR</span> <span class="keyword">FOR</span> <span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> aircrafts</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> aircraft_code;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">FETCH</span> <span class="number">3</span> <span class="keyword">FROM</span> cur;</span><br><span class="line">aircraft_code  <span class="operator">|</span> model           <span class="operator">|</span> <span class="keyword">range</span> </span><br><span class="line">−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−</span><br><span class="line"><span class="number">319</span>            <span class="operator">|</span> Airbus A319−<span class="number">100</span> <span class="operator">|</span> <span class="number">6700</span></span><br><span class="line"><span class="number">320</span>            <span class="operator">|</span> Airbus A320−<span class="number">200</span> <span class="operator">|</span> <span class="number">5700</span></span><br><span class="line"><span class="number">321</span>            <span class="operator">|</span> Airbus A321−<span class="number">200</span> <span class="operator">|</span> <span class="number">5600</span></span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">FETCH</span> <span class="number">2</span> <span class="keyword">FROM</span> cur;</span><br><span class="line">aircraft_code  <span class="operator">|</span> model          <span class="operator">|</span> <span class="keyword">range</span> </span><br><span class="line">−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−−<span class="operator">+</span>−−−−−−− </span><br><span class="line"><span class="number">733</span>            <span class="operator">|</span> Boeing <span class="number">737</span>−<span class="number">300</span> <span class="operator">|</span> <span class="number">4200</span> </span><br><span class="line"><span class="number">763</span>            <span class="operator">|</span> Boeing <span class="number">767</span>−<span class="number">300</span> <span class="operator">|</span> <span class="number">7900</span></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">COMMIT</span>;</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>) </span><br></pre></td></tr></table></figure>
 
 <p>如果查询返回大量行，且客户端需要获取所有行，那么系统吞吐量高度依赖于批量大小（batch size）。批量包含的行数越多，每次访问服务器并获取响应时产生的通信开销就越小。然而，随着批量大小继续增加，这种优势会逐渐减弱：例如，将行一条条取出与每批取 10 行的差别非常明显，但将每批取 100 行与每批取 1000 行相比，性能提升就不那么显著了</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>postgresql</category>
+      </categories>
+      <tags>
+        <tag>pginternal</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GiST framework</title>
+    <url>/2025/12/01/postgresql/GiST/</url>
+    <content><![CDATA[<p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p>
+<ul>
+<li>R-tree（二维&#x2F;多维空间数据）</li>
+<li>RD-tree（集合之间的相似性度量）</li>
+<li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li>
+</ul>
+<p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p>
+<p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p>
+<p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p>
+<p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p>
+<p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p>
+<p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p>
+<p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p>
+<p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p>
+<p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p>
+<p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p>
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>
@@ -3052,363 +3409,6 @@
       </categories>
       <tags>
         <tag>pginternal</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>About pytest</title>
-    <url>/2024/01/04/python/about-pytest/</url>
-    <content><![CDATA[<h2 id="Install-dependencies"><a href="#Install-dependencies" class="headerlink" title="Install dependencies"></a>Install dependencies</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install pytest pytest-cov</span><br></pre></td></tr></table></figure>
-
-<h2 id="Check-coverage"><a href="#Check-coverage" class="headerlink" title="Check coverage"></a>Check coverage</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil</span><br><span class="line">python -m pytest --cov=myutil --cov-report=term-missing</span><br><span class="line"></span><br><span class="line">python -m pytest --cov=myutil.myjson</span><br><span class="line">python -m pytest tests/test_myjson.py --cov=myutil</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="Generate-html-file"><a href="#Generate-html-file" class="headerlink" title="Generate html file"></a>Generate html file</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python -m pytest --cov=myutil --cov-report=html</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>python</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>python_tricks</title>
-    <url>/2022/06/20/python/python-tricks/</url>
-    <content><![CDATA[<h2 id="python参数灵活性"><a href="#python参数灵活性" class="headerlink" title="python参数灵活性"></a>python参数灵活性</h2><p>位置参数 + 默认参数 + *args + **kwargs</p>
-<table>
-<thead>
-<tr>
-<th>语法</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>*args</code></td>
-<td>收集所有 <strong>位置参数</strong>，组成元组</td>
-</tr>
-<tr>
-<td><code>**kwargs</code></td>
-<td>收集所有 <strong>关键字参数</strong>，组成字典</td>
-</tr>
-</tbody></table>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">func</span>(<span class="params">a, b=<span class="number">2</span>, **kwargs</span>):</span><br><span class="line">    <span class="built_in">print</span>(a, b, kwargs)</span><br><span class="line"></span><br><span class="line">func(<span class="number">1</span>, c=<span class="number">3</span>, d=<span class="number">4</span>)</span><br><span class="line"><span class="comment"># 输出：1 2 &#123;&#x27;c&#x27;: 3, &#x27;d&#x27;: 4&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="返回值灵活性"><a href="#返回值灵活性" class="headerlink" title="返回值灵活性"></a>返回值灵活性</h2><p>Python 函数没有固定返回类型。可以返回任意对象：数字、字符串、列表、字典、对象，甚至函数本身。调用方只要按照约定处理即可</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">example</span>(<span class="params">x</span>):</span><br><span class="line">    <span class="keyword">if</span> x &gt; <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;negative&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="虚拟环境的使用"><a href="#虚拟环境的使用" class="headerlink" title="虚拟环境的使用"></a>虚拟环境的使用</h2><ul>
-<li>创建虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python3<span class="number">.14</span> -m venv .venv</span><br></pre></td></tr></table></figure></li>
-<li>终端激活虚拟环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">source .venv/<span class="built_in">bin</span>/activate</span><br><span class="line">python --version</span><br><span class="line">which python</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="导出第三方依赖"><a href="#导出第三方依赖" class="headerlink" title="导出第三方依赖"></a>导出第三方依赖</h2><ul>
-<li>激活虚拟环境</li>
-<li>使用 pip freeze 导出  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip freeze --local &gt; requirements.txt</span><br></pre></td></tr></table></figure></li>
-<li>复现环境  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="打包"><a href="#打包" class="headerlink" title="打包"></a>打包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install pyinstaller</span><br><span class="line"></span><br><span class="line">pyinstaller \</span><br><span class="line">  --windowed \</span><br><span class="line">  --name MyApp \</span><br><span class="line">  main.py</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<ul>
-<li>macos  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">brew install create-dmg</span><br><span class="line"></span><br><span class="line">create-dmg \</span><br><span class="line">MyApp.app \</span><br><span class="line">dist/</span><br></pre></td></tr></table></figure>
-  生成  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dist/MyApp.dmg</span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-      <categories>
-        <category>python</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>Running OpenClaw with Docker</title>
-    <url>/2026/02/09/tools/How-to-use-openclaw/</url>
-    <content><![CDATA[<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
-<li><strong>Bypass internet restrictions</strong></li>
-<li>Docker Desktop (or Docker Engine) + Docker Compose v2</li>
-<li>Enough disk for images + logs</li>
-</ul>
-<h2 id="Get-code-from-github"><a href="#Get-code-from-github" class="headerlink" title="Get code from github"></a>Get code from github</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/openclaw/openclaw.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Containerized-Gateway"><a href="#Containerized-Gateway" class="headerlink" title="Containerized Gateway"></a>Containerized Gateway</h2><p>From repo root:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./docker-setup.sh</span><br></pre></td></tr></table></figure>
-<p>This script: </p>
-<ul>
-<li>builds the gateway image</li>
-<li>runs the onboarding wizard</li>
-<li>prints optional provider setup hints</li>
-<li>starts the gateway via Docker Compose</li>
-<li>generates a gateway token and writes it to .env</li>
-</ul>
-<h2 id="Control-UI-token"><a href="#Control-UI-token" class="headerlink" title="Control UI token"></a>Control UI token</h2><p>If you see “unauthorized” or “disconnected (1008): pairing required”</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&quot;gateway&quot;: &#123;</span><br><span class="line">    &quot;controlUi&quot;: &#123; &quot;dangerouslyDisableDeviceAuth&quot;: true &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>By default, OpenClaw requires every connecting device to be “paired” (approved by an administrator). Since the Control UI is running in an “insecure” context<br>(HTTP inside Docker), it cannot generate a persistent device identity. Setting allowInsecureAuth: true tells the gateway to trust the Control UI if it provides<br>the correct token, skipping the pairing requirement.</p>
-<h2 id="Install-feishu-plugin"><a href="#Install-feishu-plugin" class="headerlink" title="Install feishu plugin"></a>Install feishu plugin</h2><p>See URL below：<br><a href="https://docs.openclaw.ai/channels/feishu">Feishu</a></p>
-<h2 id="Install-skill"><a href="#Install-skill" class="headerlink" title="Install skill"></a>Install skill</h2><ol>
-<li><p>goto the following site:<br><a href="https://clawhub.ai/skills">https://clawhub.ai/skills</a></p>
-</li>
-<li><p>look for the skill you need. e.g. sonoscli</p>
-</li>
-<li><p>Execute</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npx clawhub@latest install sonoscli</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="Everything-is-ok"><a href="#Everything-is-ok" class="headerlink" title="Everything is ok"></a>Everything is ok</h2><p> <img src="/images/openclaw/feishu.png" alt="FEISHU"></p>
-<h2 id="Some-problems："><a href="#Some-problems：" class="headerlink" title="Some problems："></a>Some problems：</h2><ol>
-<li>“ plugin feishu: duplicate plugin id detected; later plugin may be overridden” <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node@45122743ed12:/app$ find / -name &quot;openclaw.plugin.json&quot; 2&gt;/dev/null | grep feishu   </span><br><span class="line">/home/node/.openclaw/extensions/feishu/openclaw.plugin.json  </span><br><span class="line">/app/extensions/feishu/openclaw.plugin.json</span><br></pre></td></tr></table></figure>
- You only need one feishu, delete the other one (I deleted the one under .openclaw, and deleting the one under app will cause the container to fail to start)</li>
-</ol>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>AI</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Win11下使用wsl</title>
-    <url>/2026/01/10/tools/Win11%E4%B8%8B%E4%BD%BF%E7%94%A8wsl/</url>
-    <content><![CDATA[<h2 id="启动、停止"><a href="#启动、停止" class="headerlink" title="启动、停止"></a>启动、停止</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wsl #如果没有安装，会安装</span><br><span class="line">wsl --shutdown</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看已安装的版本"><a href="#查看已安装的版本" class="headerlink" title="查看已安装的版本"></a>查看已安装的版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PS C:\Users\gujinfei&gt; wsl -l -v</span><br><span class="line">  NAME              STATE           VERSION</span><br><span class="line">* Ubuntu            Running         2</span><br><span class="line">  docker-desktop    Stopped         2</span><br><span class="line">PS C:\Users\gujinfei&gt;</span><br></pre></td></tr></table></figure>
-
-<h2 id="启用主机代理，加速github访问"><a href="#启用主机代理，加速github访问" class="headerlink" title="启用主机代理，加速github访问"></a>启用主机代理，加速github访问</h2><p>进入： %UserProfile% 目录，编辑或者增加 .wslconfig 文件</p>
-<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[wsl2]</span></span><br><span class="line"><span class="comment"># 开启镜像网络模式</span></span><br><span class="line"><span class="attr">networkingMode</span>=mirrored</span><br><span class="line"><span class="comment"># 自动代理转发</span></span><br><span class="line"><span class="attr">autoProxy</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="安装rust"><a href="#安装rust" class="headerlink" title="安装rust"></a>安装rust</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install -y build-essential curl pkg-config libssl-dev</span><br><span class="line">curl --proto &#x27;=https&#x27; --tlsv1.2 -sSf https://sh.rustup.rs | sh</span><br></pre></td></tr></table></figure>
-
-<h2 id="一些配置"><a href="#一些配置" class="headerlink" title="一些配置"></a>一些配置</h2><ol>
-<li>公私钥 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t ed25519 -C &quot;jeffreyfly@icloud.com&quot;</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>wsl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>docker compose</title>
-    <url>/2023/11/05/tools/docker-compose/</url>
-    <content><![CDATA[<h2 id="一-Docker-Compose-是什么"><a href="#一-Docker-Compose-是什么" class="headerlink" title="一. Docker Compose 是什么"></a>一. Docker Compose 是什么</h2><ul>
-<li><p>Docker Compose 是 Docker 官方提供的工具，用于定义和管理多容器应用。</p>
-</li>
-<li><p>它允许你用一个 YAML 文件 描述整个应用的服务（containers）、网络、卷、环境变量等，然后一条命令就能创建、启动、停止、销毁整个应用。</p>
-</li>
-<li><p>主要目标是 声明式管理 —— 你只写配置文件，Compose 确保容器状态和配置一致。</p>
-</li>
-</ul>
-<p>简单理解：<br>Docker 是管一个容器，Compose 是管理一堆容器的应用。</p>
-<h2 id="二-Compose-的核心概念"><a href="#二-Compose-的核心概念" class="headerlink" title="二. Compose 的核心概念"></a>二. Compose 的核心概念</h2><table>
-<thead>
-<tr>
-<th>概念</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Service（服务）</strong></td>
-<td>YAML 文件里定义的一个容器，包括镜像、端口、环境变量、卷挂载等。</td>
-</tr>
-<tr>
-<td><strong>Container（容器）</strong></td>
-<td>实际运行的 Docker 实例，由 Service 创建。</td>
-</tr>
-<tr>
-<td><strong>Volume（卷）</strong></td>
-<td>持久化数据，用宿主机目录或 Docker 卷存储数据库、缓存、照片等。</td>
-</tr>
-<tr>
-<td><strong>Network（网络）</strong></td>
-<td>内部容器间通信网络，自动创建，保证服务可以互相访问。</td>
-</tr>
-<tr>
-<td><strong>Project（项目）</strong></td>
-<td>一个 Compose 文件及其相关容器、卷、网络的集合，默认用目录名作为项目名。</td>
-</tr>
-</tbody></table>
-<h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br><span class="line"></span><br><span class="line"># stop and delete</span><br><span class="line">docker-compose -p gjf down</span><br></pre></td></tr></table></figure>
-
-<h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>docker-compose up -d</code></td>
-<td>创建并启动服务（后台模式）</td>
-</tr>
-<tr>
-<td><code>docker-compose down</code></td>
-<td>停止并删除容器、网络（卷可保留）</td>
-</tr>
-<tr>
-<td><code>docker-compose stop</code></td>
-<td>停止容器，但不删除</td>
-</tr>
-<tr>
-<td><code>docker-compose start</code></td>
-<td>启动已存在容器</td>
-</tr>
-<tr>
-<td><code>docker-compose restart</code></td>
-<td>停止 + 启动</td>
-</tr>
-<tr>
-<td><code>docker-compose logs -f</code></td>
-<td>查看实时日志</td>
-</tr>
-<tr>
-<td><code>docker-compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
-<td>进入容器执行命令（类似 <code>docker exec</code>）</td>
-</tr>
-<tr>
-<td><code>docker-compose ps</code></td>
-<td>查看当前项目的容器状态</td>
-</tr>
-</tbody></table>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>git</title>
-    <url>/2023/12/17/tools/git/</url>
-    <content><![CDATA[<ol>
-<li>配置 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git config --global user.name <span class="string">&quot;Jeffrey&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;jeffreyfly@icloud.com&quot;</span></span><br><span class="line">git config --global pull.rebase <span class="literal">true</span></span><br><span class="line">git config --global credential.helper store</span><br><span class="line">git config --global push.default simple</span><br><span class="line">git config --global -l</span><br></pre></td></tr></table></figure></li>
-<li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
-<li>commit 合并</li>
-</ol>
-<ul>
-<li>方法1:  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br><span class="line"></span><br><span class="line">pick abc123 Commit message 1</span><br><span class="line">pick def456 Commit message 2</span><br><span class="line">pick 789abc Commit message 3</span><br></pre></td></tr></table></figure>
-  将你想合并的提交改为 squash 或简写 s，保留第一个 pick 不动：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pick abc123 Commit message 1</span><br><span class="line">squash def456 Commit message 2</span><br><span class="line">squash 789abc Commit message 3</span><br></pre></td></tr></table></figure>
-  保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
-<li>方法2  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
-</ul>
-<ol start="4">
-<li><p>忽略所有名为 build 的目录<br>编辑.gitignore 文件</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>rebase</p>
- <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git fetch origin</span><br><span class="line">git rebase origin/main</span><br><span class="line">git add xxx.cpp</span><br><span class="line">git rebase --<span class="built_in">continue</span> / abort</span><br><span class="line">git push --force-with-lease</span><br><span class="line">git push orign &lt;localbranch&gt;:&lt;remotebranch&gt;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>把文件回退到它的上一次修改</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br><span class="line">git diff origin/main HEAD --name-only  # 远端分支 vs HEAD</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>更改作者</p>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>GIT</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2024/05/11/tools/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="about-draft"><a href="#about-draft" class="headerlink" title="about draft"></a>about draft</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new draft &quot;草稿标题&quot;</span><br><span class="line">hexo server --draft</span><br><span class="line">//xxx不带md后缀</span><br><span class="line">hexo publish post xxx </span><br></pre></td></tr></table></figure>
-
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>hexo</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>How to use omnigraffle</title>
-    <url>/2025/11/04/tools/how-to-use-omnigraffle/</url>
-    <content><![CDATA[<p>Here are some tips for using omnigraffle</p>
-<h2 id="Draw-circle"><a href="#Draw-circle" class="headerlink" title="Draw circle"></a>Draw circle</h2><p>Hold down Shift while drawing a circle</p>
-<h2 id="Draw-curve"><a href="#Draw-curve" class="headerlink" title="Draw curve"></a>Draw curve</h2><ol>
-<li>select pen tool: draw custome sharps</li>
-<li>Click one point on the canvas, then click another point — a straight line will appear.</li>
-<li>Select the line → double-click the middle of the line → drag the new point: a curved effect will appear.</li>
-</ol>
-<h2 id="Flexible-Control-Over-Line-Arrows"><a href="#Flexible-Control-Over-Line-Arrows" class="headerlink" title="Flexible Control Over Line Arrows"></a>Flexible Control Over Line Arrows</h2><p>When the endpoint of a line (especially an endpoint with an arrow) is connected to a shape, the default mode is <strong>“Connected Line”</strong> (automatic snapping). In this mode, the endpoint is <strong>“locked”</strong> to the shape’s boundary or center, and <strong>cannot be freely dragged</strong>.</p>
-<h3 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h3><ol>
-<li><strong>Turn on Magnets</strong>   <ul>
-<li><strong>Select</strong> the target shape.</li>
-<li><strong>Menu Bar</strong> → <strong>Edit</strong> → <strong>Magnets</strong> → <strong>Show Magnets</strong></li>
-<li>You will see <strong>small red dots</strong> (magnets) appear around the shape.</li>
-<li>These are the <strong>connectable positions</strong>.</li>
-<li>Drag the <strong>endpoint of a line</strong> near the red dot, and it will <strong>snap&#x2F;attach</strong> to that point.</li>
-</ul>
-</li>
-</ol>
-<h2 id="What-is-Magnet"><a href="#What-is-Magnet" class="headerlink" title="What is Magnet?"></a>What is Magnet?</h2><p>Magnet (magnetic points) are those positions on the shape (Shape) that can attract the end points of the lines.<br>When you draw a line with the Line Tool, endpoints that are close to these magnetic points will “snap” to it.</p>
-<h2 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h2><p><img src="/./images/page.png" alt="page"></p>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>omnigraffle</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>wordpress</title>
-    <url>/2025/07/31/tools/wordpress/</url>
-    <content><![CDATA[<h2 id="Ubuntu安装wordpress"><a href="#Ubuntu安装wordpress" class="headerlink" title="Ubuntu安装wordpress"></a>Ubuntu安装wordpress</h2><ul>
-<li><p>安装apache：</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2 -y</span><br><span class="line">chown -R www-data:www-data /var/www/html</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>安装php</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y php php-mysql php-json</span><br><span class="line">yum install php php-mysqlnd php-json</span><br></pre></td></tr></table></figure>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt install php libapache2-mod-php php-mysql -y</span><br><span class="line">apt install php-cli php-curl php-gd php-mbstring php-xml php-zip -y</span><br></pre></td></tr></table></figure></li>
-<li><p>安装database</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum install -y mariadb-server</span><br><span class="line">yum install -y mysql-server</span><br></pre></td></tr></table></figure>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apt install mysql-server -y</span><br></pre></td></tr></table></figure>
-<p>  修改密码：</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;12345&#x27;；</span><br><span class="line"></span><br><span class="line">CREATE DATABASE wordpress_db;</span><br><span class="line">CREATE USER &#x27;wp_user&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;password&#x27;;</span><br><span class="line">GRANT ALL PRIVILEGES ON wordpress_db.* TO &#x27;wp_user&#x27;@&#x27;localhost&#x27;;</span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>安装wordpress</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cd /var/www/html</span><br><span class="line">wget https://wordpress.org/latest.tar.gz </span><br><span class="line">tar -xvzf latest.tar.gz</span><br><span class="line">chown -R www-data:www-data /var/www/html/wordpress</span><br><span class="line">chmod -R 755 /var/www/html/wordpress</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>编辑 Apache 默认虚拟主机配置</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo nano /etc/apache2/sites-available/000-default.conf</span><br></pre></td></tr></table></figure>
-<p>  找到：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html<br>  改成：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html&#x2F;wordpress</p>
-</li>
-<li><p>&#x2F;etc&#x2F;apache2&#x2F;apache2.conf 添加：</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;Directory /var/www/html/wordpress&gt;</span><br><span class="line">    Options Indexes FollowSymLinks</span><br><span class="line">    AllowOverride All</span><br><span class="line">    Require all granted</span><br><span class="line">&lt;/Directory&gt;</span><br></pre></td></tr></table></figure>
-<p>  如果你希望支持 WordPress 的 .htaccess 功能，请保留 AllowOverride All</p>
-</li>
-<li><p>固定连接</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apache2ctl -M | grep rewrite</span><br><span class="line">a2enmod rewrite</span><br><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure>
-<p>  在 WordPress 后台重新保存固定链接</p>
-</li>
-<li><p>重启服务</p>
-  <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-      <categories>
-        <category>tools</category>
-      </categories>
-      <tags>
-        <tag>wordpress</tag>
       </tags>
   </entry>
 </search>
