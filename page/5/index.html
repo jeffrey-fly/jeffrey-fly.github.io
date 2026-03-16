@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">56</span>
+          <span class="site-state-item-count">57</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">33</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,105 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/05/14/postgresql/pgbench-md/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/05/14/postgresql/pgbench-md/" class="post-title-link" itemprop="url">How to use pgbench</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-05-14 11:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T11:26:53+08:00">2025-05-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
+<h2 id="1-Initialize-the-Test-Database"><a href="#1-Initialize-the-Test-Database" class="headerlink" title="1. Initialize the Test Database"></a>1. Initialize the Test Database</h2><p>This sets up the schema and populates data.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -i -s 10 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-i: Initialize the database.</li>
+<li>-s 10: Scale factor. Each scale unit ~100,000 rows in the pgbench_accounts table.</li>
+<li>mydb: The database to test.</li>
+</ul>
+<h2 id="2-Run-a-Simple-Benchmark-Test"><a href="#2-Run-a-Simple-Benchmark-Test" class="headerlink" title="2. Run a Simple Benchmark Test"></a>2. Run a Simple Benchmark Test</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -c 10 -j 2 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-c 10: 10 concurrent clients.</li>
+<li>-j 2: 2 threads.</li>
+<li>-T 60: Run for 60 seconds.</li>
+<li>mydb: Target database.</li>
+</ul>
+<p>It will output something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$ pgbench -c 10 -j 2 -T 60 mydb</span><br><span class="line">pgbench (18devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: &lt;builtin: TPC-B (sort of)&gt;</span><br><span class="line">scaling factor: 10</span><br><span class="line">query mode: simple</span><br><span class="line">number of clients: 10</span><br><span class="line">number of threads: 2</span><br><span class="line">maximum number of tries: 1</span><br><span class="line">duration: 60 s</span><br><span class="line">number of transactions actually processed: 12841</span><br><span class="line">number of failed transactions: 0 (0.000%)</span><br><span class="line">latency average = 46.726 ms</span><br><span class="line">initial connection time = 39.072 ms</span><br><span class="line">tps = 214.013767 (without initial connection time)</span><br><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$</span><br></pre></td></tr></table></figure>
+<h2 id="3-Run-Custom-SQL-Scripts"><a href="#3-Run-Custom-SQL-Scripts" class="headerlink" title="3. Run Custom SQL Scripts"></a>3. Run Custom SQL Scripts</h2><p>You can benchmark with custom SQL transactions:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+<p>Where myscript.sql contains something like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
+<p>Use :variable for substitution. We can define variables using -D:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1155,84 +1254,6 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install graphviz</span><br></pre></td></tr></table></figure>
 <h3 id="sample"><a href="#sample" class="headerlink" title="sample"></a>sample</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    HeapProfilerStart(<span class="string">&quot;/tmp/test_heap&quot;</span>);</span><br><span class="line">    <span class="type">void</span>* p = <span class="built_in">malloc</span>(<span class="number">16</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 分配 16MB</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;Allocated 16MB\n&quot;</span>;</span><br><span class="line">    HeapProfilerDump(<span class="string">&quot;after_alloc&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(p);</span><br><span class="line">    HeapProfilerStop();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ test_heap.cc -ltcmalloc -lpthread -lunwind -o test_heap</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2024/10/24/linux/File%20Descriptor%20Limits/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/10/24/linux/File%20Descriptor%20Limits/" class="post-title-link" itemprop="url">File Descriptor Limits</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-10-24 15:52:16" itemprop="dateCreated datePublished" datetime="2024-10-24T15:52:16+08:00">2024-10-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><a target="_blank" rel="noopener" href="https://0pointer.net/blog/file-descriptor-limits.html">https://0pointer.net/blog/file-descriptor-limits.html</a></p>
-
       
     </div>
 

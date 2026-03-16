@@ -168,7 +168,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">56</span>
+          <span class="site-state-item-count">57</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -179,7 +179,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">33</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -201,6 +201,207 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/09/03/postgresql/Lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/09/03/postgresql/Lock/" class="post-title-link" itemprop="url">Lock</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-03 11:13:57" itemprop="dateCreated datePublished" datetime="2025-09-03T11:13:57+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="全局hash"><a href="#全局hash" class="headerlink" title="全局hash"></a>全局hash</h2><p>LockMethodLockHash：存储LOCK<br>LockMethodProcLockHash：存储PROCLOCK<br>LockMethodLocalHash：存储LOCALLOCK</p>
+<p>同一个LOCK资源对象可以被多个不同的 PROCLOCK 持有，而这些 PROCLOCK 又分别属于不同的进程。</p>
+<h2 id="LOCKTAG"><a href="#LOCKTAG" class="headerlink" title="LOCKTAG"></a>LOCKTAG</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">LOCKTAG</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	uint32		locktag_field1; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint32		locktag_field2; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint32		locktag_field3; <span class="comment">/* a 32-bit ID field */</span></span><br><span class="line">	uint16		locktag_field4; <span class="comment">/* a 16-bit ID field */</span></span><br><span class="line">	uint8		locktag_type;	<span class="comment">/* see enum LockTagType */</span></span><br><span class="line">	uint8		locktag_lockmethodid;	<span class="comment">/* lockmethod indicator */</span></span><br><span class="line">&#125; LOCKTAG;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>locktag_type<br>标识这个锁是针对哪类资源的。每种 LockTagType 决定了 LOCKTAG 里后面几个字段（locktag_field1 ~ locktag_field4）是怎么解释的，比如：<br>LOCKTAG_TRANSACTION：xid<br>LOCKTAG_RELATION：dbOid + relOid<br>LOCKTAG_TUPLE：dbOid + relOid + blockNum + offNum       </li>
+<li>locktag_lockmethodid<ul>
+<li>DEFAULT_LOCKMETHOD（id &#x3D; DEFAULT_LOCKMETHOD)<br>  绝大多数用户可见的锁（relation, tuple, transactionid 等）都走它。</li>
+<li>USER_LOCKMETHOD（id &#x3D; USER_LOCKMETHOD)<br>  提供给 pg_advisory_lock() 一类的 advisory lock，用于用户自定义锁。</li>
+</ul>
+</li>
+</ul>
+<h2 id="LOCK"><a href="#LOCK" class="headerlink" title="LOCK"></a>LOCK</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">LOCK</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	LOCKTAG		tag;			</span><br><span class="line">	LOCKMASK	grantMask;		</span><br><span class="line">	LOCKMASK	waitMask;		</span><br><span class="line">	dlist_head	procLocks;		</span><br><span class="line">	dclist_head     waitProcs;		</span><br><span class="line">	<span class="type">int</span>		requested[MAX_LOCKMODES];	</span><br><span class="line">	<span class="type">int</span>		nRequested;		</span><br><span class="line">	<span class="type">int</span>		granted[MAX_LOCKMODES]; </span><br><span class="line">	<span class="type">int</span>		nGranted;		</span><br><span class="line">&#125; LOCK;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>waitProcs<br>等待本LOCK的PGPROC链表</li>
+<li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
+<li>waitMask<br>该资源上等待的锁类型</li>
+<li>grantMask<br>该资源上已经授予的锁类型</li>
+</ul>
+<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NoLock					0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessShareLock			1	<span class="comment">/* SELECT */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowShareLock			2	<span class="comment">/* SELECT FOR UPDATE/FOR SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowExclusiveLock		3	<span class="comment">/* INSERT, UPDATE, DELETE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareUpdateExclusiveLock 4	<span class="comment">/* VACUUM (non-FULL), ANALYZE, CREATE</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * INDEX CONCURRENTLY */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareLock				5	<span class="comment">/* CREATE INDEX (WITHOUT CONCURRENTLY) */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareRowExclusiveLock	6	<span class="comment">/* like EXCLUSIVE MODE, but allows ROW</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ExclusiveLock			7	<span class="comment">/* blocks ROW SHARE/SELECT...FOR UPDATE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessExclusiveLock		8	<span class="comment">/* ALTER TABLE, DROP TABLE, VACUUM FULL,</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * and unqualified LOCK TABLE */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MaxLockMode				8	<span class="comment">/* highest standard lock mode */</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="冲突矩阵"><a href="#冲突矩阵" class="headerlink" title="冲突矩阵"></a>冲突矩阵</h2><table>
+<thead>
+<tr>
+<th>Requested Lock Mode</th>
+<th>ACCESS SHARE</th>
+<th>ROW SHARE</th>
+<th>ROW EXCL.</th>
+<th>SHARE UPDATE EXCL.</th>
+<th>SHARE</th>
+<th>SHARE ROW EXCL.</th>
+<th>EXCL.</th>
+<th>ACCESS EXCL.</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ACCESS SHARE</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+</tr>
+<tr>
+<td>ROW SHARE</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>ROW EXCL.</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE UPDATE EXCL.</td>
+<td></td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE</td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>SHARE ROW EXCL.</td>
+<td></td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>EXCL.</td>
+<td></td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>ACCESS EXCL.</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+</tbody></table>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/17/explicit-locking.html">postgres官方文档</a>  </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1217,105 +1418,6 @@
 <li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
 </ol>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffrey-fly-github-io.pages.dev/2025/05/14/postgresql/pgbench-md/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/05/14/postgresql/pgbench-md/" class="post-title-link" itemprop="url">How to use pgbench</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-05-14 11:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T11:26:53+08:00">2025-05-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>pgbench is a benchmarking tool bundled with PostgreSQL, designed to simulate a TPC-B-like workload, not a full TPC-C</p>
-<h2 id="1-Initialize-the-Test-Database"><a href="#1-Initialize-the-Test-Database" class="headerlink" title="1. Initialize the Test Database"></a>1. Initialize the Test Database</h2><p>This sets up the schema and populates data.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -i -s 10 mydb</span><br></pre></td></tr></table></figure>
-<ul>
-<li>-i: Initialize the database.</li>
-<li>-s 10: Scale factor. Each scale unit ~100,000 rows in the pgbench_accounts table.</li>
-<li>mydb: The database to test.</li>
-</ul>
-<h2 id="2-Run-a-Simple-Benchmark-Test"><a href="#2-Run-a-Simple-Benchmark-Test" class="headerlink" title="2. Run a Simple Benchmark Test"></a>2. Run a Simple Benchmark Test</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -c 10 -j 2 -T 60 mydb</span><br></pre></td></tr></table></figure>
-<ul>
-<li>-c 10: 10 concurrent clients.</li>
-<li>-j 2: 2 threads.</li>
-<li>-T 60: Run for 60 seconds.</li>
-<li>mydb: Target database.</li>
-</ul>
-<p>It will output something like:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$ pgbench -c 10 -j 2 -T 60 mydb</span><br><span class="line">pgbench (18devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: &lt;builtin: TPC-B (sort of)&gt;</span><br><span class="line">scaling factor: 10</span><br><span class="line">query mode: simple</span><br><span class="line">number of clients: 10</span><br><span class="line">number of threads: 2</span><br><span class="line">maximum number of tries: 1</span><br><span class="line">duration: 60 s</span><br><span class="line">number of transactions actually processed: 12841</span><br><span class="line">number of failed transactions: 0 (0.000%)</span><br><span class="line">latency average = 46.726 ms</span><br><span class="line">initial connection time = 39.072 ms</span><br><span class="line">tps = 214.013767 (without initial connection time)</span><br><span class="line">[postgres@iZ2ze4mflpfiplp0evcw8gZ root]$</span><br></pre></td></tr></table></figure>
-<h2 id="3-Run-Custom-SQL-Scripts"><a href="#3-Run-Custom-SQL-Scripts" class="headerlink" title="3. Run Custom SQL Scripts"></a>3. Run Custom SQL Scripts</h2><p>You can benchmark with custom SQL transactions:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
-<p>Where myscript.sql contains something like:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BEGIN;</span><br><span class="line">SELECT * FROM pgbench_accounts WHERE aid = :aid;</span><br><span class="line">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
-<p>Use :variable for substitution. We can define variables using -D:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pgbench -f myscript.sql -D aid=12345 -D delta=50 -c 10 -T 60 mydb</span><br></pre></td></tr></table></figure>
       
     </div>
 
