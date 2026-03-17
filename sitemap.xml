@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://jeffly.cc/about/index.html</loc>
+    
+    <lastmod>2026-03-17</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://jeffly.cc/2026/03/16/debug/%E7%90%86%E8%A7%A3-TCP-write-%E9%98%BB%E5%A1%9E%E4%B8%8E%E4%BF%A1%E5%8F%B7%E6%89%93%E6%96%AD/</loc>
     
     <lastmod>2026-03-16</lastmod>
@@ -209,7 +218,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/11/03/postgresql/WAL%E8%AE%BE%E7%BD%AE/</loc>
+    <loc>https://jeffly.cc/2025/07/29/postgresql/WAL-Structure-Physical-Structure/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -218,7 +227,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/07/29/postgresql/WAL-Structure-Physical-Structure/</loc>
+    <loc>https://jeffly.cc/2025/11/03/postgresql/WAL%E8%AE%BE%E7%BD%AE/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -326,7 +335,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/12/16/postgresql/Extended-Query-Protocol/</loc>
+    <loc>https://jeffly.cc/2025/12/22/postgresql/Distinct-Values/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -335,7 +344,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/12/22/postgresql/Distinct-Values/</loc>
+    <loc>https://jeffly.cc/2025/12/16/postgresql/Extended-Query-Protocol/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -371,25 +380,16 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/categories/index.html</loc>
-    
-    <lastmod>2025-12-30</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://jeffly.cc/about/index.html</loc>
-    
-    <lastmod>2025-12-30</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://jeffly.cc/docs/index.html</loc>
+    
+    <lastmod>2025-12-30</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://jeffly.cc/categories/index.html</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -524,7 +524,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/06/04/database/TPCC/</loc>
+    <loc>https://jeffly.cc/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -542,7 +542,7 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/</loc>
+    <loc>https://jeffly.cc/2025/06/04/database/TPCC/</loc>
     
     <lastmod>2025-12-30</lastmod>
     
@@ -558,6 +558,13 @@
     <priority>1.0</priority>
   </url>
 
+  
+  <url>
+    <loc>https://jeffly.cc/tags/travel/</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
   
   <url>
     <loc>https://jeffly.cc/tags/algorithm/</loc>
@@ -581,14 +588,14 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/MVCC/</loc>
+    <loc>https://jeffly.cc/tags/storage/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/storage/</loc>
+    <loc>https://jeffly.cc/tags/MVCC/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -665,13 +672,6 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/travel/</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://jeffly.cc/tags/os/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -693,14 +693,14 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/learn/</loc>
+    <loc>https://jeffly.cc/tags/plan/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/plan/</loc>
+    <loc>https://jeffly.cc/tags/learn/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -742,6 +742,13 @@
   </url>
   
   <url>
+    <loc>https://jeffly.cc/tags/AI/</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://jeffly.cc/tags/wsl/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -770,13 +777,6 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/tags/AI/</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://jeffly.cc/tags/omnigraffle/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -793,6 +793,13 @@
 
   
   <url>
+    <loc>https://jeffly.cc/categories/life/</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
     <loc>https://jeffly.cc/categories/database/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -801,13 +808,6 @@
   
   <url>
     <loc>https://jeffly.cc/categories/debug/</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://jeffly.cc/categories/life/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -828,14 +828,14 @@
   </url>
   
   <url>
-    <loc>https://jeffly.cc/categories/python/</loc>
+    <loc>https://jeffly.cc/categories/tools/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://jeffly.cc/categories/tools/</loc>
+    <loc>https://jeffly.cc/categories/python/</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
