@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -202,6 +202,127 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/09/05/postgresql/LWLock-in-postgres/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/09/05/postgresql/LWLock-in-postgres/" class="post-title-link" itemprop="url">LWLock in postgres</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-05 16:14:55" itemprop="dateCreated datePublished" datetime="2025-09-05T16:14:55+08:00">2025-09-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/09/05/postgresql/LWLock-in-postgres/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/09/05/postgresql/LWLock-in-postgres/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一-相关结构体说明"><a href="#一-相关结构体说明" class="headerlink" title="一 相关结构体说明"></a>一 相关结构体说明</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="title class_">LWLock</span></span><br><span class="line">&#123;</span><br><span class="line">    uint16           tranche;       <span class="comment">/* tranche ID */</span></span><br><span class="line">    pg_atomic_uint32 state;         <span class="comment">/* state of exclusive/nonexclusive lockers */</span></span><br><span class="line">    proclist_head    waiters;       <span class="comment">/* list of waiting PGPROCs */</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> LOCK_DEBUG</span></span><br><span class="line">    pg_atomic_uint32 nwaiters;      <span class="comment">/* number of waiters */</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">PGPROC</span>    *owner;        <span class="comment">/* last exclusive owner of the lock */</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125; LWLock;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>tranche<br>每个 LWLock 都属于某个 tranche，tranche 是一个 int 类型的 ID，代表这把锁的用途</p>
+</li>
+<li><p>state （不同版本可能会有变化，本文对应版本：PostgreSQL 19devel（开发版，尚未正式发布的 19））<br>bit0..17：共享持有者计数（一个整数计数，不是位图）<br>bit18：独占锁哨兵位（LW_VAL_EXCLUSIVE &#x3D; 1&lt;&lt;18）</p>
+</li>
+</ul>
+<p>bit29: LW_FLAG_LOCKED，是 wait list 自身的小锁（保护等待队列操作）<br>bit30: LW_FLAG_RELEASE_OK，表示当前可以在释放路径执行唤醒<br>bit31: LW_FLAG_HAS_WAITERS，表示等待队列里有 waiter</p>
+<ul>
+<li>waiters<br>等待队列</li>
+</ul>
+<h2 id="二-Interface说明"><a href="#二-Interface说明" class="headerlink" title="二 Interface说明"></a>二 Interface说明</h2><h3 id="2-1-LWLockAcquire"><a href="#2-1-LWLockAcquire" class="headerlink" title="2.1 LWLockAcquire"></a>2.1 LWLockAcquire</h3><p>加锁，失败进入等待队列，直接加上锁的情况，可能会造成等待队列无效唤醒  </p>
+<blockquote>
+<p>acquire a lightweight lock in the specified mode<br>Side effect: cancel&#x2F;die interrupts are held off until lock release.</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mode == LW_EXCLUSIVE)</span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_LOCK_MASK) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_EXCLUSIVE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_VAL_EXCLUSIVE) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_SHARED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述代码确认是否可以加锁</p>
+<h3 id="2-2-LWLockRelease"><a href="#2-2-LWLockRelease" class="headerlink" title="2.2 LWLockRelease"></a>2.2 LWLockRelease</h3><p>进行唤醒条件：</p>
+<ul>
+<li>oldstate &amp; LW_FLAG_HAS_WAITERS：等待队列非空。这个条件确认有进程在等待锁。  </li>
+<li>oldstate &amp; LW_FLAG_RELEASE_OK： 允许唤醒。这个标志表示系统在上次唤醒后，已经将再次唤醒其他等待者的权限交给了被唤醒的进程。</li>
+<li>(oldstate &amp; LW_LOCK_MASK) &#x3D;&#x3D; 0：锁已空闲。这个条件确认锁当前没有被任何进程占用（无论是独占模式还是共享模式，计数都为零）</li>
+</ul>
+<h2 id="三-分配与类型（默认值，版本相关）"><a href="#三-分配与类型（默认值，版本相关）" class="headerlink" title="三 分配与类型（默认值，版本相关）"></a>三 分配与类型（默认值，版本相关）</h2><ol>
+<li><code>NUM_INDIVIDUAL_LWLOCKS</code>：核心按表生成的单锁（<code>lwlocklist.h</code>），数量随版本变化，不是固定 56。</li>
+<li><code>NUM_BUFFER_PARTITIONS</code>（默认 128）：共享缓冲区 mapping hash 的分区锁 <code>BufferMappingLock[i]</code>。</li>
+<li><code>NUM_LOCK_PARTITIONS</code>（默认 16）：heavyweight lock manager 哈希分区锁（<code>LWTRANCHE_LOCK_MANAGER</code>）。</li>
+<li><code>NUM_PREDICATELOCK_PARTITIONS</code>（默认 16）：谓词锁哈希分区锁。</li>
+<li>扩展自定义：在 postmaster 启动阶段调用 <code>RequestNamedLWLockTranche(name, n)</code> 申请一组锁，重启后 <code>GetNamedLWLockTranche</code> 取基址。需要 <code>shared_preload_libraries</code> 的扩展通常属于此类。</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -291,10 +412,26 @@
 <ul>
 <li>waitProcs<br>等待本LOCK的PGPROC链表</li>
 <li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
-<li>waitMask<br>该资源上等待的锁类型</li>
-<li>grantMask<br>该资源上已经授予的锁类型</li>
+<li>waitMask<br>该资源上等待的锁类型：目前有进程在等待的锁类型集合</li>
+<li>procLocks<ul>
+<li>一个 LOCK（资源）可以挂很多 PROCLOCK（不同后台进程），每个 PROCLOCK 只对应一个 PGPROC + 一个 LOCK。</li>
+<li>同一进程与同一资源只会有一个 PROCLOCK；它的 holdMask 可以同时包含多个锁模式位，且内部还有引用计数在 LOCALLOCK 里，不会创建多个 PROCLOCK</li>
+<li>资源侧用 LOCK.procLocks 链表串起所有持有&#x2F;等待它的 PROCLOCK；进程侧在 PGPROC.myProcLocks（见 proc.h）里串起它关联的所有 PROCLOCK<blockquote>
+<p>因此：一个资源可以被多个进程持锁；一个进程可以同时持有多个资源的锁；对同一资源如需多模式&#x2F;多次持有，累加在同一个 PROCLOCK 的掩码&#x2F;计数里。</p>
+</blockquote>
+</li>
 </ul>
-<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁</p>
+</li>
+<li>grantMask<br>该资源上已经授予的锁类型，LOCKMASK 每一位对应 “编号为 N 的锁模式是否已持有&#x2F;等待”，位号就是 lockmode， bit0 保留不适用</li>
+<li>requested[i]<br>当前有多少个后台对模式 i 提出请求（已授予 + 正在等待）</li>
+<li>nRequested：是总和<blockquote>
+<p>“等待者数” &#x3D; requested[i] - granted[i]（或总等待 &#x3D; nRequested - nGranted），依此可以知道有没有人还在等<br>授予&#x2F;释放锁时同步更新这些计数，并据此调整 grantMask&#x2F;waitMask，决定是否要唤醒等待队列；</p>
+</blockquote>
+</li>
+<li>granted[i]<br>当前有多少个后台成功得到了模式 i 的锁</li>
+<li>nGranted：<br>总和</li>
+</ul>
+<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁（lockmode）</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NoLock					0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessShareLock			1	<span class="comment">/* SELECT */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowShareLock			2	<span class="comment">/* SELECT FOR UPDATE/FOR SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowExclusiveLock		3	<span class="comment">/* INSERT, UPDATE, DELETE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareUpdateExclusiveLock 4	<span class="comment">/* VACUUM (non-FULL), ANALYZE, CREATE</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * INDEX CONCURRENTLY */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareLock				5	<span class="comment">/* CREATE INDEX (WITHOUT CONCURRENTLY) */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareRowExclusiveLock	6	<span class="comment">/* like EXCLUSIVE MODE, but allows ROW</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ExclusiveLock			7	<span class="comment">/* blocks ROW SHARE/SELECT...FOR UPDATE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessExclusiveLock		8	<span class="comment">/* ALTER TABLE, DROP TABLE, VACUUM FULL,</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * and unqualified LOCK TABLE */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MaxLockMode				8	<span class="comment">/* highest standard lock mode */</span></span></span><br></pre></td></tr></table></figure>
 <h2 id="冲突矩阵"><a href="#冲突矩阵" class="headerlink" title="冲突矩阵"></a>冲突矩阵</h2><table>
 <thead>
@@ -1464,100 +1601,6 @@
 <li>标准的 B-tree 数据结构理论上是支持合并操作的（比如删除数据后可合并空节点），但 PostgreSQL 的实现为了简化逻辑或出于性能原因，没有实现这一特性</li>
 </ol>
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><p>postgres internals 14</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/06/04/database/TPCC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/04/database/TPCC/" class="post-title-link" itemprop="url">TPCC</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-04 10:46:58" itemprop="dateCreated datePublished" datetime="2025-06-04T10:46:58+08:00">2025-06-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/06/04/database/TPCC/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/06/04/database/TPCC/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ol>
-<li>ER digram:<br><img src="/images/TPCC/823c7b37-30c8-4241-a074-f1f603c396af.png" alt="TPCC"></li>
-</ol>
 
       
     </div>

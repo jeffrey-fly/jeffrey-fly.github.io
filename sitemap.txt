@@ -1,3 +1,5 @@
+https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/
+https://jeffly.cc/2025/09/03/postgresql/Lock/
 https://jeffly.cc/about/index.html
 https://jeffly.cc/2026/03/16/debug/%E7%90%86%E8%A7%A3-TCP-write-%E9%98%BB%E5%A1%9E%E4%B8%8E%E4%BF%A1%E5%8F%B7%E6%89%93%E6%96%AD/
 https://jeffly.cc/2025/09/05/postgresql/LWLock-in-postgres/
@@ -16,7 +18,6 @@ https://jeffly.cc/2025/11/04/tools/how-to-use-omnigraffle/
 https://jeffly.cc/2024/01/04/python/about-pytest/
 https://jeffly.cc/2023/12/17/tools/git/
 https://jeffly.cc/2024/11/11/debug/nonstop/
-https://jeffly.cc/2025/09/03/postgresql/Lock/
 https://jeffly.cc/2025/12/07/postgresql/Query-Execution-Stages/
 https://jeffly.cc/2025/12/06/postgresql/RD-Trees-for-Full-Text-Search/
 https://jeffly.cc/2025/10/24/postgresql/Recovery/
@@ -93,6 +94,12 @@ https://jeffly.cc/tags/GIT/
 https://jeffly.cc/tags/hexo/
 https://jeffly.cc/tags/omnigraffle/
 https://jeffly.cc/tags/wordpress/
+https://jeffly.cc/tags/Memory-Barrier/
+https://jeffly.cc/tags/C/
+https://jeffly.cc/tags/Lock-Free/
+https://jeffly.cc/tags/ARM/
+https://jeffly.cc/tags/x86/
+https://jeffly.cc/tags/False-Sharing/
 https://jeffly.cc/categories/life/
 https://jeffly.cc/categories/database/
 https://jeffly.cc/categories/debug/

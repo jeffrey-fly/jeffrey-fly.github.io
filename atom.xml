@@ -6,7 +6,7 @@
   <link href="https://jeffly.cc/atom.xml" rel="self"/>
   
   <link href="https://jeffly.cc/"/>
-  <updated>2026-03-16T06:07:52.722Z</updated>
+  <updated>2026-03-18T10:23:09.487Z</updated>
   <id>https://jeffly.cc/</id>
   
   <author>
@@ -15,6 +15,40 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>多核并发与屏障</title>
+    <link href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/"/>
+    <id>https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/</id>
+    <published>2026-03-18T09:15:06.000Z</published>
+    <updated>2026-03-18T10:23:09.487Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="一-内存屏障概念"><a href="#一-内存屏障概念" class="headerlink" title="一 内存屏障概念"></a>一 内存屏障概念</h2><p>屏障（fence）作用：保证 指令顺序和跨线程可见性</p><ol><li>编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令</li><li>CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见</li></ol><h2 id="二-CPU-内存模型对比"><a href="#二-CPU-内存模型对比" class="headerlink" title="二 CPU 内存模型对比"></a>二 CPU 内存模型对比</h2><table><thead><tr><th>架构</th><th>内存模型</th><th>顺序保证</th></tr></thead><tbody><tr><td>x86 &#x2F; x86-64</td><td>TSO（Total Store Order）</td><td>StoreStore &#x2F; LoadLoad &#x2F; LoadStore 保证，Store→Load 可能乱序</td></tr><tr><td>ARM &#x2F; AArch64</td><td>Weakly Ordered &#x2F; Relaxed</td><td>StoreStore &#x2F; LoadLoad &#x2F; StoreLoad 都可能乱序，需要显式 fence</td></tr></tbody></table><ul><li><strong>StoreLoad hazard</strong>：前面的 store 在 store buffer 中，后续 load 先看到索引或标志 → 可能读取到旧值</li><li><strong>解决方案</strong>：release&#x2F;acquire fence，建立跨线程 happens-before 链</li></ul><h2 id="三-Release-Acquire-Fence"><a href="#三-Release-Acquire-Fence" class="headerlink" title="三 Release &#x2F; Acquire Fence"></a>三 Release &#x2F; Acquire Fence</h2><ul><li><p>Release store（写端）</p><ul><li>发布数据，保证前写在逻辑上“先发生”</li></ul></li><li><p>Acquire load &#x2F; fence（读端）</p><ul><li>获取发布数据，保证读取时看到 release store 之前的写</li></ul></li></ul><p>配对原则</p><table><thead><tr><th>写入端</th><th>读取端</th><th>作用</th></tr></thead><tbody><tr><td>release store</td><td>acquire load&#x2F;fence</td><td>建立跨线程 happens-before 链</td></tr><tr><td>普通 store</td><td>acquire load</td><td>❌ 无法保证可见性</td></tr><tr><td>release store</td><td>普通 load</td><td>❌ 读取线程可能看不到前写</td></tr></tbody></table><blockquote><p>跨平台写无锁代码时必须使用 release&#x2F;acquire，单纯依赖 x86 TSO 的天然顺序不可移植</p></blockquote><p>四 示例：</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 加上对齐，防止伪共享</span></span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; tail&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; head&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="type">int</span> buffer[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">producer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 局部变量减少原子操作频率</span></span><br><span class="line">    <span class="type">int</span> t = tail.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    </span><br><span class="line">    buffer[t % <span class="number">1024</span>] = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Release 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 STLR 指令，保证 buffer 写入先于 tail 更新</span></span><br><span class="line">    tail.<span class="built_in">store</span>(t + <span class="number">1</span>, std::memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">consumer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// head 是消费者私有的，可以用 relaxed 甚至普通变量</span></span><br><span class="line">    <span class="type">int</span> h = head.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Acquire 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 LDAR 指令，保证读到 tail 后，buffer 的内容已同步</span></span><br><span class="line">    <span class="keyword">while</span> (tail.<span class="built_in">load</span>(std::memory_order_acquire) &lt;= h) &#123;</span><br><span class="line">        <span class="comment">// 在 ARM 下，这里可以加入 __asm__ volatile(&quot;yield&quot; ::: &quot;memory&quot;); </span></span><br><span class="line">        <span class="comment">// 告诉 CPU 这是一个自旋等待，降低功耗</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> value = buffer[h % <span class="number">1024</span>];</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Data: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    head.<span class="built_in">store</span>(h + <span class="number">1</span>, std::memory_order_relaxed);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="五-总结"><a href="#五-总结" class="headerlink" title="五 总结"></a>五 总结</h2><ul><li>x86 TSO：顺序天然保证 + release&#x2F;acquire 主要用于跨线程可见性</li><li>ARM &#x2F; AArch64：顺序不保证，必须 release&#x2F;acquire 或 fence</li></ul>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;一-内存屏障概念&quot;&gt;&lt;a href=&quot;#一-内存屏障概念&quot; class=&quot;headerlink&quot; title=&quot;一 内存屏障概念&quot;&gt;&lt;/a&gt;一 内存屏障概念&lt;/h2&gt;&lt;p&gt;屏障（fence）作用：保证 指令顺序和跨线程可见性&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;编译器屏障（</summary>
+      
+    
+    
+    
+    
+    <category term="Memory Barrier" scheme="https://jeffly.cc/tags/Memory-Barrier/"/>
+    
+    <category term="C++" scheme="https://jeffly.cc/tags/C/"/>
+    
+    <category term="Lock-Free" scheme="https://jeffly.cc/tags/Lock-Free/"/>
+    
+    <category term="ARM" scheme="https://jeffly.cc/tags/ARM/"/>
+    
+    <category term="x86" scheme="https://jeffly.cc/tags/x86/"/>
+    
+    <category term="False Sharing" scheme="https://jeffly.cc/tags/False-Sharing/"/>
+    
+  </entry>
   
   <entry>
     <title>TCP write 阻塞与信号打断</title>
@@ -500,30 +534,6 @@
       
     <summary type="html">&lt;p&gt;第一个示例涉及在平面上对点（或其他几何形状）进行索引。常规的B树无法用于这种数据类型，因为点没有定义比较运算符。显然，我们可以自己实现这样的运算符，但几何形状需要索引支持完全不同的操作。我将只讨论其中的两种：搜索特定区域内包含的对象和最近邻搜索。&lt;/p&gt;
 &lt;p&gt;R树在平面上</summary>
-      
-    
-    
-    
-    <category term="postgresql" scheme="https://jeffly.cc/categories/postgresql/"/>
-    
-    
-    <category term="pginternal" scheme="https://jeffly.cc/tags/pginternal/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>GiST framework</title>
-    <link href="https://jeffly.cc/2025/12/01/postgresql/GiST/"/>
-    <id>https://jeffly.cc/2025/12/01/postgresql/GiST/</id>
-    <published>2025-12-01T00:40:54.000Z</published>
-    <updated>2025-12-30T08:39:12.405Z</updated>
-    
-    <content type="html"><![CDATA[<p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p><ul><li>R-tree（二维&#x2F;多维空间数据）</li><li>RD-tree（集合之间的相似性度量）</li><li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li></ul><p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p><p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p><p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p><p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p><p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p><p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p><p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p><p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p><p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p><p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p><h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol><li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li></ol>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tre</summary>
       
     
     

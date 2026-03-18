@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -202,6 +202,278 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/" class="post-title-link" itemprop="url">一致性hash</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-11 19:46:58" itemprop="dateCreated datePublished" datetime="2026-01-11T19:46:58+08:00">2026-01-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/01/11/database/一致性hash/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在分布式数据库中，一行数据最终会被写入哪一台机器，取决于系统所采用的数据分布策略。在使用分布键（distribution key）的场景下，这一过程通常由哈希计算精确映射完成。</p>
+<p>这个映射过程通常从一个 <strong>distribution key（分布键）</strong> 开始，经由哈希函数，最终落到某一个具体的数据节点上。</p>
+<p>看似简单的映射关系，在系统扩容或缩容时，却会成为分布式系统设计中的一个核心难题。一致性 Hash，正是为了解决这个问题而出现的。</p>
+<hr>
+<h2 id="从一个分布式表说起"><a href="#从一个分布式表说起" class="headerlink" title="从一个分布式表说起"></a>从一个分布式表说起</h2><p>以一个分布式数据库中的表为例：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> orders (</span><br><span class="line">    id <span class="type">bigint</span>,</span><br><span class="line">    user_id <span class="type">bigint</span>,</span><br><span class="line">    payload jsonb</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> create_distributed_table(<span class="string">&#x27;orders&#x27;</span>, <span class="string">&#x27;user_id&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>user_id</code> 被指定为 <strong>distribution key</strong></li>
+<li>数据库会对 <code>user_id</code> 计算哈希值</li>
+<li>哈希值先映射到某个 <strong>shard</strong></li>
+<li>shard 再映射到具体的 <strong>database node</strong><br>（shard -&gt; databasenode, 在本文后续省略，直接表示为 数据节点id，即database n）</li>
+</ul>
+<p>从这一刻开始，<code>user_id</code> 就决定了这行数据在物理层面“住在哪里”。</p>
+<hr>
+<h2 id="最直观的方案：取模-Hash"><a href="#最直观的方案：取模-Hash" class="headerlink" title="最直观的方案：取模 Hash"></a>最直观的方案：取模 Hash</h2><p>在多数据节点之间，最容易想到的一种数据分布方式是<strong>取模 Hash</strong>。</p>
+<p>其基本思路非常直接：</p>
+<ol>
+<li>对 <code>user_id</code> 计算哈希值</li>
+<li>用哈希值对数据库节点数量取模</li>
+<li>取模结果即为目标数据库节点</li>
+</ol>
+<p>示意图如下：</p>
+<p><img src="/images/hash/hash1.png" alt="hash1"></p>
+<p>对应的算法可以表示为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % num_of_dbs</span><br></pre></td></tr></table></figure>
+
+<p>比如，当数据库集群拥有3个数据节点：</p>
+<p>假设：<br>hash(123) &#x3D; 7<br>hash(456) &#x3D; 12<br>hash(789) &#x3D; 5</p>
+<p>则</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">user id：123 → 7 % 3  = 1 → Database 1</span><br><span class="line">user id：456 → 12 % 3 = 0 → Database 0</span><br><span class="line">user id：789 → 5 % 3  = 2 → Database 2</span><br></pre></td></tr></table></figure>
+
+<p>在数据节点数量固定的前提下，这种方式能够较为均匀地分布数据，实现也非常简单。</p>
+<p>但问题很快就会出现。</p>
+<hr>
+<h2 id="问题一：扩容几乎等于“重来一遍”"><a href="#问题一：扩容几乎等于“重来一遍”" class="headerlink" title="问题一：扩容几乎等于“重来一遍”"></a>问题一：扩容几乎等于“重来一遍”</h2><p>随着业务增长，3 台数据节点已经无法承载当前数据量，需要扩容到 4 台。</p>
+<p>算法随之变为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % <span class="number">4</span></span><br></pre></td></tr></table></figure>
+
+<p>对于<strong>新写入的数据</strong>来说，这个变化影响不大。但对于<strong>已有数据</strong>而言，情况就完全不同了。</p>
+<p>由于取模基数发生变化，几乎所有 <code>user_id</code> 的映射结果都会改变，意味着：</p>
+<blockquote>
+<p><strong>存量数据需要在节点之间进行大规模重分布。</strong></p>
+</blockquote>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash2.png" alt="hash2"></p>
+<p>例如，用户 <code>123</code> 过去映射到 Database 1，但现在：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hash(123) % 4 = 3 （即：7%4）</span><br></pre></td></tr></table></figure>
+
+<p>这行数据必须从Database 1迁移到 Database 3。</p>
+<p>这种迁移不是个别现象，而是系统性问题，代价极其高昂。</p>
+<blockquote>
+<p>对于取模 Hash，当节点从 n 变为 n+1 时，数据迁移率约为 n&#x2F;(n+1)。这意味着如果从 9 台扩容到 10 台，会有 90% 的数据需要搬家</p>
+</blockquote>
+<hr>
+<h2 id="问题二：缩容同样不可接受"><a href="#问题二：缩容同样不可接受" class="headerlink" title="问题二：缩容同样不可接受"></a>问题二：缩容同样不可接受</h2><p>缩容的情况并不会更好。</p>
+<p>当某个节点被下线时，取模 Hash 同样会导致大规模数据重新分布，带来：</p>
+<ul>
+<li>大量数据迁移</li>
+<li>IO 抖动</li>
+<li>服务不稳定</li>
+</ul>
+<p>问题的本质在于：</p>
+<blockquote>
+<p><strong>节点数量一旦发生变化，整个哈希空间的映射关系就被彻底打乱。</strong></p>
+</blockquote>
+<p>为了解决这一问题，我们需要一种在节点变化时“尽量少动数据”的方案。</p>
+<hr>
+<h2 id="一致性-Hash-的核心思想"><a href="#一致性-Hash-的核心思想" class="headerlink" title="一致性 Hash 的核心思想"></a>一致性 Hash 的核心思想</h2><p>一致性 Hash 的目标很明确：</p>
+<blockquote>
+<p>在添加或删除节点时，尽可能减少需要重新分布的数据量。</p>
+</blockquote>
+<p>其基本做法是：</p>
+<ol>
+<li>将整个哈希值空间组织成一个<strong>虚拟的环</strong></li>
+<li>哈希空间通常是 <code>0 ～ 2³²−1</code></li>
+<li>数据节点和数据本身都映射到这个环上</li>
+<li>数据沿顺时针方向，落到遇到的第一个节点上</li>
+</ol>
+<p>为便于说明，我们将哈希空间简化为 0～100，并假设通过哈希计算，4 个数据库节点在环上大致分布在如下位置：</p>
+<p><img src="/images/hash/hash6.png" alt="hash6"></p>
+<ul>
+<li>DB1 → 0</li>
+<li>DB2 → 25</li>
+<li>DB3 → 50</li>
+<li>DB4 → 75</li>
+</ul>
+<p>当我们对 <code>user_id</code> 计算哈希后：</p>
+<ul>
+<li>不再取模</li>
+<li>而是在环上找到该哈希值</li>
+<li>顺时针查找第一个数据库节点</li>
+</ul>
+<hr>
+<h2 id="扩容时发生了什么？"><a href="#扩容时发生了什么？" class="headerlink" title="扩容时发生了什么？"></a>扩容时发生了什么？</h2><p>现在，我们在环上的位置 65 新增一个数据库节点 DB5。</p>
+<p><img src="/images/hash/hash3.png" alt="hash3"></p>
+<p>此时：</p>
+<ul>
+<li>只有哈希值位于 <code>(50, 65]</code> 区间的数据需要迁移</li>
+<li>其他数据完全不受影响</li>
+</ul>
+<p>相比取模 Hash，数据迁移范围被大幅缩小。</p>
+<hr>
+<h2 id="缩容时的行为"><a href="#缩容时的行为" class="headerlink" title="缩容时的行为"></a>缩容时的行为</h2><p>缩容同样遵循相同的规则。</p>
+<p>如果移除某个节点，其负责的哈希区间会顺延给下一个节点，而不会影响整个系统的映射关系。</p>
+<p><img src="/images/hash/hash4.png" alt="hash4"></p>
+<hr>
+<h2 id="仍然存在的问题：负载不均"><a href="#仍然存在的问题：负载不均" class="headerlink" title="仍然存在的问题：负载不均"></a>仍然存在的问题：负载不均</h2><p>到这里，一致性 Hash 看起来已经非常理想了，但在工程实践中还会遇到一个问题：</p>
+<blockquote>
+<p><strong>节点之间的负载可能严重不均衡。</strong></p>
+</blockquote>
+<p>例如，在移除 DB3 的场景中：</p>
+<p>原本属于 DB3 的全部数据会被顺延给同一个相邻节点</p>
+<p>这可能导致某一台数据库瞬间成为性能瓶颈。</p>
+<hr>
+<h2 id="虚拟节点：工程上的关键改进"><a href="#虚拟节点：工程上的关键改进" class="headerlink" title="虚拟节点：工程上的关键改进"></a>虚拟节点：工程上的关键改进</h2><p>为了解决负载不均的问题，需要引入 <strong>虚拟节点（Virtual Nodes）</strong> 的概念。</p>
+<p>核心思想是：</p>
+<blockquote>
+<p><strong>一个物理节点，在哈希环上不只占据一个位置。</strong></p>
+</blockquote>
+<p>具体做法是：</p>
+<ul>
+<li>对同一数据库节点构造多个不同的标识</li>
+<li>分别计算哈希值</li>
+<li>将这些位置都映射到同一台物理机器</li>
+</ul>
+<p>例如，对于节点 <code>database1</code>，可以构造：</p>
+<ul>
+<li><code>Hash(&quot;database1#1&quot;)</code> -&gt; pos(VDB1#1)</li>
+<li><code>Hash(&quot;database1#2&quot;)</code> -&gt; pos(VDB1#2)</li>
+<li><code>Hash(&quot;database1#3&quot;)</code> -&gt; pos(VDB1#3)</li>
+<li><code>Hash(&quot;database1#4&quot;)</code> -&gt; pos(VDB1#4)</li>
+</ul>
+<p>它们在逻辑上是 4 个独立节点，但在物理上都指向同一台服务器。</p>
+<p>示意如下：</p>
+<p><img src="/images/hash/hash5.png" alt="hash5"></p>
+<p>引入虚拟节点后：</p>
+<ul>
+<li>数据在环上的分布更加均匀</li>
+<li>单个节点的负载波动被显著降低</li>
+<li>扩容、缩容时的数据迁移成本进一步下降</li>
+</ul>
+<p>这是一致性 Hash 能够在工程实践中落地的关键一步。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>一致性哈希的价值不在于分布是否更均匀，而在于节点变化时将重映射控制在最小范围</p>
+<p>即：当系统发生变化时，如何控制变化的影响范围</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>普通取模哈希</th>
+<th>一致性哈希</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点变化影响</td>
+<td>全局映射变化，大规模迁移</td>
+<td>仅影响 hash 环上的局部区间</td>
+</tr>
+<tr>
+<td>扩容&#x2F;缩容</td>
+<td>不支持平滑扩容</td>
+<td>支持在线、低迁移成本扩容</td>
+</tr>
+<tr>
+<td>数据迁移比例</td>
+<td>约为 1 − 1&#x2F;N</td>
+<td>约为 1&#x2F;N</td>
+</tr>
+<tr>
+<td>均衡性</td>
+<td>天然均匀（前提：hash 好）</td>
+<td>原生不均，通过虚拟节点改善</td>
+</tr>
+<tr>
+<td>典型应用</td>
+<td>本地分片、静态分区</td>
+<td>分布式缓存、KV、分布式存储</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1615,116 +1887,6 @@
 <p>然而，对于范围类型（range types）而言，并不存在“距离操作符”（因为它们表示的是线段，也就是线性几何体，而不是面状几何体）。所以，当索引建立在这些类型上时，上述性质会有所不同。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> reservations(during tsrange);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> reservations <span class="keyword">USING</span> gist(during);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX</span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> p.name, pg_index_column_has_property(<span class="string">&#x27;reservations_during_idx&#x27;</span>, <span class="number">1</span>, p.name)</span><br><span class="line"><span class="keyword">FROM</span> <span class="built_in">unnest</span>(<span class="keyword">array</span>[</span><br><span class="line"><span class="string">&#x27;returnable&#x27;</span>, <span class="string">&#x27;distance_orderable&#x27;</span></span><br><span class="line">]) p(name);</span><br><span class="line">        name        <span class="operator">|</span> pg_index_column_has_property </span><br><span class="line"><span class="comment">--------------------+------------------------------</span></span><br><span class="line"> returnable         <span class="operator">|</span> t</span><br><span class="line"> distance_orderable <span class="operator">|</span> f</span><br><span class="line">(<span class="number">2</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/12/01/postgresql/GiST/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/12/01/postgresql/GiST/" class="post-title-link" itemprop="url">GiST framework</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-12-01 08:40:54" itemprop="dateCreated datePublished" datetime="2025-12-01T08:40:54+08:00">2025-12-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/12/01/postgresql/GiST/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/12/01/postgresql/GiST/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p>
-<ul>
-<li>R-tree（二维&#x2F;多维空间数据）</li>
-<li>RD-tree（集合之间的相似性度量）</li>
-<li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li>
-</ul>
-<p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p>
-<p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p>
-<p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p>
-<p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p>
-<p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p>
-<p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p>
-<p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p>
-<p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p>
-<p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p>
-<p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p>
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>

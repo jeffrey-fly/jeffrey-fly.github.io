@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -202,6 +202,163 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/" class="post-title-link" itemprop="url">多核并发与屏障</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-18 17:15:06" itemprop="dateCreated datePublished" datetime="2026-03-18T17:15:06+08:00">2026-03-18</time>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/03/18/program/多核并发与屏障/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一-内存屏障概念"><a href="#一-内存屏障概念" class="headerlink" title="一 内存屏障概念"></a>一 内存屏障概念</h2><p>屏障（fence）作用：保证 指令顺序和跨线程可见性</p>
+<ol>
+<li>编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令</li>
+<li>CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见</li>
+</ol>
+<h2 id="二-CPU-内存模型对比"><a href="#二-CPU-内存模型对比" class="headerlink" title="二 CPU 内存模型对比"></a>二 CPU 内存模型对比</h2><table>
+<thead>
+<tr>
+<th>架构</th>
+<th>内存模型</th>
+<th>顺序保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>x86 &#x2F; x86-64</td>
+<td>TSO（Total Store Order）</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; LoadStore 保证，Store→Load 可能乱序</td>
+</tr>
+<tr>
+<td>ARM &#x2F; AArch64</td>
+<td>Weakly Ordered &#x2F; Relaxed</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; StoreLoad 都可能乱序，需要显式 fence</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>StoreLoad hazard</strong>：前面的 store 在 store buffer 中，后续 load 先看到索引或标志 → 可能读取到旧值</li>
+<li><strong>解决方案</strong>：release&#x2F;acquire fence，建立跨线程 happens-before 链</li>
+</ul>
+<h2 id="三-Release-Acquire-Fence"><a href="#三-Release-Acquire-Fence" class="headerlink" title="三 Release &#x2F; Acquire Fence"></a>三 Release &#x2F; Acquire Fence</h2><ul>
+<li><p>Release store（写端）</p>
+<ul>
+<li>发布数据，保证前写在逻辑上“先发生”</li>
+</ul>
+</li>
+<li><p>Acquire load &#x2F; fence（读端）</p>
+<ul>
+<li>获取发布数据，保证读取时看到 release store 之前的写</li>
+</ul>
+</li>
+</ul>
+<p>配对原则</p>
+<table>
+<thead>
+<tr>
+<th>写入端</th>
+<th>读取端</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>release store</td>
+<td>acquire load&#x2F;fence</td>
+<td>建立跨线程 happens-before 链</td>
+</tr>
+<tr>
+<td>普通 store</td>
+<td>acquire load</td>
+<td>❌ 无法保证可见性</td>
+</tr>
+<tr>
+<td>release store</td>
+<td>普通 load</td>
+<td>❌ 读取线程可能看不到前写</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>跨平台写无锁代码时必须使用 release&#x2F;acquire，单纯依赖 x86 TSO 的天然顺序不可移植</p>
+</blockquote>
+<p>四 示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 加上对齐，防止伪共享</span></span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; tail&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; head&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="type">int</span> buffer[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">producer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 局部变量减少原子操作频率</span></span><br><span class="line">    <span class="type">int</span> t = tail.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    </span><br><span class="line">    buffer[t % <span class="number">1024</span>] = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Release 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 STLR 指令，保证 buffer 写入先于 tail 更新</span></span><br><span class="line">    tail.<span class="built_in">store</span>(t + <span class="number">1</span>, std::memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">consumer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// head 是消费者私有的，可以用 relaxed 甚至普通变量</span></span><br><span class="line">    <span class="type">int</span> h = head.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Acquire 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 LDAR 指令，保证读到 tail 后，buffer 的内容已同步</span></span><br><span class="line">    <span class="keyword">while</span> (tail.<span class="built_in">load</span>(std::memory_order_acquire) &lt;= h) &#123;</span><br><span class="line">        <span class="comment">// 在 ARM 下，这里可以加入 __asm__ volatile(&quot;yield&quot; ::: &quot;memory&quot;); </span></span><br><span class="line">        <span class="comment">// 告诉 CPU 这是一个自旋等待，降低功耗</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> value = buffer[h % <span class="number">1024</span>];</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Data: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    head.<span class="built_in">store</span>(h + <span class="number">1</span>, std::memory_order_relaxed);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五-总结"><a href="#五-总结" class="headerlink" title="五 总结"></a>五 总结</h2><ul>
+<li>x86 TSO：顺序天然保证 + release&#x2F;acquire 主要用于跨线程可见性</li>
+<li>ARM &#x2F; AArch64：顺序不保证，必须 release&#x2F;acquire 或 fence</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1487,278 +1644,6 @@
 <li>Test <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line"><span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br></pre></td></tr></table></figure>
  result <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> t;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">create table</span> t(a text, b text, c <span class="type">int</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t;</span><br><span class="line">t</span><br><span class="line"><span class="comment">---</span></span><br><span class="line">t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), a</span><br><span class="line"><span class="keyword">Group</span> Key: t.a</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> b;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), b</span><br><span class="line"><span class="keyword">Group</span> Key: t.b</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">8735661759096201363</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c;</span><br><span class="line">            QUERY PLAN</span><br><span class="line"><span class="comment">---------------------------------------</span></span><br><span class="line">HashAggregate</span><br><span class="line">Output: <span class="built_in">count</span>(<span class="operator">*</span>), c</span><br><span class="line"><span class="keyword">Group</span> Key: t.c</span><br><span class="line"><span class="operator">-</span><span class="operator">&gt;</span>  Seq Scan <span class="keyword">on</span> public.t</span><br><span class="line">        Output: a, b, c</span><br><span class="line">Query Identifier: <span class="number">9219356609107396553</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span># <span class="keyword">SELECT</span> calls, <span class="keyword">rows</span>, query <span class="keyword">FROM</span> pg_stat_statements <span class="keyword">ORDER</span> <span class="keyword">BY</span> query <span class="keyword">COLLATE</span> &quot;C&quot;;</span><br><span class="line">calls <span class="operator">|</span> <span class="keyword">rows</span> <span class="operator">|</span>                             query</span><br><span class="line"><span class="comment">-------+------+---------------------------------------------------------------</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">1</span> <span class="operator">|</span> <span class="keyword">SELECT</span> pg_stat_statements_reset() <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AS</span> t</span><br><span class="line">    <span class="number">2</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> a</span><br><span class="line">    <span class="number">1</span> <span class="operator">|</span>    <span class="number">0</span> <span class="operator">|</span> explain(costs off, verbose) <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> t <span class="keyword">group</span> <span class="keyword">by</span> c</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">gujinfei<span class="operator">=</span>#</span><br></pre></td></tr></table></figure></li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/" class="post-title-link" itemprop="url">一致性hash</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-01-11 19:46:58" itemprop="dateCreated datePublished" datetime="2026-01-11T19:46:58+08:00">2026-01-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/01/11/database/一致性hash/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在分布式数据库中，一行数据最终会被写入哪一台机器，取决于系统所采用的数据分布策略。在使用分布键（distribution key）的场景下，这一过程通常由哈希计算精确映射完成。</p>
-<p>这个映射过程通常从一个 <strong>distribution key（分布键）</strong> 开始，经由哈希函数，最终落到某一个具体的数据节点上。</p>
-<p>看似简单的映射关系，在系统扩容或缩容时，却会成为分布式系统设计中的一个核心难题。一致性 Hash，正是为了解决这个问题而出现的。</p>
-<hr>
-<h2 id="从一个分布式表说起"><a href="#从一个分布式表说起" class="headerlink" title="从一个分布式表说起"></a>从一个分布式表说起</h2><p>以一个分布式数据库中的表为例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> orders (</span><br><span class="line">    id <span class="type">bigint</span>,</span><br><span class="line">    user_id <span class="type">bigint</span>,</span><br><span class="line">    payload jsonb</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> create_distributed_table(<span class="string">&#x27;orders&#x27;</span>, <span class="string">&#x27;user_id&#x27;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>在这个例子中：</p>
-<ul>
-<li><code>user_id</code> 被指定为 <strong>distribution key</strong></li>
-<li>数据库会对 <code>user_id</code> 计算哈希值</li>
-<li>哈希值先映射到某个 <strong>shard</strong></li>
-<li>shard 再映射到具体的 <strong>database node</strong><br>（shard -&gt; databasenode, 在本文后续省略，直接表示为 数据节点id，即database n）</li>
-</ul>
-<p>从这一刻开始，<code>user_id</code> 就决定了这行数据在物理层面“住在哪里”。</p>
-<hr>
-<h2 id="最直观的方案：取模-Hash"><a href="#最直观的方案：取模-Hash" class="headerlink" title="最直观的方案：取模 Hash"></a>最直观的方案：取模 Hash</h2><p>在多数据节点之间，最容易想到的一种数据分布方式是<strong>取模 Hash</strong>。</p>
-<p>其基本思路非常直接：</p>
-<ol>
-<li>对 <code>user_id</code> 计算哈希值</li>
-<li>用哈希值对数据库节点数量取模</li>
-<li>取模结果即为目标数据库节点</li>
-</ol>
-<p>示意图如下：</p>
-<p><img src="/images/hash/hash1.png" alt="hash1"></p>
-<p>对应的算法可以表示为：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % num_of_dbs</span><br></pre></td></tr></table></figure>
-
-<p>比如，当数据库集群拥有3个数据节点：</p>
-<p>假设：<br>hash(123) &#x3D; 7<br>hash(456) &#x3D; 12<br>hash(789) &#x3D; 5</p>
-<p>则</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">user id：123 → 7 % 3  = 1 → Database 1</span><br><span class="line">user id：456 → 12 % 3 = 0 → Database 0</span><br><span class="line">user id：789 → 5 % 3  = 2 → Database 2</span><br></pre></td></tr></table></figure>
-
-<p>在数据节点数量固定的前提下，这种方式能够较为均匀地分布数据，实现也非常简单。</p>
-<p>但问题很快就会出现。</p>
-<hr>
-<h2 id="问题一：扩容几乎等于“重来一遍”"><a href="#问题一：扩容几乎等于“重来一遍”" class="headerlink" title="问题一：扩容几乎等于“重来一遍”"></a>问题一：扩容几乎等于“重来一遍”</h2><p>随着业务增长，3 台数据节点已经无法承载当前数据量，需要扩容到 4 台。</p>
-<p>算法随之变为：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_id = <span class="built_in">hash</span>(user_id) % <span class="number">4</span></span><br></pre></td></tr></table></figure>
-
-<p>对于<strong>新写入的数据</strong>来说，这个变化影响不大。但对于<strong>已有数据</strong>而言，情况就完全不同了。</p>
-<p>由于取模基数发生变化，几乎所有 <code>user_id</code> 的映射结果都会改变，意味着：</p>
-<blockquote>
-<p><strong>存量数据需要在节点之间进行大规模重分布。</strong></p>
-</blockquote>
-<p>示意如下：</p>
-<p><img src="/images/hash/hash2.png" alt="hash2"></p>
-<p>例如，用户 <code>123</code> 过去映射到 Database 1，但现在：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hash(123) % 4 = 3 （即：7%4）</span><br></pre></td></tr></table></figure>
-
-<p>这行数据必须从Database 1迁移到 Database 3。</p>
-<p>这种迁移不是个别现象，而是系统性问题，代价极其高昂。</p>
-<blockquote>
-<p>对于取模 Hash，当节点从 n 变为 n+1 时，数据迁移率约为 n&#x2F;(n+1)。这意味着如果从 9 台扩容到 10 台，会有 90% 的数据需要搬家</p>
-</blockquote>
-<hr>
-<h2 id="问题二：缩容同样不可接受"><a href="#问题二：缩容同样不可接受" class="headerlink" title="问题二：缩容同样不可接受"></a>问题二：缩容同样不可接受</h2><p>缩容的情况并不会更好。</p>
-<p>当某个节点被下线时，取模 Hash 同样会导致大规模数据重新分布，带来：</p>
-<ul>
-<li>大量数据迁移</li>
-<li>IO 抖动</li>
-<li>服务不稳定</li>
-</ul>
-<p>问题的本质在于：</p>
-<blockquote>
-<p><strong>节点数量一旦发生变化，整个哈希空间的映射关系就被彻底打乱。</strong></p>
-</blockquote>
-<p>为了解决这一问题，我们需要一种在节点变化时“尽量少动数据”的方案。</p>
-<hr>
-<h2 id="一致性-Hash-的核心思想"><a href="#一致性-Hash-的核心思想" class="headerlink" title="一致性 Hash 的核心思想"></a>一致性 Hash 的核心思想</h2><p>一致性 Hash 的目标很明确：</p>
-<blockquote>
-<p>在添加或删除节点时，尽可能减少需要重新分布的数据量。</p>
-</blockquote>
-<p>其基本做法是：</p>
-<ol>
-<li>将整个哈希值空间组织成一个<strong>虚拟的环</strong></li>
-<li>哈希空间通常是 <code>0 ～ 2³²−1</code></li>
-<li>数据节点和数据本身都映射到这个环上</li>
-<li>数据沿顺时针方向，落到遇到的第一个节点上</li>
-</ol>
-<p>为便于说明，我们将哈希空间简化为 0～100，并假设通过哈希计算，4 个数据库节点在环上大致分布在如下位置：</p>
-<p><img src="/images/hash/hash6.png" alt="hash6"></p>
-<ul>
-<li>DB1 → 0</li>
-<li>DB2 → 25</li>
-<li>DB3 → 50</li>
-<li>DB4 → 75</li>
-</ul>
-<p>当我们对 <code>user_id</code> 计算哈希后：</p>
-<ul>
-<li>不再取模</li>
-<li>而是在环上找到该哈希值</li>
-<li>顺时针查找第一个数据库节点</li>
-</ul>
-<hr>
-<h2 id="扩容时发生了什么？"><a href="#扩容时发生了什么？" class="headerlink" title="扩容时发生了什么？"></a>扩容时发生了什么？</h2><p>现在，我们在环上的位置 65 新增一个数据库节点 DB5。</p>
-<p><img src="/images/hash/hash3.png" alt="hash3"></p>
-<p>此时：</p>
-<ul>
-<li>只有哈希值位于 <code>(50, 65]</code> 区间的数据需要迁移</li>
-<li>其他数据完全不受影响</li>
-</ul>
-<p>相比取模 Hash，数据迁移范围被大幅缩小。</p>
-<hr>
-<h2 id="缩容时的行为"><a href="#缩容时的行为" class="headerlink" title="缩容时的行为"></a>缩容时的行为</h2><p>缩容同样遵循相同的规则。</p>
-<p>如果移除某个节点，其负责的哈希区间会顺延给下一个节点，而不会影响整个系统的映射关系。</p>
-<p><img src="/images/hash/hash4.png" alt="hash4"></p>
-<hr>
-<h2 id="仍然存在的问题：负载不均"><a href="#仍然存在的问题：负载不均" class="headerlink" title="仍然存在的问题：负载不均"></a>仍然存在的问题：负载不均</h2><p>到这里，一致性 Hash 看起来已经非常理想了，但在工程实践中还会遇到一个问题：</p>
-<blockquote>
-<p><strong>节点之间的负载可能严重不均衡。</strong></p>
-</blockquote>
-<p>例如，在移除 DB3 的场景中：</p>
-<p>原本属于 DB3 的全部数据会被顺延给同一个相邻节点</p>
-<p>这可能导致某一台数据库瞬间成为性能瓶颈。</p>
-<hr>
-<h2 id="虚拟节点：工程上的关键改进"><a href="#虚拟节点：工程上的关键改进" class="headerlink" title="虚拟节点：工程上的关键改进"></a>虚拟节点：工程上的关键改进</h2><p>为了解决负载不均的问题，需要引入 <strong>虚拟节点（Virtual Nodes）</strong> 的概念。</p>
-<p>核心思想是：</p>
-<blockquote>
-<p><strong>一个物理节点，在哈希环上不只占据一个位置。</strong></p>
-</blockquote>
-<p>具体做法是：</p>
-<ul>
-<li>对同一数据库节点构造多个不同的标识</li>
-<li>分别计算哈希值</li>
-<li>将这些位置都映射到同一台物理机器</li>
-</ul>
-<p>例如，对于节点 <code>database1</code>，可以构造：</p>
-<ul>
-<li><code>Hash(&quot;database1#1&quot;)</code> -&gt; pos(VDB1#1)</li>
-<li><code>Hash(&quot;database1#2&quot;)</code> -&gt; pos(VDB1#2)</li>
-<li><code>Hash(&quot;database1#3&quot;)</code> -&gt; pos(VDB1#3)</li>
-<li><code>Hash(&quot;database1#4&quot;)</code> -&gt; pos(VDB1#4)</li>
-</ul>
-<p>它们在逻辑上是 4 个独立节点，但在物理上都指向同一台服务器。</p>
-<p>示意如下：</p>
-<p><img src="/images/hash/hash5.png" alt="hash5"></p>
-<p>引入虚拟节点后：</p>
-<ul>
-<li>数据在环上的分布更加均匀</li>
-<li>单个节点的负载波动被显著降低</li>
-<li>扩容、缩容时的数据迁移成本进一步下降</li>
-</ul>
-<p>这是一致性 Hash 能够在工程实践中落地的关键一步。</p>
-<hr>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>一致性哈希的价值不在于分布是否更均匀，而在于节点变化时将重映射控制在最小范围</p>
-<p>即：当系统发生变化时，如何控制变化的影响范围</p>
-<table>
-<thead>
-<tr>
-<th>特性</th>
-<th>普通取模哈希</th>
-<th>一致性哈希</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>节点变化影响</td>
-<td>全局映射变化，大规模迁移</td>
-<td>仅影响 hash 环上的局部区间</td>
-</tr>
-<tr>
-<td>扩容&#x2F;缩容</td>
-<td>不支持平滑扩容</td>
-<td>支持在线、低迁移成本扩容</td>
-</tr>
-<tr>
-<td>数据迁移比例</td>
-<td>约为 1 − 1&#x2F;N</td>
-<td>约为 1&#x2F;N</td>
-</tr>
-<tr>
-<td>均衡性</td>
-<td>天然均匀（前提：hash 好）</td>
-<td>原生不均，通过虚拟节点改善</td>
-</tr>
-<tr>
-<td>典型应用</td>
-<td>本地分片、静态分区</td>
-<td>分布式缓存、KV、分布式存储</td>
-</tr>
-</tbody></table>
 
       
     </div>

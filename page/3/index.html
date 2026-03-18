@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -202,6 +202,116 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/12/01/postgresql/GiST/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/01/postgresql/GiST/" class="post-title-link" itemprop="url">GiST framework</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-01 08:40:54" itemprop="dateCreated datePublished" datetime="2025-12-01T08:40:54+08:00">2025-12-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/12/01/postgresql/GiST/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/12/01/postgresql/GiST/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Gist（Generalized Search Tree，广义搜索树）是一种访问方法(是一个索引框架)，本质上是对支持值之间相对位置关系的数据类型的平衡搜索树的一种泛化。B-tree 只能用于可排序的数据类型，即那些支持比较操作（比如大于、小于等）。对于这类类型，B-tree 的支持是非常高效的。而 Gist 则更为通用，它的操作符类（operator class）允许用户定义任意的数据分布规则，从而控制树的构造方式。因此，Gist 索引可以用于实现不同的数据结构，例如：</p>
+<ul>
+<li>R-tree（二维&#x2F;多维空间数据）</li>
+<li>RD-tree（集合之间的相似性度量）</li>
+<li>签名树（类似 Bloom filter 的结构，用于快速过滤模糊匹配，比如文本）</li>
+</ul>
+<p>由于 PostgreSQL 的可扩展性，你可以通过实现索引引擎的接口，从零开始创建一个新的访问方法（access method）。但是，除了设计索引逻辑之外，你还需要定义页面布局、高效的锁策略，以及其它底层支持功能。这一切都需要强大的编程能力和大量的实现工作。Gist 简化了这项任务，它处理了所有低层次的技术细节，并提供了搜索算法的基础框架。如果你想让某个新的数据类型支持 Gist 方法，你只需要添加一个新的操作符类（operator class），其中包含大约十几个支持函数（support functions）。与 B-tree 的“简单”操作符类不同，Gist 的操作符类承载了主要的索引逻辑。因此，从这个角度看，Gist 可以被认为是构建新访问方法的一个框架。</p>
+<p>每个属于叶子节点的条目（称为“叶子条目”）都包含一个谓词（逻辑条件）和一个指向堆中元组（heap tuple）的引用。索引键（index key）必须满足这个谓词；至于这个键是否直接出现在条目中并不重要。（叶子节点中每一项不是“具体的值”，而是“某种条件”——这个条件是能覆盖实际数据的逻辑表达式。）</p>
+<p>每个内部节点中的条目（称为“内部条目”）也包含一个谓词，以及一个指向子节点的引用；子树中所有的数据都必须满足这个谓词。换句话说，内部节点条目的谓词是其所有子节点谓词的“并集”。GiST 的这个重要特性（即“内部节点的谓词是子节点谓词的并集”）实现了类似于 B-tree 中的简单排序（simple ranking）功能（GiST 通过组织谓词的包含关系，实现了类似于 B-tree 按顺序剪枝的搜索效率）。</p>
+<p>GiST 树的搜索依赖于 一致性函数（consistency function），它是由操作符类（operator class）定义的一种支持函数。</p>
+<p>一致性函数会在某个索引项上被调用，用来判断这个条目的谓词是否与搜索条件一致（即与“索引列的操作符表达式”是否可能匹配）。对于内部节点的条目，一致性函数用于判断是否需要进入对应的子树；对于叶子节点的条目，它用于判断这个索引键是否满足查询条件</p>
+<p>搜索从根节点开始，这是树形结构中常见的做法。一致性函数（consistency function）决定哪些子节点需要继续遍历，哪些可以被跳过。然后对选中的每个子节点重复这一过程；与 B-tree 不同，GiST 可能会同时有多个符合条件的子节点。被一致性函数选中的叶子节点条目将作为查询结果返回</p>
+<p>GiST 的搜索始终是深度优先的：算法会尽可能尽快到达叶子页面。这种策略对返回前几条结果（Top-N 查询）尤其有利。</p>
+<p>在向 GiST 树中插入一个新值时，无法使用一致性函数（consistent()），因为我们需要精确选择一个子节点进行插入。插入逻辑依赖于 penalty() 函数，去评估每个候选子节点“因插入新值而造成的扩展代价”；最终选择 penalty 最小的子节点 来插入。</p>
+<p>和B树索引一样，叶子结点没有空间会造成页面分裂（split），split需要两个函数，一个负责在新老节点之间分布数据，另一个函数则对两个谓词进行并集操作，以更新父节点的谓词</p>
+<p>随着新值不断插入，已有的谓词会不断扩大，而这些谓词通常只有在页面分裂或整个索引重建时才会被缩小。因此，频繁更新 GiST 索引可能会导致其性能下降</p>
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1529,127 +1639,6 @@
 <p>最新的 pg_waldump 消息显示该工具已读取 WAL到末尾。</p>
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/09/05/postgresql/LWLock-in-postgres/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/09/05/postgresql/LWLock-in-postgres/" class="post-title-link" itemprop="url">LWLock in postgres</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-09-05 16:14:55" itemprop="dateCreated datePublished" datetime="2025-09-05T16:14:55+08:00">2025-09-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/09/05/postgresql/LWLock-in-postgres/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/09/05/postgresql/LWLock-in-postgres/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="一-相关结构体说明"><a href="#一-相关结构体说明" class="headerlink" title="一 相关结构体说明"></a>一 相关结构体说明</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> <span class="title class_">LWLock</span></span><br><span class="line">&#123;</span><br><span class="line">    uint16           tranche;       <span class="comment">/* tranche ID */</span></span><br><span class="line">    pg_atomic_uint32 state;         <span class="comment">/* state of exclusive/nonexclusive lockers */</span></span><br><span class="line">    proclist_head    waiters;       <span class="comment">/* list of waiting PGPROCs */</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> LOCK_DEBUG</span></span><br><span class="line">    pg_atomic_uint32 nwaiters;      <span class="comment">/* number of waiters */</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">PGPROC</span>    *owner;        <span class="comment">/* last exclusive owner of the lock */</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125; LWLock;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>tranche<br>每个 LWLock 都属于某个 tranche，tranche 是一个 int 类型的 ID，代表这把锁的用途</p>
-</li>
-<li><p>state （不同版本可能会有变化，本文对应版本：PostgreSQL 19devel（开发版，尚未正式发布的 19））<br>bit0..17：共享持有者计数（一个整数计数，不是位图）<br>bit18：独占锁哨兵位（LW_VAL_EXCLUSIVE &#x3D; 1&lt;&lt;18）</p>
-</li>
-</ul>
-<p>bit29: LW_FLAG_LOCKED，是 wait list 自身的小锁（保护等待队列操作）<br>bit30: LW_FLAG_RELEASE_OK，表示当前可以在释放路径执行唤醒<br>bit31: LW_FLAG_HAS_WAITERS，表示等待队列里有 waiter</p>
-<ul>
-<li>waiters<br>等待队列</li>
-</ul>
-<h2 id="二-Interface说明"><a href="#二-Interface说明" class="headerlink" title="二 Interface说明"></a>二 Interface说明</h2><h3 id="2-1-LWLockAcquire"><a href="#2-1-LWLockAcquire" class="headerlink" title="2.1 LWLockAcquire"></a>2.1 LWLockAcquire</h3><p>加锁，失败进入等待队列，直接加上锁的情况，可能会造成等待队列无效唤醒  </p>
-<blockquote>
-<p>acquire a lightweight lock in the specified mode<br>Side effect: cancel&#x2F;die interrupts are held off until lock release.</p>
-</blockquote>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mode == LW_EXCLUSIVE)</span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_LOCK_MASK) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_EXCLUSIVE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    lock_free = (old_state &amp; LW_VAL_EXCLUSIVE) == <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (lock_free)</span><br><span class="line">        desired_state += LW_VAL_SHARED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上述代码确认是否可以加锁</p>
-<h3 id="2-2-LWLockRelease"><a href="#2-2-LWLockRelease" class="headerlink" title="2.2 LWLockRelease"></a>2.2 LWLockRelease</h3><p>进行唤醒条件：</p>
-<ul>
-<li>oldstate &amp; LW_FLAG_HAS_WAITERS：等待队列非空。这个条件确认有进程在等待锁。  </li>
-<li>oldstate &amp; LW_FLAG_RELEASE_OK： 允许唤醒。这个标志表示系统在上次唤醒后，已经将再次唤醒其他等待者的权限交给了被唤醒的进程。</li>
-<li>(oldstate &amp; LW_LOCK_MASK) &#x3D;&#x3D; 0：锁已空闲。这个条件确认锁当前没有被任何进程占用（无论是独占模式还是共享模式，计数都为零）</li>
-</ul>
-<h2 id="三-分配与类型（默认值，版本相关）"><a href="#三-分配与类型（默认值，版本相关）" class="headerlink" title="三 分配与类型（默认值，版本相关）"></a>三 分配与类型（默认值，版本相关）</h2><ol>
-<li><code>NUM_INDIVIDUAL_LWLOCKS</code>：核心按表生成的单锁（<code>lwlocklist.h</code>），数量随版本变化，不是固定 56。</li>
-<li><code>NUM_BUFFER_PARTITIONS</code>（默认 128）：共享缓冲区 mapping hash 的分区锁 <code>BufferMappingLock[i]</code>。</li>
-<li><code>NUM_LOCK_PARTITIONS</code>（默认 16）：heavyweight lock manager 哈希分区锁（<code>LWTRANCHE_LOCK_MANAGER</code>）。</li>
-<li><code>NUM_PREDICATELOCK_PARTITIONS</code>（默认 16）：谓词锁哈希分区锁。</li>
-<li>扩展自定义：在 postmaster 启动阶段调用 <code>RequestNamedLWLockTranche(name, n)</code> 申请一组锁，重启后 <code>GetNamedLWLockTranche</code> 取基址。需要 <code>shared_preload_libraries</code> 的扩展通常属于此类。</li>
 </ol>
 
       

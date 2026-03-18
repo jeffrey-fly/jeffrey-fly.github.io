@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jeffly.cc","root":"/","images":"/images","scheme":"Pisces","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"text":"Disqus 评论","order":-1}},"enable":true,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="一 内存屏障概念屏障（fence）作用：保证 指令顺序和跨线程可见性  编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令 CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见  二 CPU 内存模型对比   架构 内存模型 顺序保证    x86 &amp;#x2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多核并发与屏障">
+<meta property="og:url" content="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/index.html">
+<meta property="og:site_name" content="Jeffly">
+<meta property="og:description" content="一 内存屏障概念屏障（fence）作用：保证 指令顺序和跨线程可见性  编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令 CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见  二 CPU 内存模型对比   架构 内存模型 顺序保证    x86 &amp;#x2">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-03-18T09:15:06.000Z">
+<meta property="article:modified_time" content="2026-03-18T10:23:09.487Z">
+<meta property="article:author" content="Jeffrey">
+<meta property="article:tag" content="Memory Barrier">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Lock-Free">
+<meta property="article:tag" content="ARM">
+<meta property="article:tag" content="x86">
+<meta property="article:tag" content="False Sharing">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/","path":"2026/03/18/program/多核并发与屏障/","title":"多核并发与屏障"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>多核并发与屏障 | Jeffly</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Jeffly" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Jeffly</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archive"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archive</a></li><li class="menu-item menu-item-docs"><a href="/docs/" rel="section"><i class="fa fa-book fa-fw"></i>docs</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">一 内存屏障概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-CPU-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94"><span class="nav-number">2.</span> <span class="nav-text">二 CPU 内存模型对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89-Release-Acquire-Fence"><span class="nav-number">3.</span> <span class="nav-text">三 Release &#x2F; Acquire Fence</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94-%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">五 总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jeffrey"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Jeffrey</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">58</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="多核并发与屏障 | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多核并发与屏障
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-18 17:15:06" itemprop="dateCreated datePublished" datetime="2026-03-18T17:15:06+08:00">2026-03-18</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/03/18/program/多核并发与屏障/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="一-内存屏障概念"><a href="#一-内存屏障概念" class="headerlink" title="一 内存屏障概念"></a>一 内存屏障概念</h2><p>屏障（fence）作用：保证 指令顺序和跨线程可见性</p>
+<ol>
+<li>编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令</li>
+<li>CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见</li>
+</ol>
+<h2 id="二-CPU-内存模型对比"><a href="#二-CPU-内存模型对比" class="headerlink" title="二 CPU 内存模型对比"></a>二 CPU 内存模型对比</h2><table>
+<thead>
+<tr>
+<th>架构</th>
+<th>内存模型</th>
+<th>顺序保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>x86 &#x2F; x86-64</td>
+<td>TSO（Total Store Order）</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; LoadStore 保证，Store→Load 可能乱序</td>
+</tr>
+<tr>
+<td>ARM &#x2F; AArch64</td>
+<td>Weakly Ordered &#x2F; Relaxed</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; StoreLoad 都可能乱序，需要显式 fence</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>StoreLoad hazard</strong>：前面的 store 在 store buffer 中，后续 load 先看到索引或标志 → 可能读取到旧值</li>
+<li><strong>解决方案</strong>：release&#x2F;acquire fence，建立跨线程 happens-before 链</li>
+</ul>
+<h2 id="三-Release-Acquire-Fence"><a href="#三-Release-Acquire-Fence" class="headerlink" title="三 Release &#x2F; Acquire Fence"></a>三 Release &#x2F; Acquire Fence</h2><ul>
+<li><p>Release store（写端）</p>
+<ul>
+<li>发布数据，保证前写在逻辑上“先发生”</li>
+</ul>
+</li>
+<li><p>Acquire load &#x2F; fence（读端）</p>
+<ul>
+<li>获取发布数据，保证读取时看到 release store 之前的写</li>
+</ul>
+</li>
+</ul>
+<p>配对原则</p>
+<table>
+<thead>
+<tr>
+<th>写入端</th>
+<th>读取端</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>release store</td>
+<td>acquire load&#x2F;fence</td>
+<td>建立跨线程 happens-before 链</td>
+</tr>
+<tr>
+<td>普通 store</td>
+<td>acquire load</td>
+<td>❌ 无法保证可见性</td>
+</tr>
+<tr>
+<td>release store</td>
+<td>普通 load</td>
+<td>❌ 读取线程可能看不到前写</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>跨平台写无锁代码时必须使用 release&#x2F;acquire，单纯依赖 x86 TSO 的天然顺序不可移植</p>
+</blockquote>
+<p>四 示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 加上对齐，防止伪共享</span></span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; tail&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; head&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="type">int</span> buffer[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">producer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 局部变量减少原子操作频率</span></span><br><span class="line">    <span class="type">int</span> t = tail.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    </span><br><span class="line">    buffer[t % <span class="number">1024</span>] = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Release 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 STLR 指令，保证 buffer 写入先于 tail 更新</span></span><br><span class="line">    tail.<span class="built_in">store</span>(t + <span class="number">1</span>, std::memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">consumer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// head 是消费者私有的，可以用 relaxed 甚至普通变量</span></span><br><span class="line">    <span class="type">int</span> h = head.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Acquire 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 LDAR 指令，保证读到 tail 后，buffer 的内容已同步</span></span><br><span class="line">    <span class="keyword">while</span> (tail.<span class="built_in">load</span>(std::memory_order_acquire) &lt;= h) &#123;</span><br><span class="line">        <span class="comment">// 在 ARM 下，这里可以加入 __asm__ volatile(&quot;yield&quot; ::: &quot;memory&quot;); </span></span><br><span class="line">        <span class="comment">// 告诉 CPU 这是一个自旋等待，降低功耗</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> value = buffer[h % <span class="number">1024</span>];</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Data: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    head.<span class="built_in">store</span>(h + <span class="number">1</span>, std::memory_order_relaxed);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五-总结"><a href="#五-总结" class="headerlink" title="五 总结"></a>五 总结</h2><ul>
+<li>x86 TSO：顺序天然保证 + release&#x2F;acquire 主要用于跨线程可见性</li>
+<li>ARM &#x2F; AArch64：顺序不保证，必须 release&#x2F;acquire 或 fence</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Memory-Barrier/" rel="tag"># Memory Barrier</a>
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/Lock-Free/" rel="tag"># Lock-Free</a>
+              <a href="/tags/ARM/" rel="tag"># ARM</a>
+              <a href="/tags/x86/" rel="tag"># x86</a>
+              <a href="/tags/False-Sharing/" rel="tag"># False Sharing</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/03/16/debug/%E7%90%86%E8%A7%A3-TCP-write-%E9%98%BB%E5%A1%9E%E4%B8%8E%E4%BF%A1%E5%8F%B7%E6%89%93%E6%96%AD/" rel="prev" title="TCP write 阻塞与信号打断">
+                  <i class="fa fa-angle-left"></i> TCP write 阻塞与信号打断
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Jeffrey</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"jeffly","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js" defer></script>
+
+</body>
+</html>

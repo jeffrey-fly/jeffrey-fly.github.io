@@ -28,7 +28,7 @@
 <meta property="og:description" content="全局hashLockMethodLockHash：存储LOCKLockMethodProcLockHash：存储PROCLOCKLockMethodLocalHash：存储LOCALLOCK 同一个LOCK资源对象可以被多个不同的 PROCLOCK 持有，而这些 PROCLOCK 又分别属于不同的进程。 LOCKTAG123456789typedef struct LOCKTAG&#123;	ui">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-09-03T03:13:57.000Z">
-<meta property="article:modified_time" content="2025-12-30T08:39:12.407Z">
+<meta property="article:modified_time" content="2026-03-17T09:56:19.477Z">
 <meta property="article:author" content="Jeffrey">
 <meta property="article:tag" content="pginternal">
 <meta name="twitter:card" content="summary">
@@ -175,7 +175,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -186,7 +186,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -304,10 +304,26 @@
 <ul>
 <li>waitProcs<br>等待本LOCK的PGPROC链表</li>
 <li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
-<li>waitMask<br>该资源上等待的锁类型</li>
-<li>grantMask<br>该资源上已经授予的锁类型</li>
+<li>waitMask<br>该资源上等待的锁类型：目前有进程在等待的锁类型集合</li>
+<li>procLocks<ul>
+<li>一个 LOCK（资源）可以挂很多 PROCLOCK（不同后台进程），每个 PROCLOCK 只对应一个 PGPROC + 一个 LOCK。</li>
+<li>同一进程与同一资源只会有一个 PROCLOCK；它的 holdMask 可以同时包含多个锁模式位，且内部还有引用计数在 LOCALLOCK 里，不会创建多个 PROCLOCK</li>
+<li>资源侧用 LOCK.procLocks 链表串起所有持有&#x2F;等待它的 PROCLOCK；进程侧在 PGPROC.myProcLocks（见 proc.h）里串起它关联的所有 PROCLOCK<blockquote>
+<p>因此：一个资源可以被多个进程持锁；一个进程可以同时持有多个资源的锁；对同一资源如需多模式&#x2F;多次持有，累加在同一个 PROCLOCK 的掩码&#x2F;计数里。</p>
+</blockquote>
+</li>
 </ul>
-<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁</p>
+</li>
+<li>grantMask<br>该资源上已经授予的锁类型，LOCKMASK 每一位对应 “编号为 N 的锁模式是否已持有&#x2F;等待”，位号就是 lockmode， bit0 保留不适用</li>
+<li>requested[i]<br>当前有多少个后台对模式 i 提出请求（已授予 + 正在等待）</li>
+<li>nRequested：是总和<blockquote>
+<p>“等待者数” &#x3D; requested[i] - granted[i]（或总等待 &#x3D; nRequested - nGranted），依此可以知道有没有人还在等<br>授予&#x2F;释放锁时同步更新这些计数，并据此调整 grantMask&#x2F;waitMask，决定是否要唤醒等待队列；</p>
+</blockquote>
+</li>
+<li>granted[i]<br>当前有多少个后台成功得到了模式 i 的锁</li>
+<li>nGranted：<br>总和</li>
+</ul>
+<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁（lockmode）</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NoLock					0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessShareLock			1	<span class="comment">/* SELECT */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowShareLock			2	<span class="comment">/* SELECT FOR UPDATE/FOR SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowExclusiveLock		3	<span class="comment">/* INSERT, UPDATE, DELETE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareUpdateExclusiveLock 4	<span class="comment">/* VACUUM (non-FULL), ANALYZE, CREATE</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * INDEX CONCURRENTLY */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareLock				5	<span class="comment">/* CREATE INDEX (WITHOUT CONCURRENTLY) */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareRowExclusiveLock	6	<span class="comment">/* like EXCLUSIVE MODE, but allows ROW</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ExclusiveLock			7	<span class="comment">/* blocks ROW SHARE/SELECT...FOR UPDATE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessExclusiveLock		8	<span class="comment">/* ALTER TABLE, DROP TABLE, VACUUM FULL,</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * and unqualified LOCK TABLE */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MaxLockMode				8	<span class="comment">/* highest standard lock mode */</span></span></span><br></pre></td></tr></table></figure>
 <h2 id="冲突矩阵"><a href="#冲突矩阵" class="headerlink" title="冲突矩阵"></a>冲突矩阵</h2><table>
 <thead>

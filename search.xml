@@ -1956,10 +1956,26 @@
 <ul>
 <li>waitProcs<br>等待本LOCK的PGPROC链表</li>
 <li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
-<li>waitMask<br>该资源上等待的锁类型</li>
-<li>grantMask<br>该资源上已经授予的锁类型</li>
+<li>waitMask<br>该资源上等待的锁类型：目前有进程在等待的锁类型集合</li>
+<li>procLocks<ul>
+<li>一个 LOCK（资源）可以挂很多 PROCLOCK（不同后台进程），每个 PROCLOCK 只对应一个 PGPROC + 一个 LOCK。</li>
+<li>同一进程与同一资源只会有一个 PROCLOCK；它的 holdMask 可以同时包含多个锁模式位，且内部还有引用计数在 LOCALLOCK 里，不会创建多个 PROCLOCK</li>
+<li>资源侧用 LOCK.procLocks 链表串起所有持有&#x2F;等待它的 PROCLOCK；进程侧在 PGPROC.myProcLocks（见 proc.h）里串起它关联的所有 PROCLOCK<blockquote>
+<p>因此：一个资源可以被多个进程持锁；一个进程可以同时持有多个资源的锁；对同一资源如需多模式&#x2F;多次持有，累加在同一个 PROCLOCK 的掩码&#x2F;计数里。</p>
+</blockquote>
+</li>
 </ul>
-<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁</p>
+</li>
+<li>grantMask<br>该资源上已经授予的锁类型，LOCKMASK 每一位对应 “编号为 N 的锁模式是否已持有&#x2F;等待”，位号就是 lockmode， bit0 保留不适用</li>
+<li>requested[i]<br>当前有多少个后台对模式 i 提出请求（已授予 + 正在等待）</li>
+<li>nRequested：是总和<blockquote>
+<p>“等待者数” &#x3D; requested[i] - granted[i]（或总等待 &#x3D; nRequested - nGranted），依此可以知道有没有人还在等<br>授予&#x2F;释放锁时同步更新这些计数，并据此调整 grantMask&#x2F;waitMask，决定是否要唤醒等待队列；</p>
+</blockquote>
+</li>
+<li>granted[i]<br>当前有多少个后台成功得到了模式 i 的锁</li>
+<li>nGranted：<br>总和</li>
+</ul>
+<h2 id="LOCKMODE"><a href="#LOCKMODE" class="headerlink" title="LOCKMODE"></a>LOCKMODE</h2><p>每种资源支持8种锁（lockmode）</p>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NoLock					0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessShareLock			1	<span class="comment">/* SELECT */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowShareLock			2	<span class="comment">/* SELECT FOR UPDATE/FOR SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RowExclusiveLock		3	<span class="comment">/* INSERT, UPDATE, DELETE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareUpdateExclusiveLock 4	<span class="comment">/* VACUUM (non-FULL), ANALYZE, CREATE</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * INDEX CONCURRENTLY */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareLock				5	<span class="comment">/* CREATE INDEX (WITHOUT CONCURRENTLY) */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ShareRowExclusiveLock	6	<span class="comment">/* like EXCLUSIVE MODE, but allows ROW</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * SHARE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ExclusiveLock			7	<span class="comment">/* blocks ROW SHARE/SELECT...FOR UPDATE */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AccessExclusiveLock		8	<span class="comment">/* ALTER TABLE, DROP TABLE, VACUUM FULL,</span></span></span><br><span class="line"><span class="comment"><span class="meta">									 * and unqualified LOCK TABLE */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MaxLockMode				8	<span class="comment">/* highest standard lock mode */</span></span></span><br></pre></td></tr></table></figure>
 <h2 id="冲突矩阵"><a href="#冲突矩阵" class="headerlink" title="冲突矩阵"></a>冲突矩阵</h2><table>
 <thead>
@@ -3410,5 +3426,93 @@
       <categories>
         <category>python</category>
       </categories>
+  </entry>
+  <entry>
+    <title>多核并发与屏障</title>
+    <url>/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/</url>
+    <content><![CDATA[<h2 id="一-内存屏障概念"><a href="#一-内存屏障概念" class="headerlink" title="一 内存屏障概念"></a>一 内存屏障概念</h2><p>屏障（fence）作用：保证 指令顺序和跨线程可见性</p>
+<ol>
+<li>编译器屏障（compiler fence）: 阻止编译器重排指令，不生成 CPU 指令</li>
+<li>CPU 内存屏障（CPU fence &#x2F; hardware fence）：阻止 CPU 乱序执行，确保 store&#x2F;load 对其他核可见</li>
+</ol>
+<h2 id="二-CPU-内存模型对比"><a href="#二-CPU-内存模型对比" class="headerlink" title="二 CPU 内存模型对比"></a>二 CPU 内存模型对比</h2><table>
+<thead>
+<tr>
+<th>架构</th>
+<th>内存模型</th>
+<th>顺序保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>x86 &#x2F; x86-64</td>
+<td>TSO（Total Store Order）</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; LoadStore 保证，Store→Load 可能乱序</td>
+</tr>
+<tr>
+<td>ARM &#x2F; AArch64</td>
+<td>Weakly Ordered &#x2F; Relaxed</td>
+<td>StoreStore &#x2F; LoadLoad &#x2F; StoreLoad 都可能乱序，需要显式 fence</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>StoreLoad hazard</strong>：前面的 store 在 store buffer 中，后续 load 先看到索引或标志 → 可能读取到旧值</li>
+<li><strong>解决方案</strong>：release&#x2F;acquire fence，建立跨线程 happens-before 链</li>
+</ul>
+<h2 id="三-Release-Acquire-Fence"><a href="#三-Release-Acquire-Fence" class="headerlink" title="三 Release &#x2F; Acquire Fence"></a>三 Release &#x2F; Acquire Fence</h2><ul>
+<li><p>Release store（写端）</p>
+<ul>
+<li>发布数据，保证前写在逻辑上“先发生”</li>
+</ul>
+</li>
+<li><p>Acquire load &#x2F; fence（读端）</p>
+<ul>
+<li>获取发布数据，保证读取时看到 release store 之前的写</li>
+</ul>
+</li>
+</ul>
+<p>配对原则</p>
+<table>
+<thead>
+<tr>
+<th>写入端</th>
+<th>读取端</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>release store</td>
+<td>acquire load&#x2F;fence</td>
+<td>建立跨线程 happens-before 链</td>
+</tr>
+<tr>
+<td>普通 store</td>
+<td>acquire load</td>
+<td>❌ 无法保证可见性</td>
+</tr>
+<tr>
+<td>release store</td>
+<td>普通 load</td>
+<td>❌ 读取线程可能看不到前写</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>跨平台写无锁代码时必须使用 release&#x2F;acquire，单纯依赖 x86 TSO 的天然顺序不可移植</p>
+</blockquote>
+<p>四 示例：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 加上对齐，防止伪共享</span></span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; tail&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="built_in">alignas</span>(<span class="number">64</span>) std::atomic&lt;<span class="type">int</span>&gt; head&#123;<span class="number">0</span>&#125;;</span><br><span class="line"><span class="type">int</span> buffer[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">producer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 局部变量减少原子操作频率</span></span><br><span class="line">    <span class="type">int</span> t = tail.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    </span><br><span class="line">    buffer[t % <span class="number">1024</span>] = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Release 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 STLR 指令，保证 buffer 写入先于 tail 更新</span></span><br><span class="line">    tail.<span class="built_in">store</span>(t + <span class="number">1</span>, std::memory_order_release);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">consumer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// head 是消费者私有的，可以用 relaxed 甚至普通变量</span></span><br><span class="line">    <span class="type">int</span> h = head.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Acquire 语义：</span></span><br><span class="line">    <span class="comment">// 在 ARM 上生成 LDAR 指令，保证读到 tail 后，buffer 的内容已同步</span></span><br><span class="line">    <span class="keyword">while</span> (tail.<span class="built_in">load</span>(std::memory_order_acquire) &lt;= h) &#123;</span><br><span class="line">        <span class="comment">// 在 ARM 下，这里可以加入 __asm__ volatile(&quot;yield&quot; ::: &quot;memory&quot;); </span></span><br><span class="line">        <span class="comment">// 告诉 CPU 这是一个自旋等待，降低功耗</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> value = buffer[h % <span class="number">1024</span>];</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Data: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    head.<span class="built_in">store</span>(h + <span class="number">1</span>, std::memory_order_relaxed);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五-总结"><a href="#五-总结" class="headerlink" title="五 总结"></a>五 总结</h2><ul>
+<li>x86 TSO：顺序天然保证 + release&#x2F;acquire 主要用于跨线程可见性</li>
+<li>ARM &#x2F; AArch64：顺序不保证，必须 release&#x2F;acquire 或 fence</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>Memory Barrier</tag>
+        <tag>C++</tag>
+        <tag>Lock-Free</tag>
+        <tag>ARM</tag>
+        <tag>x86</tag>
+        <tag>False Sharing</tag>
+      </tags>
   </entry>
 </search>
