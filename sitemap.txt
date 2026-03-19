@@ -107,3 +107,4 @@ https://jeffly.cc/categories/linux/
 https://jeffly.cc/categories/postgresql/
 https://jeffly.cc/categories/tools/
 https://jeffly.cc/categories/python/
+https://jeffly.cc/categories/program/
