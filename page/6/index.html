@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">58</span>
+          <span class="site-state-item-count">59</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -202,6 +202,105 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2024/11/11/debug/nonstop/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/11/11/debug/nonstop/" class="post-title-link" itemprop="url">gdb 异步调试</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-11-11 10:59:00" itemprop="dateCreated datePublished" datetime="2024-11-11T10:59:00+08:00">2024-11-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2024/11/11/debug/nonstop/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2024/11/11/debug/nonstop/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="使用如下-gdbinit-文件"><a href="#使用如下-gdbinit-文件" class="headerlink" title="使用如下.gdbinit 文件"></a>使用如下.gdbinit 文件</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> target-async 1 </span><br><span class="line"><span class="built_in">set</span> pagination off </span><br><span class="line"><span class="built_in">set</span> non-stop on</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> pretty on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> object on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> static-members on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> demangle on</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">print</span> sevenbit-strings off</span><br><span class="line"></span><br><span class="line">python </span><br><span class="line">import sys</span><br><span class="line">sys.path.insert(0,<span class="string">&#x27;/usr/share/gcc-4.8.2/python*) </span></span><br><span class="line"><span class="string">from libstdcxx.v6.printers import register_libstdcxx_printers</span></span><br><span class="line"><span class="string">register_libstdcxx_printers (None)</span></span><br><span class="line"><span class="string">end</span></span><br></pre></td></tr></table></figure>
+<h2 id="GDB-加载脚本条件"><a href="#GDB-加载脚本条件" class="headerlink" title="GDB 加载脚本条件"></a>GDB 加载脚本条件</h2><ol>
+<li><p>路径完全匹配（核心条件）<br>GDB 的自动加载逻辑非常死板，它会根据你的程序链接的 libstdc++.so.6 的真实物理路径来拼接查找路径。<br>如果你的程序链接的是 &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6，那么 GDB 会尝试在以下位置查找： [auto-load 根目录] + [库的绝对路径] + [-gdb.py 脚本]<br>即：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load + &#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6 + -gdb.py 也就是你找到的：&#x2F;usr&#x2F;share&#x2F;gdb&#x2F;auto-load&#x2F;usr&#x2F;lib64&#x2F;libstdc++.so.6-gdb.py。</p>
+</li>
+<li><p>必须开启 safe-path 权限<br>即使文件位置对了，GDB 为了安全默认也是不运行它的。你需要给它“授权”。    </p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set auto-load safe-path /</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Check-script-load-status"><a href="#Check-script-load-status" class="headerlink" title="Check script load status"></a>Check script load status</h2><p>start gdb：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">info auto-load python-scripts</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
