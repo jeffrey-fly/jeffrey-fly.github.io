@@ -299,7 +299,7 @@ mjx-container[display="true"] + br {
 </div>
   <div class="links-of-author animated">
       <span class="links-of-author-item">
-        <a href="mailto:jeffreyfly@icloud.com" title="E-Mail → mailto:jeffreyfly@icloud.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+        <a href="mailto:gujinfei@jeffly.cc" title="E-Mail → mailto:gujinfei@jeffly.cc" rel="noopener me"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
       </span>
   </div>
 
@@ -445,7 +445,7 @@ mjx-container[display="true"] + br {
 </tr>
 </tbody></table>
 <blockquote>
-<p><strong>💡 字典序最小的拓扑排序</strong>：将 Queue 替换为 Min-Heap（优先队列）即可。</p>
+<p><strong>字典序最小的拓扑排序</strong>：将 Queue 替换为 Min-Heap（优先队列）即可。</p>
 </blockquote>
 
       
@@ -609,7 +609,6 @@ mjx-container[display="true"] + br {
 <li><strong>x86 TSO</strong>：CPU 层面保证了大部分顺序，<code>memory_order_release</code>&#x2F;<code>acquire</code> 在 x86 上通常不会生成额外的 fence 指令。但编译器屏障依然必要，不能省略——省了之后编译器可能把你的代码重排到完全错误的地方。</li>
 <li><strong>ARM</strong>：什么都不帮你保证，每一处需要同步的地方都得显式写出来。好处是性能更可控，坏处是出错了很难调试。</li>
 </ul>
-<p>实际写无锁代码的建议：先用 <code>std::memory_order_seq_cst</code> 把逻辑跑通，再在性能瓶颈处换成 release&#x2F;acquire，最后用 ThreadSanitizer 跑一遍验证。别一上来就写 relaxed，省不了多少性能，却能坑死自己。</p>
 
       
     </div>
