@@ -1955,7 +1955,6 @@
 <h2 id="LOCK"><a href="#LOCK" class="headerlink" title="LOCK"></a>LOCK</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">LOCK</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	LOCKTAG		tag;			</span><br><span class="line">	LOCKMASK	grantMask;		</span><br><span class="line">	LOCKMASK	waitMask;		</span><br><span class="line">	dlist_head	procLocks;		</span><br><span class="line">	dclist_head     waitProcs;		</span><br><span class="line">	<span class="type">int</span>		requested[MAX_LOCKMODES];	</span><br><span class="line">	<span class="type">int</span>		nRequested;		</span><br><span class="line">	<span class="type">int</span>		granted[MAX_LOCKMODES]; </span><br><span class="line">	<span class="type">int</span>		nGranted;		</span><br><span class="line">&#125; LOCK;</span><br></pre></td></tr></table></figure>
 <ul>
 <li>waitProcs<br>等待本LOCK的PGPROC链表</li>
-<li>procLocks<br>等待本LOCK的PROCLOCK链表</li>
 <li>waitMask<br>该资源上等待的锁类型：目前有进程在等待的锁类型集合</li>
 <li>procLocks<ul>
 <li>一个 LOCK（资源）可以挂很多 PROCLOCK（不同后台进程），每个 PROCLOCK 只对应一个 PGPROC + 一个 LOCK。</li>
@@ -3580,5 +3579,11 @@
       <tags>
         <tag>wordpress</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Dynamic_hash_in_postgresql</title>
+    <url>/2026/04/23/postgresql-source/Dynamic-hash-in-postgresql/</url>
+    <content><![CDATA[<h2 id="Memory-layout-diagram"><a href="#Memory-layout-diagram" class="headerlink" title="Memory layout diagram"></a>Memory layout diagram</h2><p><img src="/images/hash/dhash.png" alt="hash"></p>
+]]></content>
   </entry>
 </search>
