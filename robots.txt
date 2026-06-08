@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# 不需要被索引的路径（Hexo 常见）
+Disallow: /search/
+Disallow: /archives/
+Disallow: /tags/
+Disallow: /categories/
+
+# 如果有本地搜索或插件页面
+Disallow: /local-search.xml
+
+# sitemap
+Sitemap: https://jeffly.cc/sitemap.xml
