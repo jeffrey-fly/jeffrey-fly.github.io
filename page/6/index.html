@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-count">62</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -202,6 +202,190 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-01-15 10:44:26" itemprop="dateCreated datePublished" datetime="2025-01-15T10:44:26+00:00">2025-01-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/01/15/database/Raft%E5%8D%8F%E8%AE%AE/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/01/15/database/Raft协议/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Raft 是一个分布式一致性算法，被设计为比 Paxos 更易于理解，同时具备相似的性能和安全性。它常用于构建容错的分布式系统，确保多个节点在面对网络分区、节点失效等情况下能够达成一致</p>
+<h2 id="核心目标"><a href="#核心目标" class="headerlink" title="核心目标"></a>核心目标</h2><ol>
+<li>Leader选举：通过选举机制确保每个时间段只有一个节点（Leader）负责日志复制和状态变更。</li>
+<li>日志复制：Leader 将客户端的操作（日志）复制到其他节点（Follower），确保日志的一致性。</li>
+<li>状态机一致性：通过确保所有节点按相同顺序应用日志，实现一致性。</li>
+</ol>
+<h2 id="主要模块"><a href="#主要模块" class="headerlink" title="主要模块"></a>主要模块</h2><h3 id="1-角色"><a href="#1-角色" class="headerlink" title="1. 角色"></a>1. 角色</h3><ul>
+<li>Leader：负责接收客户端请求，将操作以日志形式写入并同步给 Follower。</li>
+<li>Follower：响应 Leader 的同步请求，被动地接受 Leader 的日志和指令。</li>
+<li>Candidate：在 Leader 失效后，由 Follower 转为 Candidate，通过投票选举自己为新 Leader。</li>
+</ul>
+<h3 id="2-选举过程"><a href="#2-选举过程" class="headerlink" title="2. 选举过程"></a>2. 选举过程</h3><ul>
+<li>若 Follower 超时未收到 Leader 的心跳信号，会转为 Candidate 并发起选举。</li>
+<li>每个节点在选举期间投票给自己，同时请求其他节点投票。</li>
+<li>如果一个 Candidate 获得了超过半数的投票，则成为 Leader。</li>
+</ul>
+<h3 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h3><ul>
+<li>Leader 接收到客户端请求后，将其作为日志条目添加到自己的日志中。</li>
+<li>Leader 使用 AppendEntries RPC 将日志复制到 Follower。</li>
+<li>当多数节点确认日志条目后，Leader 将日志提交，并通知所有节点应用日志到状态机。</li>
+</ul>
+<h3 id="4-一致性保证"><a href="#4-一致性保证" class="headerlink" title="4. 一致性保证"></a>4. 一致性保证</h3><ul>
+<li>使用 任期号（Term） 防止陈旧的 Leader 发出无效指令。</li>
+<li>确保日志条目在所有节点上按照相同顺序出现，避免状态不一致。</li>
+</ul>
+<h2 id="扩展：MultiRaft协议"><a href="#扩展：MultiRaft协议" class="headerlink" title="扩展：MultiRaft协议"></a>扩展：MultiRaft协议</h2><p>MultiRaft 是 Raft 的一种扩展，旨在支持多个 Raft 实例同时运行，以便在大规模分布式系统中更高效地管理数据分片和分布式事务。</p>
+<h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><ol>
+<li>单个 Raft 实例在处理大量数据时可能成为瓶颈。</li>
+<li>在分布式系统中，通常需要对数据进行分区，每个分区由独立的一组节点管理。</li>
+<li>MultiRaft 提供了一种机制，通过运行多个 Raft 实例，每个实例负责一部分数据，从而提高系统的吞吐量和扩展性</li>
+</ol>
+<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><ol>
+<li>多实例并行运行：</li>
+</ol>
+<ul>
+<li>每个 Raft 实例管理一个独立的数据分片（shard）。</li>
+<li>每个实例有自己的 Leader、Follower 和日志，独立运行 Raft 协议。</li>
+</ul>
+<ol start="2">
+<li>共享底层资源：</li>
+</ol>
+<ul>
+<li>多个 Raft 实例可以运行在相同的物理节点上，共享网络、存储和 CPU 等资源。</li>
+<li>使用高效的调度机制协调实例间的资源竞争。</li>
+</ul>
+<ol start="3">
+<li>动态分片和迁移：</li>
+</ol>
+<ul>
+<li>数据分片可以动态调整，每个分片由一个 Raft 实例管理。</li>
+<li>分片可以在节点之间迁移，以应对节点故障或负载不均。</li>
+</ul>
+<ol start="4">
+<li>跨分片操作：</li>
+</ol>
+<ul>
+<li>支持分布式事务，需要在多个 Raft 实例之间协调。</li>
+<li>一般通过两阶段提交（2PC）或共识组间通信来实现。</li>
+</ul>
+<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><table>
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th>Raft</th>
+<th>MultiRaft</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标</td>
+<td>提供单一一致性机制</td>
+<td>提供分区一致性机制</td>
+</tr>
+<tr>
+<td>运行实例</td>
+<td>单个 Raft 集群</td>
+<td>多个独立的 Raft 集群</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小规模系统</td>
+<td>大规模分布式存储或事务场景</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>有限,单点可能成为瓶颈</td>
+<td>高扩展性，分片机制避免瓶颈</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>较低</td>
+<td>较高，需要处理跨分片事务</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1174,180 +1358,6 @@
 <li><p>更改作者</p>
  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2023/11/05/tools/docker-compose/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/11/05/tools/docker-compose/" class="post-title-link" itemprop="url">docker compose</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-11-05 20:17:05" itemprop="dateCreated datePublished" datetime="2023-11-05T20:17:05+00:00">2023-11-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2023/11/05/tools/docker-compose/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2023/11/05/tools/docker-compose/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="一-Docker-Compose-是什么"><a href="#一-Docker-Compose-是什么" class="headerlink" title="一. Docker Compose 是什么"></a>一. Docker Compose 是什么</h2><ul>
-<li><p>Docker Compose 是 Docker 官方提供的工具，用于定义和管理多容器应用。</p>
-</li>
-<li><p>它允许你用一个 YAML 文件 描述整个应用的服务（containers）、网络、卷、环境变量等，然后一条命令就能创建、启动、停止、销毁整个应用。</p>
-</li>
-<li><p>主要目标是 声明式管理 —— 你只写配置文件，Compose 确保容器状态和配置一致。</p>
-</li>
-</ul>
-<p>简单理解：<br>Docker 是管一个容器，Compose 是管理一堆容器的应用。</p>
-<h2 id="二-Compose-的核心概念"><a href="#二-Compose-的核心概念" class="headerlink" title="二. Compose 的核心概念"></a>二. Compose 的核心概念</h2><table>
-<thead>
-<tr>
-<th>概念</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Service（服务）</strong></td>
-<td>YAML 文件里定义的一个容器，包括镜像、端口、环境变量、卷挂载等。</td>
-</tr>
-<tr>
-<td><strong>Container（容器）</strong></td>
-<td>实际运行的 Docker 实例，由 Service 创建。</td>
-</tr>
-<tr>
-<td><strong>Volume（卷）</strong></td>
-<td>持久化数据，用宿主机目录或 Docker 卷存储数据库、缓存、照片等。</td>
-</tr>
-<tr>
-<td><strong>Network（网络）</strong></td>
-<td>内部容器间通信网络，自动创建，保证服务可以互相访问。</td>
-</tr>
-<tr>
-<td><strong>Project（项目）</strong></td>
-<td>一个 Compose 文件及其相关容器、卷、网络的集合，默认用目录名作为项目名。</td>
-</tr>
-</tbody></table>
-<h2 id="三-Compose-文件结构"><a href="#三-Compose-文件结构" class="headerlink" title="三. Compose 文件结构"></a>三. Compose 文件结构</h2><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.8&quot;</span>  <span class="comment"># Compose 文件版本</span></span><br><span class="line"><span class="attr">services:</span>       <span class="comment"># 定义服务</span></span><br><span class="line">  <span class="attr">photoprism:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">photoprism/photoprism:latest</span>  <span class="comment"># 镜像</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">photoprism</span>            <span class="comment"># 容器名字</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span>               <span class="comment"># 自动重启策略</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;2342:2342&quot;</span>                       <span class="comment"># 端口映射</span></span><br><span class="line">    <span class="attr">environment:</span>                           <span class="comment"># 环境变量</span></span><br><span class="line">      <span class="attr">PHOTOPRISM_ADMIN_PASSWORD:</span> <span class="string">&quot;密码&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span>                               <span class="comment"># 挂载卷</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/originals:/photoprism/originals&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;D:/photoprism/storage:/photoprism/storage&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&quot;3.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">dev:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="comment"># deploy.replicas: 3 </span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">gbase</span></span><br><span class="line">    <span class="attr">privileged:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">shm_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">working_dir:</span> <span class="string">/home/gbase</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/env.list</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">app-data:/data/app</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mynet</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="attr">net.ipv6.conf.all.disable_ipv6:</span> <span class="number">0</span> </span><br><span class="line">      <span class="attr">net.ipv6.conf.default.disable_ipv6:</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">nofile:</span> <span class="number">655360</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">mynet:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">    <span class="attr">enable_ipv6:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">ipam:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;fd00:1234:5678::/64&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">subnet:</span> <span class="string">&quot;172.20.0.0/24&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">app-data:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 普通 Compose:</span><br><span class="line">docker-compose -p gjf up -d --scale dev=3</span><br><span class="line"># Swarm Compose:</span><br><span class="line">docker stack deploy -c docker-compose.yml gjf</span><br><span class="line">deploy.replicas: 3 生效</span><br><span class="line"></span><br><span class="line"># stop and delete</span><br><span class="line">docker-compose -p gjf down</span><br></pre></td></tr></table></figure>
-
-<h2 id="四-常用命令"><a href="#四-常用命令" class="headerlink" title="四. 常用命令"></a>四. 常用命令</h2><table>
-<thead>
-<tr>
-<th>命令</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>docker-compose up -d</code></td>
-<td>创建并启动服务（后台模式）</td>
-</tr>
-<tr>
-<td><code>docker-compose down</code></td>
-<td>停止并删除容器、网络（卷可保留）</td>
-</tr>
-<tr>
-<td><code>docker-compose stop</code></td>
-<td>停止容器，但不删除</td>
-</tr>
-<tr>
-<td><code>docker-compose start</code></td>
-<td>启动已存在容器</td>
-</tr>
-<tr>
-<td><code>docker-compose restart</code></td>
-<td>停止 + 启动</td>
-</tr>
-<tr>
-<td><code>docker-compose logs -f</code></td>
-<td>查看实时日志</td>
-</tr>
-<tr>
-<td><code>docker-compose exec &lt;service&gt; &lt;cmd&gt;</code></td>
-<td>进入容器执行命令（类似 <code>docker exec</code>）</td>
-</tr>
-<tr>
-<td><code>docker-compose ps</code></td>
-<td>查看当前项目的容器状态</td>
-</tr>
-</tbody></table>
 
       
     </div>

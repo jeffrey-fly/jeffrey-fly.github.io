@@ -281,7 +281,7 @@ mjx-container[display="true"] + br {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-count">62</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -314,6 +314,147 @@ mjx-container[display="true"] + br {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/06/11/postgresql/Predicate-locks-in-pg/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/06/11/postgresql/Predicate-locks-in-pg/" class="post-title-link" itemprop="url">Predicate_locks_in_pg</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-11 05:43:33" itemprop="dateCreated datePublished" datetime="2026-06-11T05:43:33+00:00">2026-06-11</time>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/06/11/postgresql/Predicate-locks-in-pg/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/06/11/postgresql/Predicate-locks-in-pg/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="谓词锁："><a href="#谓词锁：" class="headerlink" title="谓词锁："></a>谓词锁：</h2><ol>
+<li>传统谓词锁：</li>
+</ol>
+<ul>
+<li>真锁：锁住一个数学条件（如 age &gt; 10）。</li>
+<li>缺点：<ul>
+<li>数据库难以判断任意两个条件是否重叠（数学上不可判定）</li>
+<li>性能极差</li>
+</ul>
+</li>
+</ul>
+<ol start="2">
+<li>postgresql谓词锁：</li>
+</ol>
+<ul>
+<li>假锁，实际上是标记（SIRead 标记）。</li>
+<li>目的：支持 SSI（可串行化快照隔离）协议。</li>
+<li>本质：在内存中不阻塞任何事务，只做“记事本”，记录谁读了什么，谁后来改了什么。</li>
+</ul>
+<h2 id="为什么记录-RW（读后写）依赖？"><a href="#为什么记录-RW（读后写）依赖？" class="headerlink" title="为什么记录 RW（读后写）依赖？"></a>为什么记录 RW（读后写）依赖？</h2><ul>
+<li>写偏斜（Write Skew）最难防。</li>
+<li>常规锁只能解决 WR 依赖（先写后读）。</li>
+<li>对 RW 依赖（先读后写），普通锁无法察觉</li>
+</ul>
+<h2 id="PostgreSQL-的解决方法"><a href="#PostgreSQL-的解决方法" class="headerlink" title="PostgreSQL 的解决方法"></a>PostgreSQL 的解决方法</h2><ol>
+<li>事务 A 读数据 → 默默加 SIRead 标记。</li>
+<li>事务 B 修改数据 → 检查 SIRead 标记 → 在后台依赖图上连线（A →rw B）</li>
+</ol>
+<h2 id="An-Example"><a href="#An-Example" class="headerlink" title="An Example"></a>An Example</h2><p>让我们创建一个具有跨多个页面的索引的表（可以通过使用较低的填充因子值来实现）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> pred(n <span class="type">numeric</span>, s text);</span><br><span class="line"><span class="keyword">INSERT INTO</span> pred(n) <span class="keyword">SELECT</span> n <span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">10000</span>) n; </span><br><span class="line"><span class="keyword">CREATE</span> INDEX <span class="keyword">ON</span> pred(n) <span class="keyword">WITH</span> (fillfactor <span class="operator">=</span> <span class="number">10</span>);</span><br><span class="line">ANALYZE pred;</span><br></pre></td></tr></table></figure>
+<p>如果查询执行顺序扫描，则会在整个表上获取谓词锁（即使某些行不满足提供的过滤条件）。</p>
+<blockquote>
+<p>Sequential scan 丢失了谓词的精度，PG 只能保守地锁整表。这是一种宁可误判、不能漏判的策略——牺牲并发性，换取正确性。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">mytest<span class="operator">=</span># <span class="keyword">SELECT</span> pg_backend_pid();</span><br><span class="line"> pg_backend_pid </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line">         <span class="number">512701</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line">mytest<span class="operator">=</span># <span class="keyword">BEGIN</span> ISOLATION LEVEL SERIALIZABLE;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># EXPLAIN (analyze, costs off, timing off, summary off)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> pred <span class="keyword">WHERE</span> n <span class="operator">&gt;</span> <span class="number">100</span>;</span><br><span class="line">                   QUERY PLAN                   </span><br><span class="line"><span class="comment">------------------------------------------------</span></span><br><span class="line"> Seq Scan <span class="keyword">on</span> pred (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">9900.00</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">   <span class="keyword">Filter</span>: (n <span class="operator">&gt;</span> <span class="string">&#x27;100&#x27;</span>::<span class="type">numeric</span>)</span><br><span class="line">   <span class="keyword">Rows</span> Removed <span class="keyword">by</span> <span class="keyword">Filter</span>: <span class="number">100</span></span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">45</span></span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">15</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>尽管谓词锁（predicate locks）拥有自己独立的底层基础设施，但 pg_locks 视图仍然会将它们与重量级锁（heavyweight locks）放在一起共同显示。所有的谓词锁在获取时，其模式一律为 SIRead 模式，该模式是“可串行化隔离读”（Serializable Isolation Read）的缩写。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mytest=*# SELECT relation::regclass, locktype, page, tuple FROM pg_locks WHERE mode = &#x27;SIReadLock&#x27; AND pid = 512701 ORDER BY 1, 2, 3, 4;</span><br><span class="line"> relation | locktype | page | tuple </span><br><span class="line">----------+----------+------+-------</span><br><span class="line"> pred     | relation |      |      </span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure>
+<p>需要注意的是，谓词锁的持有时间可能会超过事务本身的持续时间，因为它们被用来追踪事务之间的依赖关系。但无论如何，它们都是自动管理的。</p>
+<p>如果查询执行的是索引扫描（index scan），情况就会有所好转。对于 B-tree 索引，只需在读取的堆元组（heap tuples，即实际的数据行）以及索引中被扫描的叶子页面（leaf pages）上设置谓词锁即可。这将“锁定”已被读取的整个范围，而不仅仅是那些精确的数值。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mytest<span class="operator">=</span># <span class="keyword">BEGIN</span> ISOLATION LEVEL SERIALIZABLE;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># EXPLAIN (analyze, costs off, timing off, summary off)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> pred <span class="keyword">WHERE</span> n <span class="keyword">BETWEEN</span> <span class="number">1000</span> <span class="keyword">AND</span> <span class="number">1001</span>;</span><br><span class="line">                            QUERY PLAN                             </span><br><span class="line"><span class="comment">-------------------------------------------------------------------</span></span><br><span class="line"> Index Scan <span class="keyword">using</span> pred_n_idx <span class="keyword">on</span> pred (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">2.00</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">   Index Cond: ((n <span class="operator">&gt;=</span> <span class="string">&#x27;1000&#x27;</span>::<span class="type">numeric</span>) <span class="keyword">AND</span> (n <span class="operator">&lt;=</span> <span class="string">&#x27;1001&#x27;</span>::<span class="type">numeric</span>))</span><br><span class="line">   Index Searches: <span class="number">1</span></span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">1</span> read<span class="operator">=</span><span class="number">2</span></span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">6</span></span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> relation::regclass, locktype, page, tuple <span class="keyword">FROM</span> pg_locks <span class="keyword">WHERE</span> mode <span class="operator">=</span> <span class="string">&#x27;SIReadLock&#x27;</span> <span class="keyword">AND</span> pid <span class="operator">=</span> <span class="number">512701</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>;</span><br><span class="line">  relation  <span class="operator">|</span> locktype <span class="operator">|</span> page <span class="operator">|</span> tuple </span><br><span class="line"><span class="comment">------------+----------+------+-------</span></span><br><span class="line"> pred       <span class="operator">|</span> tuple    <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>    <span class="number">96</span></span><br><span class="line"> pred       <span class="operator">|</span> tuple    <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>    <span class="number">97</span></span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>   <span class="number">28</span> <span class="operator">|</span>      </span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>已经扫描过的元组（数据行）所对应的索引叶子页面（leaf pages）数量是会发生变化的：例如，当向表中插入新行时，索引页面可能会发生分裂（split）。然而，PostgreSQL 充分考虑到了这种情况，并且也会将新出现的页面锁定</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> relation::regclass, locktype, page, tuple <span class="keyword">FROM</span> pg_locks <span class="keyword">WHERE</span> mode <span class="operator">=</span> <span class="string">&#x27;SIReadLock&#x27;</span> <span class="keyword">AND</span> pid <span class="operator">=</span> <span class="number">512701</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>;</span><br><span class="line">  relation  <span class="operator">|</span> locktype <span class="operator">|</span> page <span class="operator">|</span> tuple </span><br><span class="line"><span class="comment">------------+----------+------+-------</span></span><br><span class="line"> pred       <span class="operator">|</span> tuple    <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>    <span class="number">96</span></span><br><span class="line"> pred       <span class="operator">|</span> tuple    <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>    <span class="number">97</span></span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>   <span class="number">28</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">266</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">267</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">268</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">269</span> <span class="operator">|</span>      </span><br><span class="line">(<span class="number">7</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>每一个被读取的元组（数据行）都是被单独锁定的，而这类元组的数量可能会相当庞大。谓词锁使用在服务器启动时分配的独立内存池。谓词锁的总数受到 max_pred_locks_per_transaction 参数值乘以 max_connections 参数值的限制（尽管从参数名称来看，谓词锁并不是按每个独立事务分别计算的）</p>
+<p>在这里，我们遇到了与行级锁（row-level locks）相同的问题，但解决方式却截然不同：这里应用了“锁升级”（lock escalation）机制。</p>
+<p>一旦与单个页面（page）相关的元组锁（tuple locks）数量超过了 max_pred_locks_per_page 参数的值(默认值设为 2)，它们就会被一个单一的页面级锁（page-level lock）所取代</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># EXPLAIN (analyze, costs off, timing off, summary off) <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> pred <span class="keyword">WHERE</span> n <span class="keyword">BETWEEN</span> <span class="number">1000</span> <span class="keyword">AND</span> <span class="number">1002</span>;</span><br><span class="line">                            QUERY PLAN                             </span><br><span class="line"><span class="comment">-------------------------------------------------------------------</span></span><br><span class="line"> Index Scan <span class="keyword">using</span> pred_n_idx <span class="keyword">on</span> pred (actual <span class="keyword">rows</span><span class="operator">=</span><span class="number">1002.00</span> loops<span class="operator">=</span><span class="number">1</span>)</span><br><span class="line">   Index Cond: ((n <span class="operator">&gt;=</span> <span class="string">&#x27;1000&#x27;</span>::<span class="type">numeric</span>) <span class="keyword">AND</span> (n <span class="operator">&lt;=</span> <span class="string">&#x27;1002&#x27;</span>::<span class="type">numeric</span>))</span><br><span class="line">   Index Searches: <span class="number">1</span></span><br><span class="line">   Buffers: shared hit<span class="operator">=</span><span class="number">15</span></span><br><span class="line">(<span class="number">4</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+<p>现在，我们不再拥有三个元组类型的锁，而是拥有了一个页面类型的锁：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mytest<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> relation::regclass, locktype, page, tuple <span class="keyword">FROM</span> pg_locks <span class="keyword">WHERE</span> mode <span class="operator">=</span> <span class="string">&#x27;SIReadLock&#x27;</span> <span class="keyword">AND</span> pid <span class="operator">=</span> <span class="number">512701</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>;</span><br><span class="line">  relation  <span class="operator">|</span> locktype <span class="operator">|</span> page <span class="operator">|</span> tuple </span><br><span class="line"><span class="comment">------------+----------+------+-------</span></span><br><span class="line"> pred       <span class="operator">|</span> page     <span class="operator">|</span>    <span class="number">4</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>   <span class="number">28</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">266</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">267</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">268</span> <span class="operator">|</span>      </span><br><span class="line"> pred_n_idx <span class="operator">|</span> page     <span class="operator">|</span>  <span class="number">269</span> <span class="operator">|</span>      </span><br><span class="line">(<span class="number">6</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>锁升级肯定会导致误报序列化错误，这会对系统吞吐量产生负面影响。因此，必须在性能和在锁上花费可用资源之间找到适当的平衡。</p>
+<p>Predicate locks 支持以下索引类型：</p>
+<ul>
+<li>B-Trees</li>
+<li>hash indexes, GiST, and GIN</li>
+</ul>
+<p>如果执行索引扫描，但索引不支持谓词锁，则整个索引将被锁定。可以预见的是，在这种情况下，无故中止的事务数量也会增加。</p>
+<p>为了在可串行化（Serializable）级别下实现更高效的运行，通过 READ ONLY 子句将事务显式声明为“只读”是非常有意义的。如果锁管理器（lock manager）发现一个只读事务不会与其他事务发生冲突，它就可以释放已经设置的谓词锁，并且不再获取新的谓词锁。而如果这样的事务同时被声明为 DEFERRABLE（可延迟的），那么只读事务异常（read-only transaction anomaly）也将得以避免。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1588,147 +1729,6 @@ mjx-container[display="true"] + br {
 </ul>
 <p><strong>特殊实现</strong><br>读己所写（Read-Your-Own-Writes Consistency）：用户在同一会话中总能立即看到自己提交的更新。常用于社交媒体。</p>
 <h3 id="最终一致性（Eventual-Consistency）："><a href="#最终一致性（Eventual-Consistency）：" class="headerlink" title="最终一致性（Eventual Consistency）："></a>最终一致性（Eventual Consistency）：</h3><p>系统在经过一段时间后最终达到一致状态，但短期内可能存在不一致数据。典型应用：ClickHouse、分布式缓存等。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/01/20/database/Files-in-Clickhouse/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/01/20/database/Files-in-Clickhouse/" class="post-title-link" itemprop="url">Files in Clickhouse</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-01-20 10:57:54" itemprop="dateCreated datePublished" datetime="2026-01-20T10:57:54+00:00">2026-01-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2026/01/20/database/Files-in-Clickhouse/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/01/20/database/Files-in-Clickhouse/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="物理结构图"><a href="#物理结构图" class="headerlink" title="物理结构图"></a>物理结构图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">primary.idx</span><br><span class="line"> ├─ entry 0  -&gt; granule 0</span><br><span class="line"> ├─ entry 1  -&gt; granule 1</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br><span class="line">column.mrk4 (per column)</span><br><span class="line"> ├─ mark 0 -&gt; (compressed_offset, decompressed_offset) of granule 0</span><br><span class="line"> ├─ mark 1 -&gt; (compressed_offset, decompressed_offset) of granule 1</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br><span class="line">data.bin</span><br><span class="line"> ├─ compressed block A</span><br><span class="line"> │    ├─ granule 0</span><br><span class="line"> │    └─ granule 1</span><br><span class="line"> ├─ compressed block B</span><br><span class="line"> │    └─ granule 2</span><br><span class="line"> └─ ...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="primary-idx-primary-cidx（主键稀疏索引）"><a href="#primary-idx-primary-cidx（主键稀疏索引）" class="headerlink" title="primary.idx &#x2F; primary.cidx（主键稀疏索引）"></a>primary.idx &#x2F; primary.cidx（主键稀疏索引）</h3><p>主键索引文件，用于按 granule 粒度 进行范围裁剪（range pruning）。</p>
-<p><strong>索引项（entry）生成规则</strong></p>
-<ul>
-<li><p>每当形成一个新的 granule，就会在 primary 索引中生成一个 entry</p>
-</li>
-<li><p>granule 的边界由以下两个条件之一触发（OR 关系）：</p>
-<ul>
-<li>行数达到 index_granularity（默认 8192 行）</li>
-<li>ranule 内累计的 解压后数据大小 达到 index_granularity_bytes（通常约 10MB）</li>
-</ul>
-<p>  重要说明  </p>
-<ul>
-<li>granule 的行数是 上限约束，并非固定值</li>
-<li>当 10MB 条件先触发时，一个 granule 的行数可能 明显小于 8192</li>
-<li>primary 索引是 稀疏索引，只定位到 granule，而非单行</li>
-</ul>
-</li>
-</ul>
-<h3 id="column-mrk-column-mrk4（列级定位信息）"><a href="#column-mrk-column-mrk4（列级定位信息）" class="headerlink" title="column.mrk &#x2F; column.mrk4（列级定位信息）"></a>column.mrk &#x2F; column.mrk4（列级定位信息）</h3><p>对于 每一列，都有一个对应的 mark 文件，用于描述 每个 granule 在该列数据文件中的物理位置。</p>
-<p><strong>mark 的数量关系</strong><br>每个 data part 中：primary.idx 中有多少个 entry，每个列的 .mrk &#x2F; .mrk4 文件中就有多少个 mark。二者在 granule 维度上 一一对应  </p>
-<p>每个 mark 的内容<br>每个 mark 是一对偏移量：<br><strong>compressed_offset</strong> ：granule 所在压缩块在 .bin 文件中的起始字节偏移<br><strong>decompressed_offset</strong>：压缩块解压到内存后，该 granule 在解压后内存块中的起始字节偏移</p>
-<p><strong>补充说明</strong><br>decompressed_offset 是 内存语义，不是磁盘语义。当一个压缩块只包含一个 granule 时，该值通常为 0；当一个压缩块包含多个 granule 时：第一个 granule 的 decompressed_offset &#x3D; 0；后续 granule 的 decompressed_offset 为其在解压后内存块中的字节偏移</p>
-<h3 id="data-bin（列数据文件）"><a href="#data-bin（列数据文件）" class="headerlink" title="data.bin（列数据文件）"></a>data.bin（列数据文件）</h3><p><strong>物理结构</strong></p>
-<p>data.bin 由多个 压缩块（compressed blocks） 顺序组成</p>
-<p><strong>每个压缩块包含：</strong><br>1 个或多个完整 granule；任何一个 granule 都不会跨越压缩块边界</p>
-<p><strong>关系约束</strong><br>一个 granule：必然完全位于某一个压缩块中；一个压缩块：可以包含多个 granule（取决于 granule 大小与压缩策略）</p>
-<h3 id="其他文件"><a href="#其他文件" class="headerlink" title="其他文件"></a>其他文件</h3><ol>
-<li><p>columns.txt：描述本 part 中：列名、列类型、列顺序</p>
-</li>
-<li><p>columns_substreams.txt：<br> 描述每个列的 子流（substream）布局。特别是：</p>
-<ul>
-<li>Nullable</li>
-<li>Array</li>
-<li>LowCardinality</li>
-<li>Map</li>
-</ul>
-<p> 决定：一个逻辑列拆成几个 .bin &#x2F; .mrk</p>
-</li>
-<li><p>checksums.txt：记录本 part 中 每个文件的校验和与大小</p>
-</li>
-<li><p>count.txt：记录该 part 中的 行数，相当于 part 级的 “统计元数据”</p>
-</li>
-<li><p>serialization.json：描述 列的序列化 &#x2F; 反序列化方式</p>
-</li>
-<li><p>default_compression_codec.txt：记录该 part 使用的默认压缩算法（如 LZ4、ZSTD）</p>
-</li>
-<li><p>metadata_version.txt:表示该 part 的 metadata 版本</p>
-</li>
-</ol>
 
       
     </div>

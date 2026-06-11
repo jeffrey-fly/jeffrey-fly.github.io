@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-count">62</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -202,6 +202,137 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/11/01/postgresql/WAL-MODES/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/01/postgresql/WAL-MODES/" class="post-title-link" itemprop="url">WAL MODES</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-01 19:03:57" itemprop="dateCreated datePublished" datetime="2025-11-01T19:03:57+00:00">2025-11-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/11/01/postgresql/WAL-MODES/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/11/01/postgresql/WAL-MODES/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>当数据库服务正常运行时，wal文件持续不断的写入磁盘。这种写入时顺序的（sequential）：几乎没有随机访问，所以即便时hdd硬盘也能处理这样的任务。由于这种负载和典型的数据文件访问非常不一样，值得为WAL文件设置单独的物理存储，并通过符号链接替换PGDATA&#x2F;PG_WAL目录，该目录链接到mount的文件系统中的目录。</p>
+<blockquote>
+<p>在某些情况下，需要同时写和读取WAL文件。第一种情况是崩溃恢复。第二个是流复制。 Walsender流程直接从文件中读取WALENTRIES。因此，如果必需的页面仍位于主服务器的OS缓冲区中（不在shared_buffer中），replica未接收WAL条目，则必须从磁盘中读取数据。但是访问仍然是顺序而不是随机的。</p>
+</blockquote>
+<p>wal日志条目写入有以下两种模式：</p>
+<ul>
+<li><strong>同步模式</strong>：在事务提交之前，必须把所有相关的 WAL 记录写入磁盘，否则不允许继续执行后续操作。</li>
+<li><strong>异步模式</strong>：事务提交会立刻返回成功，相关的 WAL 记录则由后台进程稍后再写入磁盘。</li>
+</ul>
+<p>当前使用的模式由参数：synchronous_commit 确定</p>
+<p><strong>同步模式</strong>：为了可靠地记录一次提交，仅仅将WAL条目传递给操作系统是不够的；你必须确保磁盘同步已经成功完成。由于同步涉及实际的I&#x2F;O操作（这相当慢），因此最好尽可能少地执行它。</p>
+<p>为此，完成事务并将WAL条目写入磁盘的后端可以进行一次小的暂停，该暂停由commit_delay参数定义。但是，只有当系统中至少有commit_siblings个活跃事务时，这种情况才会发生：在这次暂停期间，其中一些事务可能会完成，而服务器将设法一次性同步所有WAL条目。这很像为某人赶进来而按住电梯门。</p>
+<p>默认情况下，没有暂停。仅针对执行大量短时OLTP事务的数据库系统修改commit_delay参数是有意义的。</p>
+<p>在可能出现的暂停之后，完成事务的进程会将所有累积的 WAL 条目刷新到磁盘并执行同步操作（关键是要保存提交记录以及与该事务相关的所有前置记录；至于其他记录，则只是顺便写入，因为它们不会增加额外开销）。</p>
+<p>从这一刻起，ACID 的持久性要求便得到保证——事务被认为已经可靠提交。这就是为什么默认使用同步模式的原因。</p>
+<p>同步提交的缺点在于延迟更长（在同步完成之前，COMMIT 命令不会返回控制权），并且系统吞吐量较低，尤其对于 OLTP loads。</p>
+<p><strong>异步模式</strong>：要启用异步模式，必须关闭 synchronous_commit 参数。<br>在异步模式下，WAL 条目由 walwriter 进程写入磁盘，该进程在“工作—休眠”之间交替运行。休眠时长由 wal_writer_delay 参数决定（默认 200ms）。</p>
+<p>当 walwriter 从休眠中唤醒时，它会检查缓存中是否存在新的、已经完全填满的 WAL 页面。如果存在，就将这些页面写入磁盘，同时跳过当前未写满的页面；否则，它会写入当前半空的页面，因为既然已经被唤醒了。</p>
+<p>这种算法的目的在于避免同一个页面被多次刷盘，这在数据变更频繁的负载下能带来显著的性能提升。</p>
+<p>虽然 WAL 缓存采用环形缓冲区（ring buffer）的形式，但 walwriter 在到达缓存的最后一页时会停止；在经过一次休眠后，下一轮写入循环会从缓存的第一页重新开始。因此，在最坏的情况下，walwriter 可能需要 三次循环才能处理某个特定的 WAL 记录：</p>
+<p>第一次，它会写出缓存尾部的所有已填满页面；（当前位置之后的所有满块）<br>第二次，它回到开头；（当前位置之前的所有满块）<br>第三次，才会处理包含目标记录的那个未填满页面。<br>不过，在大多数情况下，只需要 一到两次循环 就能完成。</p>
+<p>每当写入的数据量达到 wal_writer_flush_after 时，就会执行一次同步操作；在写入循环结束时，也会再次进行同步。</p>
+<p>与同步提交相比，异步提交更快，因为它不需要等待物理写入磁盘完成。但可靠性有所下降：在发生故障前的 3 × wal_writer_delay 时间内提交的数据可能会丢失（默认值为 0.6 秒）</p>
+<p>在实际应用中，这两种模式是互补的。</p>
+<ul>
+<li>在 <strong>同步模式</strong> 下，与长事务相关的 WAL 条目仍然可以 异步写入，以释放 WAL 缓冲区。</li>
+<li>反之，即使在 <strong>异步模式</strong> 下，如果某个 WAL 条目所在的页即将被 从缓冲区淘汰，该条目也会被 立即刷盘，否则系统无法继续正常操作。<br>在大多数情况下，系统设计者必须在 性能和持久性之间做出权衡。</li>
+</ul>
+<p>synchronous_commit 参数也可以针对特定事务进行设置。如果能够在应用层将所有事务分类为 绝对关键（如处理财务数据）或 非关键，就可以在只冒非关键事务丢失风险的前提下，提升整体性能</p>
+<p>为了了解 异步提交 可能带来的性能提升，我们可以通过 pgbench 测试，比较两种模式下的 延迟（latency）和吞吐量（throughput）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>i test</span><br><span class="line">dropping <span class="keyword">old</span> tables...</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_accounts&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_branches&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_history&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">NOTICE:  <span class="keyword">table</span> &quot;pgbench_tellers&quot; does <span class="keyword">not</span> exist, skipping</span><br><span class="line">creating tables...</span><br><span class="line">generating data (client<span class="operator">-</span>side)...</span><br><span class="line">vacuuming...                                                                              </span><br><span class="line">creating <span class="keyword">primary</span> keys...</span><br><span class="line">done <span class="keyword">in</span> <span class="number">1.54</span> s (<span class="keyword">drop</span> tables <span class="number">0.11</span> s, <span class="keyword">create</span> tables <span class="number">0.49</span> s, client<span class="operator">-</span>side generate <span class="number">0.54</span> s, vacuum <span class="number">0.18</span> s, <span class="keyword">primary</span> keys <span class="number">0.23</span> s).</span><br><span class="line"> </span><br><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>T <span class="number">30</span> test</span><br><span class="line">pgbench (<span class="number">19</span>devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: <span class="operator">&lt;</span>builtin: TPC<span class="operator">-</span>B (sort <span class="keyword">of</span>)<span class="operator">&gt;</span></span><br><span class="line">scaling factor: <span class="number">1</span></span><br><span class="line">query mode: simple</span><br><span class="line">number <span class="keyword">of</span> clients: <span class="number">1</span></span><br><span class="line">number <span class="keyword">of</span> threads: <span class="number">1</span></span><br><span class="line">maximum number <span class="keyword">of</span> tries: <span class="number">1</span></span><br><span class="line">duration: <span class="number">30</span> s</span><br><span class="line">number <span class="keyword">of</span> transactions actually processed: <span class="number">3522</span></span><br><span class="line">number <span class="keyword">of</span> failed transactions: <span class="number">0</span> (<span class="number">0.000</span><span class="operator">%</span>)</span><br><span class="line">latency average <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">8.518</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> ms</span><br><span class="line"><span class="keyword">initial</span> connection <span class="type">time</span> <span class="operator">=</span> <span class="number">4.025</span> ms</span><br><span class="line">tps <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">117.400485</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> (<span class="keyword">without</span> <span class="keyword">initial</span> connection <span class="type">time</span>)</span><br></pre></td></tr></table></figure>
+<p>修改参数后跑异步模式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> synchronous_commit <span class="operator">=</span> off;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"> </span><br><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ pgbench <span class="operator">-</span>T <span class="number">30</span> test</span><br><span class="line">pgbench (<span class="number">19</span>devel)</span><br><span class="line">starting vacuum...end.</span><br><span class="line">transaction type: <span class="operator">&lt;</span>builtin: TPC<span class="operator">-</span>B (sort <span class="keyword">of</span>)<span class="operator">&gt;</span></span><br><span class="line">scaling factor: <span class="number">1</span></span><br><span class="line">query mode: simple</span><br><span class="line">number <span class="keyword">of</span> clients: <span class="number">1</span></span><br><span class="line">number <span class="keyword">of</span> threads: <span class="number">1</span></span><br><span class="line">maximum number <span class="keyword">of</span> tries: <span class="number">1</span></span><br><span class="line">duration: <span class="number">30</span> s</span><br><span class="line">number <span class="keyword">of</span> transactions actually processed: <span class="number">9510</span></span><br><span class="line">number <span class="keyword">of</span> failed transactions: <span class="number">0</span> (<span class="number">0.000</span><span class="operator">%</span>)</span><br><span class="line">latency average <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">3.154</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> ms</span><br><span class="line"><span class="keyword">initial</span> connection <span class="type">time</span> <span class="operator">=</span> <span class="number">4.383</span> ms</span><br><span class="line">tps <span class="operator">=</span> <span class="operator">&lt;</span>strong<span class="operator">&gt;</span><span class="number">317.038330</span><span class="operator">&lt;</span><span class="operator">/</span>strong<span class="operator">&gt;</span> (<span class="keyword">without</span> <span class="keyword">initial</span> connection <span class="type">time</span>)</span><br></pre></td></tr></table></figure>
+<p>在 <strong>异步模式</strong> 下，这个简单的基准测试显示出 显著更低的延迟（latency）和更高的吞吐量（tps）。当然，每个具体系统的数值会根据当前负载有所不同，但可以清楚地看出，对于 短事务，性能提升是相当明显的。</p>
+<p>恢复参数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="variable">@lavm</span><span class="operator">-</span>bar1guved6:<span class="operator">/</span>root$ psql test</span><br><span class="line">psql (<span class="number">19</span>devel)</span><br><span class="line">Type &quot;help&quot; <span class="keyword">for</span> help.</span><br><span class="line"> </span><br><span class="line">test<span class="operator">=</span># <span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> RESET synchronous_commit;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span></span><br><span class="line">test<span class="operator">=</span># <span class="keyword">SELECT</span> pg_reload_conf();</span><br><span class="line"> pg_reload_conf </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line"> t</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
+<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1477,135 +1608,6 @@
 <li><p>重启服务</p>
   <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/07/30/postgresql/WAL-Structure-Logical-Structure/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/07/30/postgresql/WAL-Structure-Logical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Logical-Structure)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-07-30 10:46:03" itemprop="dateCreated datePublished" datetime="2025-07-30T10:46:03+00:00">2025-07-30</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/07/30/postgresql/WAL-Structure-Logical-Structure/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/07/30/postgresql/WAL-Structure-Logical-Structure/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>从wal逻辑结构来看，WAL 可被描述为变长日志条目流。每个条目都包含有关特定操作的一些数据，并以标准标头作为前缀。该标头提供的信息包括但不限于：</p>
-<ul>
-<li>与条目（entry）相关的事务 ID </li>
-<li>解释条目的资源管理器</li>
-<li>用于检测数据损坏的校验和</li>
-<li>条目长度</li>
-<li>对前一个 WAL 条目的引用<blockquote>
-<p>WAL 通常是按正向读取的，但某些工具（例如 pg_rewind）可能会反向扫描它</p>
-</blockquote>
-</li>
-</ul>
-<p>WAL 数据本身可以具有不同的格式和含义。例如，它可能是一段页片段（page fragment），需要替换某个页面中指定偏移处的一部分内容。相应的资源管理器（resource manager）必须知道如何解析并重放这一特定条目。针对表、各种索引类型、事务状态以及其他实体，PostgreSQL 都有独立的资源管理器来处理它们各自的 WAL。</p>
-<p>WAL 文件会占用服务器共享内存中的特殊缓冲区。用于 WAL 的缓存大小由参数 wal_buffers 决定。默认情况下，这个大小会自动设为总缓冲区缓存（buffer cache）大小的 1&#x2F;32。</p>
-<p>WAL 缓存与缓冲区缓存（buffer cache）非常相似，但它通常以环形缓冲区（ring buffer）的方式运行：新的日志条目被添加到缓冲区的头部，而旧的条目则从尾部开始写入磁盘。如果 WAL 缓存太小，就会比必要的更频繁地进行磁盘同步操作。</p>
-<p>在系统负载较低的情况下，插入位置（即缓冲区的头部）几乎总是与已经写入磁盘的条目位置（即缓冲区的尾部）保持一致。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_lsn(), pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_lsn <span class="operator">|</span> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">--------------------+---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDC2CD8         <span class="operator">|</span> <span class="number">1</span><span class="operator">/</span>EBDC2CD8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>在PostgreSQL 10之前，所有函数名称都包含XLOG首字母缩写词，而不是WAL。</p>
-</blockquote>
-<p>为了引用某个特定的日志条目，PostgreSQL 使用一种特殊的数据类型：pg_lsn（日志序列号，Log Sequence Number，简称 LSN）。它表示从 WAL 起始位置开始，以字节为单位的 64 位偏移量。LSN 通常以两个十六进制数字表示，中间用斜杠（&#x2F;）分隔。</p>
-<p>我们创建一个表：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># <span class="keyword">CREATE TABLE</span> wal(id <span class="type">integer</span>);</span><br><span class="line"><span class="keyword">CREATE TABLE</span></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">INSERT INTO</span> wal <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">1</span></span><br><span class="line">启动一个事务，并记录下当前 WAL 插入位置的 LSN。</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA4F8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>现在执行一个任意命令，例如，更新一行数据。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">UPDATE</span> wal <span class="keyword">SET</span> id <span class="operator">=</span> id <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
-<p>页面的修改是在 RAM 中的缓冲区缓存（buffer cache）中进行的。这个更改也会记录在位于 RAM 中的 WAL 页面中。因此，插入的 LSN 会向前推进。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5E8</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>为了确保修改后的数据页是在对应的 WAL 条目之后才被刷新到磁盘，数据页的页头会存储该页最新相关的 WAL 条目的 LSN。你可以使用 pageinspect 插件查看这个 LSN。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">SELECT</span> lsn <span class="keyword">FROM</span> page_header(get_raw_page(<span class="string">&#x27;wal&#x27;</span>,<span class="number">0</span>));</span><br><span class="line">    lsn     </span><br><span class="line"><span class="comment">------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDA5B0</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>整个数据库集群只有一个 WAL，并且新的条目会不断地追加到其中。因此，存储在数据页中的 LSN 可能会比 之前某个时刻 pg_current_wal_insert_lsn() 返回的 LSN 更小。但如果系统中没有发生任何操作，这两个数值将会相同。</p>
-<p>现在提交这个事务</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span><span class="operator">*</span># <span class="keyword">commit</span>;</span><br><span class="line"><span class="keyword">COMMIT</span></span><br><span class="line"><span class="keyword">commit</span>操作同样被日志记录，同时<span class="keyword">insert</span> lsn再次改变</span><br><span class="line"></span><br><span class="line">demo<span class="operator">=</span># <span class="keyword">SELECT</span> pg_current_wal_insert_lsn();</span><br><span class="line"> pg_current_wal_insert_lsn </span><br><span class="line"><span class="comment">---------------------------</span></span><br><span class="line"> <span class="number">1</span><span class="operator">/</span>EBDDC500</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>为了确保某个 CLog 页在对应的 WAL 条目写入磁盘之前不会被刷新到磁盘，必须追踪该页所对应的最新 WAL 条目的 LSN。但这种 LSN 信息是保存在内存（RAM）中的，而不是存在 CLog 页本身</p>
-<p>某个时刻，WAL 日志条目会被写入磁盘；此时，才能把对应的 CLOG 和数据页从缓存中淘汰（evict）。如果必须更早淘汰这些缓存页，那么系统会发现这一点，并会先强制将对应的 WAL 条目写入磁盘。<br>如果你知道两个 LSN（日志序列号）的位置，就可以通过简单地相减计算这两者之间的 WAL 日志大小（以字节为单位）。只需将它们转换为 pg_lsn 类型即可进行减法运算</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">demo<span class="operator">=</span># demo<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="string">&#x27;1/EBDDC500&#x27;</span>::pg_lsn <span class="operator">-</span> <span class="string">&#x27;1/EBDDA4F8&#x27;</span>::pg_lsn;</span><br><span class="line"> ?<span class="keyword">column</span>? </span><br><span class="line"><span class="comment">----------</span></span><br><span class="line">     <span class="number">8200</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-<p>在这个具体案例中，更新（update）和提交（commit）操作相关的 WAL 条目大约占用了几千字节。可以用相同的方法，估算某个工作负载在单位时间内产生的 WAL 日志量。<br>这些信息对设置检查点（checkpoint）参数非常重要。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
 
       
     </div>
