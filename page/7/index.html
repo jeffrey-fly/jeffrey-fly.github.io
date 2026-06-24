@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-count">63</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -202,6 +202,124 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2023/12/17/tools/git/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/12/17/tools/git/" class="post-title-link" itemprop="url">git</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-12-17 19:57:11" itemprop="dateCreated datePublished" datetime="2023-12-17T19:57:11+00:00">2023-12-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2023/12/17/tools/git/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2023/12/17/tools/git/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ol>
+<li>配置 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.name <span class="string">&quot;Jeffrey&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;jeffreyfly@icloud.com&quot;</span></span><br><span class="line">git config --global pull.rebase <span class="literal">true</span></span><br><span class="line">git config --global credential.helper store</span><br><span class="line">git config --global push.default simple</span><br><span class="line">git config --global -l</span><br></pre></td></tr></table></figure></li>
+<li>合并提交（本地未push） <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git status</span><br><span class="line">git add -u</span><br><span class="line">git commit --amend --no-edit</span><br></pre></td></tr></table></figure></li>
+<li>commit 合并</li>
+</ol>
+<ul>
+<li>方法1:  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br><span class="line"></span><br><span class="line">pick abc123 Commit message 1</span><br><span class="line">pick def456 Commit message 2</span><br><span class="line">pick 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  将你想合并的提交改为 squash 或简写 s，保留第一个 pick 不动：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pick abc123 Commit message 1</span><br><span class="line">squash def456 Commit message 2</span><br><span class="line">squash 789abc Commit message 3</span><br></pre></td></tr></table></figure>
+  保存退出，Git 会让你编辑最终的 commit message，合并或者修改后保存即可。<br>  强行推送：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git push origin your-branch --force-with-lease</span><br></pre></td></tr></table></figure></li>
+<li>方法2  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 回到上一次 push 的状态（或者想作为基准的 commit）</span><br><span class="line">git reset --soft origin/your-branch</span><br><span class="line"># 或者 git reset --soft HEAD~N （如果你想数 N 个提交的话）</span><br><span class="line"></span><br><span class="line"># 将所有改动重新提交为一个 commit</span><br><span class="line">git commit -m &quot;合并后的 commit message&quot;</span><br><span class="line"></span><br><span class="line"># 推送到远程（已 push 的分支需要强制）</span><br><span class="line">git push --force-with-lease</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="4">
+<li><p>忽略所有名为 build 的目录<br>编辑.gitignore 文件</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">保留仓库根目录下的 build/README.md</span><br><span class="line">build/</span><br><span class="line">**/build/*.log</span><br><span class="line"></span><br><span class="line">//任意层级 build 目录下的 README.md</span><br><span class="line">build/</span><br><span class="line">!**/build/</span><br><span class="line">!**/build/README.md</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>rebase</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git fetch origin</span><br><span class="line">git rebase origin/main</span><br><span class="line">git add xxx.cpp</span><br><span class="line">git rebase --<span class="built_in">continue</span> / abort</span><br><span class="line">git push --force-with-lease</span><br><span class="line">git push orign &lt;localbranch&gt;:&lt;remotebranch&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>把文件回退到它的上一次修改</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout $(git log -n 1 --pretty=format:%H -- path/to/file) -- path/to/file</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>只查看发生变更的文件名（不看具体 diff 内容）</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">git diff --name-only           # 工作区 ↔ 暂存区</span><br><span class="line">git diff --staged --name-only  # 暂存区 vs HEAD</span><br><span class="line">git diff HEAD --name-only      # 工作区 vs HEAD</span><br><span class="line">git diff origin/main HEAD --name-only  # 远端分支 vs HEAD</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>更改作者</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git commit --amend --author=&quot;Your Name &lt;your@email.com&gt;&quot;</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 

@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-count">63</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -202,6 +202,128 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/07/31/tools/wordpress/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/31/tools/wordpress/" class="post-title-link" itemprop="url">wordpress</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-31 10:59:00" itemprop="dateCreated datePublished" datetime="2025-07-31T10:59:00+00:00">2025-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/07/31/tools/wordpress/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/07/31/tools/wordpress/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Ubuntu安装wordpress"><a href="#Ubuntu安装wordpress" class="headerlink" title="Ubuntu安装wordpress"></a>Ubuntu安装wordpress</h2><ul>
+<li><p>安装apache：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2 -y</span><br><span class="line">chown -R www-data:www-data /var/www/html</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装php</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y php php-mysql php-json</span><br><span class="line">yum install php php-mysqlnd php-json</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install php libapache2-mod-php php-mysql -y</span><br><span class="line">apt install php-cli php-curl php-gd php-mbstring php-xml php-zip -y</span><br></pre></td></tr></table></figure></li>
+<li><p>安装database</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install -y mariadb-server</span><br><span class="line">yum install -y mysql-server</span><br></pre></td></tr></table></figure>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt install mysql-server -y</span><br></pre></td></tr></table></figure>
+<p>  修改密码：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;12345&#x27;；</span><br><span class="line"></span><br><span class="line">CREATE DATABASE wordpress_db;</span><br><span class="line">CREATE USER &#x27;wp_user&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;password&#x27;;</span><br><span class="line">GRANT ALL PRIVILEGES ON wordpress_db.* TO &#x27;wp_user&#x27;@&#x27;localhost&#x27;;</span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装wordpress</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd /var/www/html</span><br><span class="line">wget https://wordpress.org/latest.tar.gz </span><br><span class="line">tar -xvzf latest.tar.gz</span><br><span class="line">chown -R www-data:www-data /var/www/html/wordpress</span><br><span class="line">chmod -R 755 /var/www/html/wordpress</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编辑 Apache 默认虚拟主机配置</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/apache2/sites-available/000-default.conf</span><br></pre></td></tr></table></figure>
+<p>  找到：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html<br>  改成：<br>  DocumentRoot &#x2F;var&#x2F;www&#x2F;html&#x2F;wordpress</p>
+</li>
+<li><p>&#x2F;etc&#x2F;apache2&#x2F;apache2.conf 添加：</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;Directory /var/www/html/wordpress&gt;</span><br><span class="line">    Options Indexes FollowSymLinks</span><br><span class="line">    AllowOverride All</span><br><span class="line">    Require all granted</span><br><span class="line">&lt;/Directory&gt;</span><br></pre></td></tr></table></figure>
+<p>  如果你希望支持 WordPress 的 .htaccess 功能，请保留 AllowOverride All</p>
+</li>
+<li><p>固定连接</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apache2ctl -M | grep rewrite</span><br><span class="line">a2enmod rewrite</span><br><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure>
+<p>  在 WordPress 后台重新保存固定链接</p>
+</li>
+<li><p>重启服务</p>
+  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart apache2</span><br></pre></td></tr></table></figure></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1306,104 +1428,6 @@
 <h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
 <li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/" class="post-title-link" itemprop="url">gdb调试改变返回值</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-01-23 10:09:48" itemprop="dateCreated datePublished" datetime="2025-01-23T10:09:48+00:00">2025-01-23</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/01/23/debug/gdb%E8%B0%83%E8%AF%95%E6%94%B9%E5%8F%98%E8%BF%94%E5%9B%9E%E5%80%BC/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/01/23/debug/gdb调试改变返回值/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>使用 GDB 调试时，有时候需要修改返回值，但是返回值有时候无法直接使用p修改，如std::list::empty(); 如何修改标准库的empty函数返回值呢？</p>
-<h2 id="修改寄存器值"><a href="#修改寄存器值" class="headerlink" title="修改寄存器值"></a>修改寄存器值</h2><p>函数的返回值通常存储在特定寄存器中（例如，x86-64 架构中是 %rax）。在函数返回之前，你可以修改 %rax 的值。</p>
-<p>步骤：</p>
-<ol>
-<li>在函数返回之前设置断点（如 ret 指令处）<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">b *func+&lt;offset&gt; # 偏移地址为即将返回的位置</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>2.运行程序并等待断点触发<br>3.修改返回值所在的寄存器（例如 %rax）：</p>
 
       
     </div>
