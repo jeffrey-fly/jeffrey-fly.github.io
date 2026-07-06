@@ -6,7 +6,7 @@
   <link href="https://jeffly.cc/atom.xml" rel="self"/>
   
   <link href="https://jeffly.cc/"/>
-  <updated>2026-06-24T07:49:10.808Z</updated>
+  <updated>2026-07-06T05:34:04.125Z</updated>
   <id>https://jeffly.cc/</id>
   
   <author>
@@ -17,22 +17,50 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>Implement_B-Tree_using_c++</title>
+    <link href="https://jeffly.cc/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/"/>
+    <id>https://jeffly.cc/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/</id>
+    <published>2026-07-06T02:32:34.000Z</published>
+    <updated>2026-07-06T05:34:04.125Z</updated>
+    
+    <content type="html"><![CDATA[<p>B-tree 在并发修改时，传统实现通常采用 lock coupling（也叫 crabbing）：从根开始向下加锁，只有确认当前节点是 safe node （即插入时不会触发 split 的节点）后才能释放父节点锁。当发生 split 时，可能需要长时间持有多层节点锁，并发性受到限制。<br>Lehman-Yao 1981年的论文给出了一个优雅的解法——只需要给每个节点增加两个字段，就能把最大同时持锁数降到3个常数。这篇文章记录我用C++实现这个算法的过程，以及踩过的坑。</p><h2 id="B-link-tree-是什么"><a href="#B-link-tree-是什么" class="headerlink" title="B-link tree 是什么"></a>B-link tree 是什么</h2><p>B-link tree 是 b-tree的一个变体：增加了high-key和right-link：</p><ul><li>high-key：当前节点 key 范围的上界（所有 key 都满足 <code>key &lt; high-key</code>）。最右侧节点的 high-key 为 +∞。</li><li>right-link：平级之间，左结点持有右结点的指针，可以方便的从左边访问到右边（不经过父节点）<br>查询不需要加锁:<blockquote><p>Note the simplicity of the search, which behaves just as a nonconcurrent search, treating link pointers in exactly the same manner as any other pointer.</p></blockquote></li></ul><blockquote><p>Note also that this procedure does no locking of any kind. This contrasts with conventional database search algorithms (e.g., Bayer and Schkolnick [3]), in which all searches read-lock the nodes they examine.</p></blockquote><p>插入遵循自顶向下找到目标叶子，然后自底向上传播 split。加锁时最多同时持有三个锁:</p><ol><li>分裂节点的原始左半部分</li><li>分裂节点上一层的两个节点<br>与传统方法相比（即只有在确定节点为安全节点时才释放锁），这种做法在 锁粒度和并发性能上都有显著改进。</li></ol><h2 id="实现过程中踩的坑"><a href="#实现过程中踩的坑" class="headerlink" title="实现过程中踩的坑"></a>实现过程中踩的坑</h2><ol><li><strong>内部节点的 keys 可以为空</strong><br> B-tree 内部节点的 key 是相邻 children 之间的分隔符，只有 children &gt;&#x3D; 2 时才需要。当 max_keys&#x3D;1 时，split 后右半部分内部节点只有1个 child，不需要任何分隔符，keys 为空是合法状态。开始误以为内部节点必须有 key，导致 max_keys&#x3D;1 的边界情况一直跑不通。</li><li>任意结点的均需要按顺序插入<br> 开始写代码时，受用例影响，key &#x3D; 1、2、3、4、5 这样插入，用 <code>push_back</code> 直接追加 key，没有用 <code>lower_bound</code> 找到正确插入位置，导致换用例后节点内 keys 无序，<code>ScanNode</code> 的二分查找全部失效。B-tree 节点内的 keys 必须始终保持有序。</li><li>分裂时需要区分叶子结点和中间结点<br> 分裂时叶子结点和中间结点需要区分处理：<br> 叶子结点：中间对半分，mid key 是<strong>右节点的第一个 key</strong>，复制到父节点作为分隔符，同时也成为左节点的 high-key<br> 中间结点：中间对半分，mid key提升到父节点，右边从mid+1开始<br> 分裂算法以及流程需要很清晰，然后开始写代码，会事半功倍。而我没有想明白的情况下，改了好几版才最终成型</li><li>打印树<br>  每完成一次插入后打印整棵树（或每次插入前先检查树），可以很快定位是哪一次插入开始破坏了树结构，比单纯调试代码效率高得多。</li></ol><h2 id="当前进度和后续计划"><a href="#当前进度和后续计划" class="headerlink" title="当前进度和后续计划"></a>当前进度和后续计划</h2><p>当前实现已经完成单线程插入和节点分裂，下一步将实现论文中的并发插入流程，并验证最多持有三个锁的性质。</p><ul><li><input checked="" disabled="" type="checkbox">  Search</li><li><input checked="" disabled="" type="checkbox"> Single-threaded insert with leaf and internal node splitting</li><li><input disabled="" type="checkbox"> Concurrent insert (in progress)</li></ul><h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p><a href="https://github.com/jeffrey-fly/blink-tree-cpp.git">https://github.com/jeffrey-fly/blink-tree-cpp.git</a></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;B-tree 在并发修改时，传统实现通常采用 lock coupling（也叫 crabbing）：从根开始向下加锁，只有确认当前节点是 safe node （即插入时不会触发 split 的节点）后才能释放父节点锁。当发生 split 时，可能需要长时间持有多层节点锁，并</summary>
+      
+    
+    
+    
+    <category term="database" scheme="https://jeffly.cc/categories/database/"/>
+    
+    
+    <category term="algorithm" scheme="https://jeffly.cc/tags/algorithm/"/>
+    
+    <category term="BTree" scheme="https://jeffly.cc/tags/BTree/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Good articles about postgres</title>
     <link href="https://jeffly.cc/2026/06/24/postgresql/Good-articles-about-databases/"/>
     <id>https://jeffly.cc/2026/06/24/postgresql/Good-articles-about-databases/</id>
-    <published>2026-06-24T07:46:00.000Z</published>
-    <updated>2026-06-24T07:49:10.808Z</updated>
+    <published>2026-06-23T23:46:00.000Z</published>
+    <updated>2026-07-06T05:34:04.128Z</updated>
     
-    <content type="html"><![CDATA[<ol><li>Richard Yen: pg_stats: How Postgres Internal Stats Work<br><a href="https://postgr.es/p/9mG">https://postgr.es/p/9mG</a><br>2026-06-22</li></ol>]]></content>
+    <content type="html"><![CDATA[<ol><li><p>Richard Yen: pg_stats: How Postgres Internal Stats Work<br><a href="https://postgr.es/p/9mG">https://postgr.es/p/9mG</a><br>2026-06-22</p></li><li><p>warda bibi: MCP For PostgreSQL: Automated Health Checks &amp; Performance Analysis<br><a href="https://postgr.es/p/9nf">https://postgr.es/p/9nf</a><br>2026-06-24</p></li></ol>]]></content>
     
     
       
       
     <summary type="html">&lt;ol&gt;
-&lt;li&gt;Richard Yen: pg_stats: How Postgres Internal Stats Work&lt;br&gt;&lt;a href=&quot;https://postgr.es/p/9mG&quot;&gt;https://postgr.es/p/9mG&lt;/a&gt;&lt;br&gt;2026-06</summary>
+&lt;li&gt;&lt;p&gt;Richard Yen: pg_stats: How Postgres Internal Stats Work&lt;br&gt;&lt;a href=&quot;https://postgr.es/p/9mG&quot;&gt;https://postgr.es/p/9mG&lt;/a&gt;&lt;br&gt;2026</summary>
       
     
     
+    
+    <category term="postgresql" scheme="https://jeffly.cc/categories/postgresql/"/>
     
     
   </entry>
@@ -110,8 +138,8 @@
   
   <entry>
     <title>多核并发与屏障</title>
-    <link href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/"/>
-    <id>https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/</id>
+    <link href="https://jeffly.cc/2026/03/19/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/"/>
+    <id>https://jeffly.cc/2026/03/19/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/</id>
     <published>2026-03-18T17:15:06.000Z</published>
     <updated>2026-06-07T07:38:22.277Z</updated>
     
@@ -255,8 +283,8 @@
   
   <entry>
     <title>Running OpenClaw with Docker</title>
-    <link href="https://jeffly.cc/2026/02/09/tools/How-to-use-openclaw/"/>
-    <id>https://jeffly.cc/2026/02/09/tools/How-to-use-openclaw/</id>
+    <link href="https://jeffly.cc/2026/02/10/tools/How-to-use-openclaw/"/>
+    <id>https://jeffly.cc/2026/02/10/tools/How-to-use-openclaw/</id>
     <published>2026-02-09T20:28:44.000Z</published>
     <updated>2026-06-07T07:38:22.277Z</updated>
     
@@ -375,8 +403,8 @@
   
   <entry>
     <title>一致性hash</title>
-    <link href="https://jeffly.cc/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/"/>
-    <id>https://jeffly.cc/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/</id>
+    <link href="https://jeffly.cc/2026/01/12/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/"/>
+    <id>https://jeffly.cc/2026/01/12/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/</id>
     <published>2026-01-11T19:46:58.000Z</published>
     <updated>2026-06-07T07:38:22.275Z</updated>
     
@@ -502,35 +530,6 @@
     
     <category term="postgresql" scheme="https://jeffly.cc/categories/postgresql/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>Basic Statistics</title>
-    <link href="https://jeffly.cc/2025/12/18/postgresql/Basic-Statistics/"/>
-    <id>https://jeffly.cc/2025/12/18/postgresql/Basic-Statistics/</id>
-    <published>2025-12-18T09:42:18.000Z</published>
-    <updated>2026-06-07T07:38:22.276Z</updated>
-    
-    <content type="html"><![CDATA[<p>基本的 relation-level统计信息存储在系统目录的 pg_class 表中，包含以下数据：</p><ul><li>relation中的元组（记录）数量（reltuples）</li><li>relation的大小，以页（page）为单位（relpages）</li><li>在可见性映射（visibility map）中被标记的页数（relallvisible）</li></ul><p>下面是 flights 表对应的这些值：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>如果查询未施加任何过滤条件，则 reltuples 的值将作为基数（cardinality）估计：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights;</span><br><span class="line">QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.4772</span><span class="number">.67</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">214867</span> width<span class="operator">=</span><span class="number">63</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>统计信息是在表分析（无论是手动还是自动）过程中收集的。此外，由于基本统计信息至关重要，这些数据也会在其他操作中计算（如 VACUUM FULL 和 CLUSTER，以及 CREATE INDEX 和 REINDEX），并在常规 VACUUM 过程中进一步精化。</p><p>为了分析目的，会从表中随机抽取 300 × <em>default_statistics_target</em> 行进行采样。为了构建具有特定精度的统计信息，所需的样本量与被分析数据的总体量关系不大，因此表的大小不会被考虑在内。</p><p>抽样行是从同样数量的随机页（300 × <em>default_statistics_target</em> 页）中选出的。显然，如果表本身较小，则可能读取的页数更少，选取用于分析的行数也会相应减少。</p><p>对于大表，统计信息收集不会包含所有行，因此估算值可能与实际值存在偏差。这是完全正常的：如果数据在不断变化，统计信息本身也不可能始终准确。通常，只要估算精度在数量级上足够，即可用来选择合理的查询执行计划。</p><p>我们创建一个 flights 表的副本，并禁用 autovacuum，这样我们就可以控制自动分析（autoanalysis）的启动时间：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">CREATE TABLE</span> flights_copy(<span class="keyword">LIKE</span> flights) <span class="keyword">WITH</span> (autovacuum_enabled <span class="operator">=</span> <span class="literal">false</span>);</span><br></pre></td></tr></table></figure><p>目前新表没有统计信息</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible</span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">        −<span class="number">1</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>当 reltuples &#x3D; −1 时，用于区分尚未分析的表和真正没有行的空表。</p><p>表创建后，很可能会马上插入一些行。由于优化器无法获知表的当前实际状态，它会假设该表包含 10 个页：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.14</span><span class="number">.10</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">410</span> width<span class="operator">=</span><span class="number">170</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>行数的估算是基于单行的大小（在执行计划中显示为 width）。行宽通常是在分析过程中计算的平均值，但由于此时尚未收集任何统计信息，这里只是根据列的数据类型做出的近似估算。</p><p>现在，我们从 flights 表拷贝数据同时完成分析：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">=&gt; INSERT INTO flights_copy SELECT * FROM flights; INSERT 0 214867</span><br><span class="line">=&gt; ANALYZE flights_copy;</span><br></pre></td></tr></table></figure><p>收集到的统计信息反映了实际的行数（表足够小，分析器可以对所有数据收集统计信息）：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>relallvisible 值用于估算 index-only scan 的成本。该值由 VACUUM 更新：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> VACUUM flights_copy;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line">relallvisible </span><br><span class="line">−−−−−−−−−−−−−−−</span><br><span class="line">          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>现在我们将行数翻倍，但不更新统计信息，检查查询计划中的基数估算：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">INSERT INTO</span> flights_copy <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights; </span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights_copy;</span><br><span class="line"> count </span><br><span class="line">−−−−−−−−</span><br><span class="line"><span class="number">429734</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.9545</span><span class="number">.34</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">429734</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>尽管 pg_class 中的数据已经过时，估算结果仍然准确：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>    <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>问题在于，如果优化器发现 relpages 与实际文件大小之间存在差距，它可以通过比例调整 reltuples 的值来提高估算精度。由于文件大小相比 relpages 翻了一倍，优化器会调整估算的行数，同时假设数据密度保持不变：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples <span class="operator">*</span></span><br><span class="line">(pg_relation_size(<span class="string">&#x27;flights_copy&#x27;</span>) <span class="operator">/</span> <span class="number">8192</span>) <span class="operator">/</span> relpages <span class="keyword">AS</span> tuples</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> tuples</span><br><span class="line">−−−−−−−−</span><br><span class="line"> <span class="number">429734</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure><p>当然，这种调整并不总是有效（例如，如果删除了一些行，估算值将保持不变），但在某些情况下，它可以让优化器在下一次分析触发之前仍然保持合理的估算。</p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;基本的 relation-level统计信息存储在系统目录的 pg_class 表中，包含以下数据：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;relation中的元组（记录）数量（reltuples）&lt;/li&gt;
-&lt;li&gt;relation的大小，以页（page）为单位（relpages）&lt;</summary>
-      
-    
-    
-    
-    <category term="postgresql" scheme="https://jeffly.cc/categories/postgresql/"/>
-    
-    
-    <category term="pginternal" scheme="https://jeffly.cc/tags/pginternal/"/>
-    
-    <category term="statistics" scheme="https://jeffly.cc/tags/statistics/"/>
     
   </entry>
   

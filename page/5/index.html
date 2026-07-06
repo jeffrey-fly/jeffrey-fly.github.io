@@ -169,7 +169,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-count">64</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -202,6 +202,163 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/08/06/debug/io/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/06/debug/io/" class="post-title-link" itemprop="url">IO</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-06 02:25:48" itemprop="dateCreated datePublished" datetime="2025-08-06T02:25:48+08:00">2025-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debug/" itemprop="url" rel="index"><span itemprop="name">debug</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2025/08/06/debug/io/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/08/06/debug/io/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。"><a href="#确认-I-O-是否是瓶颈，需要从多个角度综合判断，-瓶颈可能体现在磁盘、文件系统甚至内核调度上。" class="headerlink" title="确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。"></a>确认 I&#x2F;O 是否是瓶颈，需要从多个角度综合判断， 瓶颈可能体现在磁盘、文件系统甚至内核调度上。</h2><h3 id="1-使用系统工具监控-I-O"><a href="#1-使用系统工具监控-I-O" class="headerlink" title="1. 使用系统工具监控 I&#x2F;O"></a>1. 使用系统工具监控 I&#x2F;O</h3><h4 id="Linux-常用："><a href="#Linux-常用：" class="headerlink" title="Linux 常用："></a>Linux 常用：</h4><ol>
+<li><p><strong><code>iostat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iostat -x 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>%util</code> 高接近 100% → 磁盘基本饱和。</li>
+<li><code>await</code> 高 → 每次 I&#x2F;O 延迟大。</li>
+<li><code>r/s</code> 和 <code>w/s</code> → 每秒读写次数，衡量吞吐能力。</li>
+</ul>
+</li>
+<li><p><strong><code>iotop</code></strong></p>
+<ul>
+<li>实时显示哪个进程在进行 I&#x2F;O 以及占用的 I&#x2F;O 带宽。</li>
+<li>可以确认是单个进程占用过多 I&#x2F;O 还是多个进程平均分摊。</li>
+</ul>
+</li>
+<li><p><strong><code>vmstat</code></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmstat 1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>bi</code>&#x2F;<code>bo</code> 字段表示每秒块设备读写量。</li>
+<li><code>wa</code> 字段表示 CPU 等待 I&#x2F;O 的百分比，高的话说明 I&#x2F;O 成为 CPU 等待瓶颈。</li>
+</ul>
+</li>
+<li><p><strong><code>dstat</code> &#x2F; <code>perf stat</code></strong></p>
+<ul>
+<li>更细粒度监控吞吐量、延迟和上下文切换。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-检查磁盘吞吐能力"><a href="#2-检查磁盘吞吐能力" class="headerlink" title="2. 检查磁盘吞吐能力"></a>2. 检查磁盘吞吐能力</h3><ul>
+<li><p>测试磁盘最大写入带宽：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/tmp/testfile bs=1M count=1024 oflag=direct</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>oflag=direct</code> 避免缓存干扰。</li>
+<li>如果测试带宽接近你程序的写入量，磁盘可能就是瓶颈。</li>
+</ul>
+</li>
+<li><p>同理，可以测试并发读写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=10 --runtime=60 --group_reporting</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>fio</code> 可以模拟多线程读写负载，测出 IOPS 和吞吐量。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-观察系统行为"><a href="#3-观察系统行为" class="headerlink" title="3. 观察系统行为"></a>3. 观察系统行为</h3><ul>
+<li><p><strong>CPU vs I&#x2F;O 时间</strong>：</p>
+<ul>
+<li><code>top</code> 或 <code>perf top</code> 中如果 CPU 很空闲，程序主要在等待 I&#x2F;O → I&#x2F;O 瓶颈。</li>
+</ul>
+</li>
+<li><p><strong>延迟累积</strong>：</p>
+<ul>
+<li>如果程序写入文件很慢，但 CPU 使用低且磁盘高负载 → 瓶颈在 I&#x2F;O。</li>
+</ul>
+</li>
+<li><p><strong>锁与等待</strong>：</p>
+<ul>
+<li>并发写入时，文件系统锁、页缓存锁也会引入“假 I&#x2F;O 瓶颈”，需要 <code>perf trace</code> 或 <code>blktrace</code> 排查。</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -240,7 +397,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-07-31 10:59:00" itemprop="dateCreated datePublished" datetime="2025-07-31T10:59:00+00:00">2025-07-31</time>
+      <time title="Created: 2025-07-31 18:59:00" itemprop="dateCreated datePublished" datetime="2025-07-31T18:59:00+08:00">2025-07-31</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -362,7 +519,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-07-30 10:46:03" itemprop="dateCreated datePublished" datetime="2025-07-30T10:46:03+00:00">2025-07-30</time>
+      <time title="Created: 2025-07-30 18:46:03" itemprop="dateCreated datePublished" datetime="2025-07-30T18:46:03+08:00">2025-07-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -462,7 +619,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/07/29/postgresql/WAL-Structure-Physical-Structure/">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/07/30/postgresql/WAL-Structure-Physical-Structure/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -480,7 +637,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/07/29/postgresql/WAL-Structure-Physical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Physical-Structure)</a>
+          <a href="/2025/07/30/postgresql/WAL-Structure-Physical-Structure/" class="post-title-link" itemprop="url">WAL Structure(Physical-Structure)</a>
         </h2>
 
         <div class="post-meta-container">
@@ -491,7 +648,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-07-29 16:17:08" itemprop="dateCreated datePublished" datetime="2025-07-29T16:17:08+00:00">2025-07-29</time>
+      <time title="Created: 2025-07-30 00:17:08" itemprop="dateCreated datePublished" datetime="2025-07-30T00:17:08+08:00">2025-07-30</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -512,8 +669,8 @@
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/2025/07/29/postgresql/WAL-Structure-Physical-Structure/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/07/29/postgresql/WAL-Structure-Physical-Structure/" itemprop="commentCount"></span>
+    <a title="disqus" href="/2025/07/30/postgresql/WAL-Structure-Physical-Structure/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/07/30/postgresql/WAL-Structure-Physical-Structure/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -657,7 +814,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-07-10 14:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T14:33:12+00:00">2025-07-10</time>
+      <time title="Created: 2025-07-10 22:33:12" itemprop="dateCreated datePublished" datetime="2025-07-10T22:33:12+08:00">2025-07-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -811,7 +968,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-06-04 10:46:58" itemprop="dateCreated datePublished" datetime="2025-06-04T10:46:58+00:00">2025-06-04</time>
+      <time title="Created: 2025-06-04 18:46:58" itemprop="dateCreated datePublished" datetime="2025-06-04T18:46:58+08:00">2025-06-04</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -905,7 +1062,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-05-14 11:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T11:26:53+00:00">2025-05-14</time>
+      <time title="Created: 2025-05-14 19:26:53" itemprop="dateCreated datePublished" datetime="2025-05-14T19:26:53+08:00">2025-05-14</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1018,7 +1175,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-05-07 09:22:22" itemprop="dateCreated datePublished" datetime="2025-05-07T09:22:22+00:00">2025-05-07</time>
+      <time title="Created: 2025-05-07 17:22:22" itemprop="dateCreated datePublished" datetime="2025-05-07T17:22:22+08:00">2025-05-07</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1110,7 +1267,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/04/03/postgresql/Checkpoint/">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/04/04/postgresql/Checkpoint/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1128,7 +1285,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/04/03/postgresql/Checkpoint/" class="post-title-link" itemprop="url">Checkpoint</a>
+          <a href="/2025/04/04/postgresql/Checkpoint/" class="post-title-link" itemprop="url">Checkpoint</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1139,7 +1296,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-04-03 19:28:21" itemprop="dateCreated datePublished" datetime="2025-04-03T19:28:21+00:00">2025-04-03</time>
+      <time title="Created: 2025-04-04 03:28:21" itemprop="dateCreated datePublished" datetime="2025-04-04T03:28:21+08:00">2025-04-04</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1160,8 +1317,8 @@
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/2025/04/03/postgresql/Checkpoint/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/04/03/postgresql/Checkpoint/" itemprop="commentCount"></span>
+    <a title="disqus" href="/2025/04/04/postgresql/Checkpoint/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/04/04/postgresql/Checkpoint/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1257,7 +1414,7 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-03-16 10:54:41" itemprop="dateCreated datePublished" datetime="2025-03-16T10:54:41+00:00">2025-03-16</time>
+      <time title="Created: 2025-03-16 18:54:41" itemprop="dateCreated datePublished" datetime="2025-03-16T18:54:41+08:00">2025-03-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1309,126 +1466,6 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./your_program</span><br></pre></td></tr></table></figure>
 <h2 id="4-设置环境变量"><a href="#4-设置环境变量" class="headerlink" title="4. 设置环境变量"></a>4. 设置环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:symbolize=1:quarantine_size=1024:log_path=/home/postgres/asan/asan.log</span><br></pre></td></tr></table></figure>
 <h2 id="5-Example"><a href="#5-Example" class="headerlink" title="5. Example"></a>5. Example</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">=================================================================</span><br><span class="line">==791265==ERROR: LeakSanitizer: detected memory leaks</span><br><span class="line"></span><br><span class="line">Direct leak of 1024 byte(s) in 1 object(s) allocated from:</span><br><span class="line">    #0 0x7f6fcee65887 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:145</span><br><span class="line">    #1 0x55adcdfee87a in main /home/postgres/codes/sample/epoll_server.c:54</span><br><span class="line">    #2 0x7f6fcebb1d8f in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58</span><br><span class="line"></span><br><span class="line">SUMMARY: AddressSanitizer: 1024 byte(s) leaked in 1 allocation(s).</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/02/27/postgresql/Logging/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/02/27/postgresql/Logging/" class="post-title-link" itemprop="url">Logging</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-02-27 18:40:39" itemprop="dateCreated datePublished" datetime="2025-02-27T18:40:39+00:00">2025-02-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/02/27/postgresql/Logging/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/02/27/postgresql/Logging/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在发生故障（例如停电、操作系统错误或数据库服务器崩溃）时，RAM 中的所有内容都将丢失；只有写入磁盘的数据会保留下来。要在故障后启动服务器，您必须恢复数据一致性。如果磁盘本身已损坏，则必须通过备份恢复来解决相同的问题。</p>
-<p>理论上，您可以始终保持磁盘上的数据一致性。但实际上，这意味着服务器必须不断地将随机页面写入磁盘（尽管顺序写入成本更低），并且此类写入的顺序必须保证在任何特定时刻都不会损害一致性（这很难实现，尤其是当您处理复杂的索引结构时）。</p>
-<p>与大多数数据库系统一样，PostgreSQL 采用了一种不同的方法。</p>
-<p>服务器运行时，部分当前数据仅存在于 RAM 中，其写入永久存储的操作被推迟。因此，服务器运行时存储在磁盘上的数据始终是不一致的，因为页面从不会一次性全部刷新。但是，RAM 中发生的每个更改（例如在缓冲区缓存中执行的页面更新）都会被记录下来：PostgreSQL 会创建一个日志条目，其中包含在需要时重复此操作所需的所有基本信息。</p>
-<p>页面修改相关的日志条目必须先于修改后的页面本身写入磁盘。这就是日志名称的由来：预写式日志（write-ahead log），简称 WAL。这项要求保证了在发生故障时，PostgreSQL 可以从磁盘读取 WAL 条目并重放它们，以重复那些已完成但结果仍在 RAM 中且在崩溃前未写入磁盘的操作。</p>
-<p>保留预写式日志通常比将随机页面写入磁盘更高效。WAL 条目构成一个连续的数据流，即使是硬盘驱动器 (HDD) 也能很好地处理。此外，WAL 条目通常比页面大小更小。</p>
-<p>为了在发生故障时避免数据不一致，所有可能破坏数据一致性的操作都需要记录下来。具体来说，以下操作会记录在 预写式日志 (WAL) 中：</p>
-<ul>
-<li>WAL 记录的操作</li>
-</ul>
-<ol>
-<li>缓冲区缓存中的页面修改：由于写入是延迟的，这些修改需要记录下来以备恢复。</li>
-<li>事务提交和回滚：事务状态的变化发生在 CLOG 缓冲区中，不会立即写入磁盘，因此需要记录。</li>
-<li>文件操作：当添加或删除表时，文件和目录的创建与删除等操作必须与数据更改同步，所以也要记录。</li>
-</ol>
-<ul>
-<li>WAL 不记录的操作</li>
-</ul>
-<ol>
-<li>unlogged表相关操作</li>
-<li>临时表上的操作：由于临时表的生命周期仅限于创建它们的会话，所以它们的操作不会被记录。<blockquote>
-<p>在 PostgreSQL 10 之前，哈希索引的操作也不会被记录。它们的主要目的是将哈希函数与不同的数据类型匹配。</p>
-</blockquote>
-</li>
-</ol>
-<p>除了用于崩溃恢复之外，WAL 还可以用于从备份进行时间点恢复以及数据复制。</p>
-<h2 id="参考书目"><a href="#参考书目" class="headerlink" title="参考书目"></a>参考书目</h2><ol>
-<li>Egor Rogov, <em>PostgreSQL 14 Internals</em>, <a target="_blank" rel="noopener" href="https://postgrespro.com/community/books/internals">https://postgrespro.com/community/books/internals</a></li>
-</ol>
-
       
     </div>
 

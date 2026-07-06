@@ -281,7 +281,7 @@ mjx-container[display="true"] + br {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-count">64</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -292,7 +292,7 @@ mjx-container[display="true"] + br {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -314,6 +314,131 @@ mjx-container[display="true"] + br {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/02/10/tools/How-to-use-openclaw/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/02/10/tools/How-to-use-openclaw/" class="post-title-link" itemprop="url">Running OpenClaw with Docker</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-10 04:28:44" itemprop="dateCreated datePublished" datetime="2026-02-10T04:28:44+08:00">2026-02-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/02/10/tools/How-to-use-openclaw/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/02/10/tools/How-to-use-openclaw/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
+<li><strong>Bypass internet restrictions</strong></li>
+<li>Docker Desktop (or Docker Engine) + Docker Compose v2</li>
+<li>Enough disk for images + logs</li>
+</ul>
+<h2 id="Get-code-from-github"><a href="#Get-code-from-github" class="headerlink" title="Get code from github"></a>Get code from github</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/openclaw/openclaw.git</span><br></pre></td></tr></table></figure>
+
+<h2 id="Containerized-Gateway"><a href="#Containerized-Gateway" class="headerlink" title="Containerized Gateway"></a>Containerized Gateway</h2><p>From repo root:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./docker-setup.sh</span><br></pre></td></tr></table></figure>
+<p>This script: </p>
+<ul>
+<li>builds the gateway image</li>
+<li>runs the onboarding wizard</li>
+<li>prints optional provider setup hints</li>
+<li>starts the gateway via Docker Compose</li>
+<li>generates a gateway token and writes it to .env</li>
+</ul>
+<h2 id="Control-UI-token"><a href="#Control-UI-token" class="headerlink" title="Control UI token"></a>Control UI token</h2><p>If you see “unauthorized” or “disconnected (1008): pairing required”</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;gateway&quot;: &#123;</span><br><span class="line">    &quot;controlUi&quot;: &#123; &quot;dangerouslyDisableDeviceAuth&quot;: true &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>By default, OpenClaw requires every connecting device to be “paired” (approved by an administrator). Since the Control UI is running in an “insecure” context<br>(HTTP inside Docker), it cannot generate a persistent device identity. Setting allowInsecureAuth: true tells the gateway to trust the Control UI if it provides<br>the correct token, skipping the pairing requirement.</p>
+<h2 id="Install-feishu-plugin"><a href="#Install-feishu-plugin" class="headerlink" title="Install feishu plugin"></a>Install feishu plugin</h2><p>See URL below：<br><a target="_blank" rel="noopener" href="https://docs.openclaw.ai/channels/feishu">Feishu</a></p>
+<h2 id="Install-skill"><a href="#Install-skill" class="headerlink" title="Install skill"></a>Install skill</h2><ol>
+<li><p>goto the following site:<br><a target="_blank" rel="noopener" href="https://clawhub.ai/skills">https://clawhub.ai/skills</a></p>
+</li>
+<li><p>look for the skill you need. e.g. sonoscli</p>
+</li>
+<li><p>Execute</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npx clawhub@latest install sonoscli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Everything-is-ok"><a href="#Everything-is-ok" class="headerlink" title="Everything is ok"></a>Everything is ok</h2><p> <img src="/images/openclaw/feishu.png" alt="FEISHU"></p>
+<h2 id="Some-problems："><a href="#Some-problems：" class="headerlink" title="Some problems："></a>Some problems：</h2><ol>
+<li>“ plugin feishu: duplicate plugin id detected; later plugin may be overridden” <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">node@45122743ed12:/app$ find / -name &quot;openclaw.plugin.json&quot; 2&gt;/dev/null | grep feishu   </span><br><span class="line">/home/node/.openclaw/extensions/feishu/openclaw.plugin.json  </span><br><span class="line">/app/extensions/feishu/openclaw.plugin.json</span><br></pre></td></tr></table></figure>
+ You only need one feishu, delete the other one (I deleted the one under .openclaw, and deleting the one under app will cause the container to fail to start)</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -352,7 +477,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-02-01 09:29:33" itemprop="dateCreated datePublished" datetime="2026-02-01T09:29:33+00:00">2026-02-01</time>
+      <time title="Created: 2026-02-01 17:29:33" itemprop="dateCreated datePublished" datetime="2026-02-01T17:29:33+08:00">2026-02-01</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -470,7 +595,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-01-20 10:57:54" itemprop="dateCreated datePublished" datetime="2026-01-20T10:57:54+00:00">2026-01-20</time>
+      <time title="Created: 2026-01-20 18:57:54" itemprop="dateCreated datePublished" datetime="2026-01-20T18:57:54+08:00">2026-01-20</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -611,7 +736,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-01-16 10:38:58" itemprop="dateCreated datePublished" datetime="2026-01-16T10:38:58+00:00">2026-01-16</time>
+      <time title="Created: 2026-01-16 18:38:58" itemprop="dateCreated datePublished" datetime="2026-01-16T18:38:58+08:00">2026-01-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -796,7 +921,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-01-12 10:33:28" itemprop="dateCreated datePublished" datetime="2026-01-12T10:33:28+00:00">2026-01-12</time>
+      <time title="Created: 2026-01-12 18:33:28" itemprop="dateCreated datePublished" datetime="2026-01-12T18:33:28+08:00">2026-01-12</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -886,7 +1011,7 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/01/12/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -904,7 +1029,7 @@ mjx-container[display="true"] + br {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/" class="post-title-link" itemprop="url">一致性hash</a>
+          <a href="/2026/01/12/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/" class="post-title-link" itemprop="url">一致性hash</a>
         </h2>
 
         <div class="post-meta-container">
@@ -915,7 +1040,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-01-11 19:46:58" itemprop="dateCreated datePublished" datetime="2026-01-11T19:46:58+00:00">2026-01-11</time>
+      <time title="Created: 2026-01-12 03:46:58" itemprop="dateCreated datePublished" datetime="2026-01-12T03:46:58+08:00">2026-01-12</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -936,8 +1061,8 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/2026/01/11/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/01/11/database/一致性hash/" itemprop="commentCount"></span>
+    <a title="disqus" href="/2026/01/12/database/%E4%B8%80%E8%87%B4%E6%80%A7hash/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/01/12/database/一致性hash/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1187,7 +1312,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-01-10 09:54:05" itemprop="dateCreated datePublished" datetime="2026-01-10T09:54:05+00:00">2026-01-10</time>
+      <time title="Created: 2026-01-10 17:54:05" itemprop="dateCreated datePublished" datetime="2026-01-10T17:54:05+08:00">2026-01-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1290,7 +1415,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-12-25 00:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T00:00:00+00:00">2025-12-25</time>
+      <time title="Created: 2025-12-25 08:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T08:00:00+08:00">2025-12-25</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1553,7 +1678,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-12-22 10:52:49" itemprop="dateCreated datePublished" datetime="2025-12-22T10:52:49+00:00">2025-12-22</time>
+      <time title="Created: 2025-12-22 18:52:49" itemprop="dateCreated datePublished" datetime="2025-12-22T18:52:49+08:00">2025-12-22</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1648,7 +1773,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2025-12-19 10:52:49" itemprop="dateCreated datePublished" datetime="2025-12-19T10:52:49+00:00">2025-12-19</time>
+      <time title="Created: 2025-12-19 18:52:49" itemprop="dateCreated datePublished" datetime="2025-12-19T18:52:49+08:00">2025-12-19</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1693,143 +1818,6 @@ mjx-container[display="true"] + br {
 
 <p>以下是实际的行数：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights <span class="keyword">WHERE</span> actual_departure <span class="keyword">IS</span> <span class="keyword">NULL</span>;</span><br><span class="line"> count </span><br><span class="line">−−−−−−− </span><br><span class="line"> <span class="number">16348</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2025/12/18/postgresql/Basic-Statistics/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/12/18/postgresql/Basic-Statistics/" class="post-title-link" itemprop="url">Basic Statistics</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-12-18 09:42:18" itemprop="dateCreated datePublished" datetime="2025-12-18T09:42:18+00:00">2025-12-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2025/12/18/postgresql/Basic-Statistics/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2025/12/18/postgresql/Basic-Statistics/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>基本的 relation-level统计信息存储在系统目录的 pg_class 表中，包含以下数据：</p>
-<ul>
-<li>relation中的元组（记录）数量（reltuples）</li>
-<li>relation的大小，以页（page）为单位（relpages）</li>
-<li>在可见性映射（visibility map）中被标记的页数（relallvisible）</li>
-</ul>
-<p>下面是 flights 表对应的这些值：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>如果查询未施加任何过滤条件，则 reltuples 的值将作为基数（cardinality）估计：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−− </span><br><span class="line">Seq Scan <span class="keyword">on</span> flights (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.4772</span><span class="number">.67</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">214867</span> width<span class="operator">=</span><span class="number">63</span>)</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>统计信息是在表分析（无论是手动还是自动）过程中收集的。此外，由于基本统计信息至关重要，这些数据也会在其他操作中计算（如 VACUUM FULL 和 CLUSTER，以及 CREATE INDEX 和 REINDEX），并在常规 VACUUM 过程中进一步精化。</p>
-<p>为了分析目的，会从表中随机抽取 300 × <em>default_statistics_target</em> 行进行采样。为了构建具有特定精度的统计信息，所需的样本量与被分析数据的总体量关系不大，因此表的大小不会被考虑在内。</p>
-<p>抽样行是从同样数量的随机页（300 × <em>default_statistics_target</em> 页）中选出的。显然，如果表本身较小，则可能读取的页数更少，选取用于分析的行数也会相应减少。</p>
-<p>对于大表，统计信息收集不会包含所有行，因此估算值可能与实际值存在偏差。这是完全正常的：如果数据在不断变化，统计信息本身也不可能始终准确。通常，只要估算精度在数量级上足够，即可用来选择合理的查询执行计划。</p>
-<p>我们创建一个 flights 表的副本，并禁用 autovacuum，这样我们就可以控制自动分析（autoanalysis）的启动时间：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">CREATE TABLE</span> flights_copy(<span class="keyword">LIKE</span> flights) <span class="keyword">WITH</span> (autovacuum_enabled <span class="operator">=</span> <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
-
-<p>目前新表没有统计信息</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible</span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">        −<span class="number">1</span> <span class="operator">|</span>        <span class="number">0</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>当 reltuples &#x3D; −1 时，用于区分尚未分析的表和真正没有行的空表。</p>
-<p>表创建后，很可能会马上插入一些行。由于优化器无法获知表的当前实际状态，它会假设该表包含 10 个页：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.14</span><span class="number">.10</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">410</span> width<span class="operator">=</span><span class="number">170</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>行数的估算是基于单行的大小（在执行计划中显示为 width）。行宽通常是在分析过程中计算的平均值，但由于此时尚未收集任何统计信息，这里只是根据列的数据类型做出的近似估算。</p>
-<p>现在，我们从 flights 表拷贝数据同时完成分析：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">=&gt; INSERT INTO flights_copy SELECT * FROM flights; INSERT 0 214867</span><br><span class="line">=&gt; ANALYZE flights_copy;</span><br></pre></td></tr></table></figure>
-
-<p>收集到的统计信息反映了实际的行数（表足够小，分析器可以对所有数据收集统计信息）：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages, relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages <span class="operator">|</span> relallvisible </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>     <span class="number">2624</span> <span class="operator">|</span>             <span class="number">0</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>relallvisible 值用于估算 index-only scan 的成本。该值由 VACUUM 更新：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> VACUUM flights_copy;</span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> relallvisible <span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line">relallvisible </span><br><span class="line">−−−−−−−−−−−−−−−</span><br><span class="line">          <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>现在我们将行数翻倍，但不更新统计信息，检查查询计划中的基数估算：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">INSERT INTO</span> flights_copy <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights; </span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> flights_copy;</span><br><span class="line"> count </span><br><span class="line">−−−−−−−−</span><br><span class="line"><span class="number">429734</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> flights_copy;</span><br><span class="line">							QUERY PLAN </span><br><span class="line">−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−</span><br><span class="line">Seq Scan <span class="keyword">on</span> flights_copy (cost<span class="operator">=</span><span class="number">0.00</span>.<span class="number">.9545</span><span class="number">.34</span> <span class="keyword">rows</span><span class="operator">=</span><span class="number">429734</span> width<span class="operator">=</span><span class="number">63</span>) </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>尽管 pg_class 中的数据已经过时，估算结果仍然准确：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples, relpages</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> reltuples <span class="operator">|</span> relpages </span><br><span class="line">−−−−−−−−−−−<span class="operator">+</span>−−−−−−−−−−</span><br><span class="line">    <span class="number">214867</span> <span class="operator">|</span>    <span class="number">2624</span> </span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>问题在于，如果优化器发现 relpages 与实际文件大小之间存在差距，它可以通过比例调整 reltuples 的值来提高估算精度。由于文件大小相比 relpages 翻了一倍，优化器会调整估算的行数，同时假设数据密度保持不变：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> reltuples <span class="operator">*</span></span><br><span class="line">(pg_relation_size(<span class="string">&#x27;flights_copy&#x27;</span>) <span class="operator">/</span> <span class="number">8192</span>) <span class="operator">/</span> relpages <span class="keyword">AS</span> tuples</span><br><span class="line"><span class="keyword">FROM</span> pg_class <span class="keyword">WHERE</span> relname <span class="operator">=</span> <span class="string">&#x27;flights_copy&#x27;</span>;</span><br><span class="line"> tuples</span><br><span class="line">−−−−−−−−</span><br><span class="line"> <span class="number">429734</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br></pre></td></tr></table></figure>
-
-<p>当然，这种调整并不总是有效（例如，如果删除了一些行，估算值将保持不变），但在某些情况下，它可以让优化器在下一次分析触发之前仍然保持合理的估算。</p>
 
       
     </div>

@@ -281,7 +281,7 @@ mjx-container[display="true"] + br {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-count">64</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -292,7 +292,7 @@ mjx-container[display="true"] + br {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -314,6 +314,127 @@ mjx-container[display="true"] + br {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Jeffrey">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Jeffly">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/" class="post-title-link" itemprop="url">Implement_B-Tree_using_c++</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-06 10:32:34" itemprop="dateCreated datePublished" datetime="2026-07-06T10:32:34+08:00">2026-07-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/database/" itemprop="url" rel="index"><span itemprop="name">database</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/07/06/database/Implement-B-link-Tree-using-cplusplus/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>B-tree 在并发修改时，传统实现通常采用 lock coupling（也叫 crabbing）：从根开始向下加锁，只有确认当前节点是 safe node （即插入时不会触发 split 的节点）后才能释放父节点锁。当发生 split 时，可能需要长时间持有多层节点锁，并发性受到限制。<br>Lehman-Yao 1981年的论文给出了一个优雅的解法——只需要给每个节点增加两个字段，就能把最大同时持锁数降到3个常数。这篇文章记录我用C++实现这个算法的过程，以及踩过的坑。</p>
+<h2 id="B-link-tree-是什么"><a href="#B-link-tree-是什么" class="headerlink" title="B-link tree 是什么"></a>B-link tree 是什么</h2><p>B-link tree 是 b-tree的一个变体：增加了high-key和right-link：</p>
+<ul>
+<li>high-key：当前节点 key 范围的上界（所有 key 都满足 <code>key &lt; high-key</code>）。最右侧节点的 high-key 为 +∞。</li>
+<li>right-link：平级之间，左结点持有右结点的指针，可以方便的从左边访问到右边（不经过父节点）<br>查询不需要加锁:<blockquote>
+<p>Note the simplicity of the search, which behaves just as a nonconcurrent search, treating link pointers in exactly the same manner as any other pointer.</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>Note also that this procedure does no locking of any kind. This contrasts with conventional database search algorithms (e.g., Bayer and Schkolnick [3]), in which all searches read-lock the nodes they examine.</p>
+</blockquote>
+<p>插入遵循自顶向下找到目标叶子，然后自底向上传播 split。加锁时最多同时持有三个锁:</p>
+<ol>
+<li>分裂节点的原始左半部分</li>
+<li>分裂节点上一层的两个节点<br>与传统方法相比（即只有在确定节点为安全节点时才释放锁），这种做法在 锁粒度和并发性能上都有显著改进。</li>
+</ol>
+<h2 id="实现过程中踩的坑"><a href="#实现过程中踩的坑" class="headerlink" title="实现过程中踩的坑"></a>实现过程中踩的坑</h2><ol>
+<li><strong>内部节点的 keys 可以为空</strong><br> B-tree 内部节点的 key 是相邻 children 之间的分隔符，只有 children &gt;&#x3D; 2 时才需要。当 max_keys&#x3D;1 时，split 后右半部分内部节点只有1个 child，不需要任何分隔符，keys 为空是合法状态。开始误以为内部节点必须有 key，导致 max_keys&#x3D;1 的边界情况一直跑不通。</li>
+<li>任意结点的均需要按顺序插入<br> 开始写代码时，受用例影响，key &#x3D; 1、2、3、4、5 这样插入，用 <code>push_back</code> 直接追加 key，没有用 <code>lower_bound</code> 找到正确插入位置，导致换用例后节点内 keys 无序，<code>ScanNode</code> 的二分查找全部失效。B-tree 节点内的 keys 必须始终保持有序。</li>
+<li>分裂时需要区分叶子结点和中间结点<br> 分裂时叶子结点和中间结点需要区分处理：<br> 叶子结点：中间对半分，mid key 是<strong>右节点的第一个 key</strong>，复制到父节点作为分隔符，同时也成为左节点的 high-key<br> 中间结点：中间对半分，mid key提升到父节点，右边从mid+1开始<br> 分裂算法以及流程需要很清晰，然后开始写代码，会事半功倍。而我没有想明白的情况下，改了好几版才最终成型</li>
+<li>打印树<br>  每完成一次插入后打印整棵树（或每次插入前先检查树），可以很快定位是哪一次插入开始破坏了树结构，比单纯调试代码效率高得多。</li>
+</ol>
+<h2 id="当前进度和后续计划"><a href="#当前进度和后续计划" class="headerlink" title="当前进度和后续计划"></a>当前进度和后续计划</h2><p>当前实现已经完成单线程插入和节点分裂，下一步将实现论文中的并发插入流程，并验证最多持有三个锁的性质。</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox">  Search</li>
+<li><input checked="" disabled="" type="checkbox"> Single-threaded insert with leaf and internal node splitting</li>
+<li><input disabled="" type="checkbox"> Concurrent insert (in progress)</li>
+</ul>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p><a target="_blank" rel="noopener" href="https://github.com/jeffrey-fly/blink-tree-cpp.git">https://github.com/jeffrey-fly/blink-tree-cpp.git</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -352,7 +473,16 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-24 07:46:00" itemprop="dateCreated datePublished" datetime="2026-06-24T07:46:00+00:00">2026-06-24</time>
+      <time title="Created: 2026-06-24 07:46:00" itemprop="dateCreated datePublished" datetime="2026-06-24T07:46:00+08:00">2026-06-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+        </span>
     </span>
 
   
@@ -380,7 +510,10 @@ mjx-container[display="true"] + br {
     
     <div class="post-body" itemprop="articleBody">
           <ol>
-<li>Richard Yen: pg_stats: How Postgres Internal Stats Work<br><a target="_blank" rel="noopener" href="https://postgr.es/p/9mG">https://postgr.es/p/9mG</a><br>2026-06-22</li>
+<li><p>Richard Yen: pg_stats: How Postgres Internal Stats Work<br><a target="_blank" rel="noopener" href="https://postgr.es/p/9mG">https://postgr.es/p/9mG</a><br>2026-06-22</p>
+</li>
+<li><p>warda bibi: MCP For PostgreSQL: Automated Health Checks &amp; Performance Analysis<br><a target="_blank" rel="noopener" href="https://postgr.es/p/9nf">https://postgr.es/p/9nf</a><br>2026-06-24</p>
+</li>
 </ol>
 
       
@@ -437,7 +570,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 05:43:33" itemprop="dateCreated datePublished" datetime="2026-06-11T05:43:33+00:00">2026-06-11</time>
+      <time title="Created: 2026-06-11 13:43:33" itemprop="dateCreated datePublished" datetime="2026-06-11T13:43:33+08:00">2026-06-11</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -587,7 +720,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-05-23 15:46:33" itemprop="dateCreated datePublished" datetime="2026-05-23T15:46:33+00:00">2026-05-23</time>
+      <time title="Created: 2026-05-23 23:46:33" itemprop="dateCreated datePublished" datetime="2026-05-23T23:46:33+08:00">2026-05-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -679,7 +812,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-04-08 14:17:47" itemprop="dateCreated datePublished" datetime="2026-04-08T14:17:47+00:00">2026-04-08</time>
+      <time title="Created: 2026-04-08 22:17:47" itemprop="dateCreated datePublished" datetime="2026-04-08T22:17:47+08:00">2026-04-08</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -800,7 +933,7 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/">
+    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/03/19/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -818,7 +951,7 @@ mjx-container[display="true"] + br {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/" class="post-title-link" itemprop="url">多核并发与屏障</a>
+          <a href="/2026/03/19/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/" class="post-title-link" itemprop="url">多核并发与屏障</a>
         </h2>
 
         <div class="post-meta-container">
@@ -829,7 +962,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-03-18 17:15:06" itemprop="dateCreated datePublished" datetime="2026-03-18T17:15:06+00:00">2026-03-18</time>
+      <time title="Created: 2026-03-19 01:15:06" itemprop="dateCreated datePublished" datetime="2026-03-19T01:15:06+08:00">2026-03-19</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -850,8 +983,8 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/2026/03/18/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/03/18/program/多核并发与屏障/" itemprop="commentCount"></span>
+    <a title="disqus" href="/2026/03/19/program/%E5%A4%9A%E6%A0%B8%E5%B9%B6%E5%8F%91%E4%B8%8E%E5%B1%8F%E9%9A%9C/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/03/19/program/多核并发与屏障/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -990,7 +1123,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-03-16 10:33:02" itemprop="dateCreated datePublished" datetime="2026-03-16T10:33:02+00:00">2026-03-16</time>
+      <time title="Created: 2026-03-16 18:33:02" itemprop="dateCreated datePublished" datetime="2026-03-16T18:33:02+08:00">2026-03-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1135,7 +1268,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-03-04 12:50:50" itemprop="dateCreated datePublished" datetime="2026-03-04T12:50:50+00:00">2026-03-04</time>
+      <time title="Created: 2026-03-04 20:50:50" itemprop="dateCreated datePublished" datetime="2026-03-04T20:50:50+08:00">2026-03-04</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1385,7 +1518,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-03-01 11:58:42" itemprop="dateCreated datePublished" datetime="2026-03-01T11:58:42+00:00">2026-03-01</time>
+      <time title="Created: 2026-03-01 19:58:42" itemprop="dateCreated datePublished" datetime="2026-03-01T19:58:42+08:00">2026-03-01</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1542,7 +1675,7 @@ mjx-container[display="true"] + br {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-02-24 11:29:23" itemprop="dateCreated datePublished" datetime="2026-02-24T11:29:23+00:00">2026-02-24</time>
+      <time title="Created: 2026-02-24 19:29:23" itemprop="dateCreated datePublished" datetime="2026-02-24T19:29:23+08:00">2026-02-24</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1580,131 +1713,6 @@ mjx-container[display="true"] + br {
     <div class="post-body" itemprop="articleBody">
           <p>2026年，春节从老家返程途中游玩连云港。愿孩子们永远健康快乐</p>
 <p><img src="/images/lianyungang/liandao.jpeg" alt="liandao"></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://jeffly.cc/2026/02/09/tools/How-to-use-openclaw/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Jeffrey">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Jeffly">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/02/09/tools/How-to-use-openclaw/" class="post-title-link" itemprop="url">Running OpenClaw with Docker</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-02-09 20:28:44" itemprop="dateCreated datePublished" datetime="2026-02-09T20:28:44+00:00">2026-02-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/tools/" itemprop="url" rel="index"><span itemprop="name">tools</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/2026/02/09/tools/How-to-use-openclaw/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2026/02/09/tools/How-to-use-openclaw/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><ul>
-<li><strong>Bypass internet restrictions</strong></li>
-<li>Docker Desktop (or Docker Engine) + Docker Compose v2</li>
-<li>Enough disk for images + logs</li>
-</ul>
-<h2 id="Get-code-from-github"><a href="#Get-code-from-github" class="headerlink" title="Get code from github"></a>Get code from github</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/openclaw/openclaw.git</span><br></pre></td></tr></table></figure>
-
-<h2 id="Containerized-Gateway"><a href="#Containerized-Gateway" class="headerlink" title="Containerized Gateway"></a>Containerized Gateway</h2><p>From repo root:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./docker-setup.sh</span><br></pre></td></tr></table></figure>
-<p>This script: </p>
-<ul>
-<li>builds the gateway image</li>
-<li>runs the onboarding wizard</li>
-<li>prints optional provider setup hints</li>
-<li>starts the gateway via Docker Compose</li>
-<li>generates a gateway token and writes it to .env</li>
-</ul>
-<h2 id="Control-UI-token"><a href="#Control-UI-token" class="headerlink" title="Control UI token"></a>Control UI token</h2><p>If you see “unauthorized” or “disconnected (1008): pairing required”</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;gateway&quot;: &#123;</span><br><span class="line">    &quot;controlUi&quot;: &#123; &quot;dangerouslyDisableDeviceAuth&quot;: true &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>By default, OpenClaw requires every connecting device to be “paired” (approved by an administrator). Since the Control UI is running in an “insecure” context<br>(HTTP inside Docker), it cannot generate a persistent device identity. Setting allowInsecureAuth: true tells the gateway to trust the Control UI if it provides<br>the correct token, skipping the pairing requirement.</p>
-<h2 id="Install-feishu-plugin"><a href="#Install-feishu-plugin" class="headerlink" title="Install feishu plugin"></a>Install feishu plugin</h2><p>See URL below：<br><a target="_blank" rel="noopener" href="https://docs.openclaw.ai/channels/feishu">Feishu</a></p>
-<h2 id="Install-skill"><a href="#Install-skill" class="headerlink" title="Install skill"></a>Install skill</h2><ol>
-<li><p>goto the following site:<br><a target="_blank" rel="noopener" href="https://clawhub.ai/skills">https://clawhub.ai/skills</a></p>
-</li>
-<li><p>look for the skill you need. e.g. sonoscli</p>
-</li>
-<li><p>Execute</p>
- <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npx clawhub@latest install sonoscli</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="Everything-is-ok"><a href="#Everything-is-ok" class="headerlink" title="Everything is ok"></a>Everything is ok</h2><p> <img src="/images/openclaw/feishu.png" alt="FEISHU"></p>
-<h2 id="Some-problems："><a href="#Some-problems：" class="headerlink" title="Some problems："></a>Some problems：</h2><ol>
-<li>“ plugin feishu: duplicate plugin id detected; later plugin may be overridden” <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">node@45122743ed12:/app$ find / -name &quot;openclaw.plugin.json&quot; 2&gt;/dev/null | grep feishu   </span><br><span class="line">/home/node/.openclaw/extensions/feishu/openclaw.plugin.json  </span><br><span class="line">/app/extensions/feishu/openclaw.plugin.json</span><br></pre></td></tr></table></figure>
- You only need one feishu, delete the other one (I deleted the one under .openclaw, and deleting the one under app will cause the container to fail to start)</li>
-</ol>
 
       
     </div>
