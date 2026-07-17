@@ -1,5 +1,6 @@
+https://jeffly.cc/2026/07/17/postgresql-source/LSN-in-WAL/
+https://jeffly.cc/2026/05/06/database/Implement-B-link-Tree-using-cplusplus/
 https://jeffly.cc/2026/06/24/postgresql/Good-articles-about-databases/
-https://jeffly.cc/2026/07/06/database/Implement-B-link-Tree-using-cplusplus/
 https://jeffly.cc/2026/01/16/database/BTree-vs-LSMTree/
 https://jeffly.cc/2026/06/11/postgresql/Predicate-locks-in-pg/
 https://jeffly.cc/2025/05/07/database/Anomalies-in-database/
